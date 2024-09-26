@@ -1,0 +1,9 @@
+# Directories
+.vs/
+_bin/
+_intermediate/
+
+# Files
+*.user
+*.vcxproj
+*.filters
