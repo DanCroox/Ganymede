@@ -5,7 +5,7 @@
 		#define GANYMEDE_API __declspec(dllexport)
 	#else
 		#define GANYMEDE_API __declspec(dllimport)
-	#endif
+	#endif // GM_BUILD_DLL
 #else
 	#error Ganymede only supported on Windows!
-#endif
+#endif // GM_PLATFORM_WINDOWS

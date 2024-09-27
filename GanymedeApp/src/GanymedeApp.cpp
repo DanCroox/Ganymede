@@ -2,5 +2,6 @@
 
 void GanymedeApp::Run()
 {
-	// App goes here
+	GM_INFO("Application started");
+	for (;;);
 }

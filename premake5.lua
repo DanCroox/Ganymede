@@ -1,22 +1,25 @@
 workspace "Ganymede"
 	architecture "x64"
-
 	configurations
 	{
 		"Debug",
 		"Release",
 		"Retail"
 	}
+	startproject "GanymedeApp"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
+bindir = "_bin/"
+intermediatedir = "_intermediate/"
+
 
 project "Ganymede"
 	location "Ganymede"
 	kind "SharedLib"
 	language "C++"
 
-	targetdir (".bin/" .. outputdir .. "/%{prj.name}")
-	objdir (".intermediate/" .. outputdir .. "/%{prj.name}")
+	targetdir (bindir .. outputdir .. "/%{prj.name}")
+	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
 
 	files
 	{
@@ -26,10 +29,11 @@ project "Ganymede"
 
 	includedirs
 	{
+		"Ganymede/vendor/spdlog/include"
 	}
 
 	filter "system:windows"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		staticruntime "On"
 		systemversion "latest"
 
@@ -41,7 +45,8 @@ project "Ganymede"
 
 		postbuildcommands
 		{
-			("{COPYFILE} %{cfg.buildtarget.relpath} ../.bin/" .. outputdir .. "/GanymedeApp")
+ 			("{MKDIR} ../" .. bindir .. outputdir .. "/GanymedeApp"),
+			("{COPYFILE} %{cfg.buildtarget.relpath} ../" .. bindir .. outputdir .. "/GanymedeApp")
 		}
 
 	filter "configurations:Debug"
@@ -62,8 +67,8 @@ project "GanymedeApp"
 	kind "ConsoleApp"
 	language "C++"
 
-	targetdir (".bin/" .. outputdir .. "/%{prj.name}")
-	objdir (".intermediate/" .. outputdir .. "/%{prj.name}")
+	targetdir (bindir .. outputdir .. "/%{prj.name}")
+	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
 
 	files
 	{
@@ -73,7 +78,8 @@ project "GanymedeApp"
 
 	includedirs
 	{
-		"Ganymede/src"
+		"Ganymede/src",
+		"Ganymede/vendor/spdlog/include"
 	}
 
 	links
@@ -82,7 +88,7 @@ project "GanymedeApp"
 	}
 
 	filter "system:windows"
-		cppdialect "C++17"
+		cppdialect "C++20"
 		staticruntime "On"
 		systemversion "latest"
 
