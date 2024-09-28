@@ -1,3 +1,6 @@
 [submodule "Ganymede/vendor/spdlog"]
 	path = Ganymede/vendor/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "Ganymede/vendor/assimp"]
+	path = Ganymede/vendor/assimp
+	url = https://github.com/DanCroox/assimp
