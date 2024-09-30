@@ -1,6 +1,18 @@
-[submodule "Ganymede/vendor/spdlog"]
-	path = Ganymede/vendor/spdlog
-	url = https://github.com/gabime/spdlog
 [submodule "Ganymede/vendor/assimp"]
 	path = Ganymede/vendor/assimp
 	url = https://github.com/DanCroox/assimp
+[submodule "Ganymede/vendor/bullet3"]
+	path = Ganymede/vendor/bullet3
+	url = https://github.com/DanCroox/bullet3
+[submodule "Ganymede/vendor/spdlog"]
+	path = Ganymede/vendor/spdlog
+	url = https://github.com/DanCroox/spdlog
+[submodule "Ganymede/vendor/glm"]
+	path = Ganymede/vendor/glm
+	url = https://github.com/DanCroox/glm
+[submodule "Ganymede/vendor/glfw"]
+	path = Ganymede/vendor/glfw
+	url = https://github.com/DanCroox/glfw
+[submodule "Ganymede/vendor/recastnavigation"]
+	path = Ganymede/vendor/recastnavigation
+	url = https://github.com/DanCroox/recastnavigation
