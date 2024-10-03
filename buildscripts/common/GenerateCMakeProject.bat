@@ -1,33 +1,40 @@
 @echo off
 
-set IDE=%1
-set ARCHITECTURE=%2
-set SOURCE_DIR=%3
-set BUILD_PARAMS=%~4
+:: Check if cmake present
+WHERE cmake >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    ECHO CMake not found. Please install cmake first!
+    EXIT /b 1
+)
 
-set BUILD_DIR=%SOURCE_DIR%\build
+SET IDE=%1
+SET ARCHITECTURE=%2
+SET SOURCE_DIR=%3
+SET BUILD_PARAMS=%~4
 
-echo "Project generation started ..."
+SET BUILD_DIR=%SOURCE_DIR%\build
 
-echo %BUILD_DIR%
+ECHO "Project generation started ..."
+
+ECHO %BUILD_DIR%
 :: Check if project-build directory exists. Create if not.
-if not exist "%BUILD_DIR%" (
-    mkdir "%BUILD_DIR%"
+IF NOT EXIST "%BUILD_DIR%" (
+    MKDIR "%BUILD_DIR%"
 )
 
 :: Switch into project-build directory.
-pushd "%BUILD_DIR%"
+PUSHD "%BUILD_DIR%"
 
 :: Generate project files.
 cmake %SOURCE_DIR% -G %IDE% -A %ARCHITECTURE% %BUILD_PARAMS%
 
-popd
+POPD
 
 :: Check if generation succeeded.
-if errorlevel 1 (
-    echo CMake-config failed.
-    exit /b 1
+IF %ERRORLEVEL% NEQ 0 (
+    ECHO CMake-config failed.
+    EXIT /b 1
 )
 
-echo Project generation succeeded!
-exit /b 0
+ECHO Project generation succeeded!
+EXIT /b 0

@@ -2,6 +2,7 @@
 .vs/
 _bin/
 _intermediate/
+GanymedeApp/res/models/
 
 # Files
 *.user

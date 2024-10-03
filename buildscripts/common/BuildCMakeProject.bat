@@ -1,33 +1,40 @@
 @echo off
 
-set SOURCE_DIR=%1
-set BUILD_CONFIG=%2
+:: Check if cmake present
+WHERE cmake >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    ECHO CMake not found. Please install cmake first!
+    EXIT /b 1
+)
 
-set BUILD_DIR=%SOURCE_DIR%\build
+SET SOURCE_DIR=%1
+SET BUILD_CONFIG=%2
 
-echo "Build started ..."
+SET BUILD_DIR=%SOURCE_DIR%\build
 
-echo %BUILD_DIR%
+ECHO "Build started ..."
+
+ECHO %BUILD_DIR%
 :: Check if project-build directory exists. Create if not.
-if not exist "%BUILD_DIR%" (
-    echo "CMake build directory not existent. Regenerate projects!
-    exit /b 1
+IF NOT EXIST "%BUILD_DIR%" (
+    ECHO "CMake build directory not existent. Regenerate projects!
+    EXIT /b 1
 )
 
 :: Switch into project-build directory.
-pushd "%BUILD_DIR%"
+PUSHD "%BUILD_DIR%"
 
 :: Build binaries.
-echo "Build started ..."
+ECHO "Build started ..."
 cmake --build . -j20 --config %BUILD_CONFIG%
 
-popd
+POPD
 
 :: Check if build succeeded
-if errorlevel 1 (
-    echo Build failed.
-    exit /b 1
+IF %ERRORLEVEL% NEQ 0 (
+    ECHO Build failed.
+    EXIT /b 1
 )
 
-echo Build succeeded!
-exit /b 0
+ECHO Build succeeded!
+EXIT /b 0

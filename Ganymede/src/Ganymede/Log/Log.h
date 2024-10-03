@@ -18,7 +18,7 @@
 	// Needed to unlock all loglevels for the SPDLOG_LOGGER_TRACE/DEBUG... defines. Leave it like that and change loglevel at the respective logger.
 	#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 
-	#include "Core.h"
+	#include "Ganymede/Core/Core.h"
 	#include "spdlog/spdlog.h"
 
 	// Although "Logger" is exported, this does not happen to the shared_ptr template-members implicitly. Need to forward declare to fix it.
