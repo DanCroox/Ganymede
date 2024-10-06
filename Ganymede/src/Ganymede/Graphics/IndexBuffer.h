@@ -1,16 +1,21 @@
 #pragma once
 
-class IndexBuffer
+#include "Ganymede/Core/Core.h"
+
+namespace Ganymede
 {
-private:
-	unsigned int m_RendererID;
-	unsigned int m_Count;
-public:
-	IndexBuffer(const unsigned int* data, unsigned int count);
-	~IndexBuffer();
+	class GANYMEDE_API IndexBuffer
+	{
+	private:
+		unsigned int m_RendererID;
+		unsigned int m_Count;
+	public:
+		IndexBuffer(const unsigned int* data, unsigned int count);
+		~IndexBuffer();
 
-	void Bind() const;
-	void Unbind() const;
+		void Bind() const;
+		void Unbind() const;
 
-	inline unsigned int GetCount() const { return m_Count; }
-};
+		inline unsigned int GetCount() const { return m_Count; }
+	};
+}

@@ -1,73 +1,75 @@
 #pragma once
-#include <iostream>
-#include <vector>
-#include <unordered_map>
-#include "WorldObject.h"
+
+#include "Ganymede/Core/Core.h"
+
 #include "MeshWorldObject.h"
-#include "MeshWorldObjectInstance.h"
-#include "Ganymede/Graphics/Texture.h"
 
-
-struct BoneInfo
+namespace Ganymede
 {
-	glm::mat4 m_OffsetTransform;
-	unsigned int m_Index;
-};
-
-
-struct BoneWeight
-{
-	unsigned int m_BoneIndex; //wie in vertex buffer
-	float m_Weight;
-};
-
-struct Animation
-{
-	struct Bone
+	struct GANYMEDE_API BoneInfo
 	{
-		std::vector<glm::mat4> m_Frames;
+		glm::mat4 m_OffsetTransform;
+		unsigned int m_Index;
 	};
 
-	std::string m_Name;
-	std::vector<Bone> m_Bones;
 
-	float m_FPS;
-};
-
-class SkeletalMeshWorldObject : public MeshWorldObject
-{
-	using MeshWorldObject::MeshWorldObject;
-public:
-	void SetBoneInfoByName(const std::string& name, const BoneInfo& boneInfo)
+	struct GANYMEDE_API BoneWeight
 	{
-		m_BoneInfoByBoneName[name] = boneInfo;
-	}
+		unsigned int m_BoneIndex; //wie in vertex buffer
+		float m_Weight;
+	};
 
-	bool HasBoneName(const std::string& name)
+	struct GANYMEDE_API Animation
 	{
-		return m_BoneInfoByBoneName.count(name) > 0;
-	}
-
-	bool TryGetBoneInfoByName(const std::string& name, BoneInfo& boneInfoOut) const
-	{
-		if (m_BoneInfoByBoneName.count(name) > 0)
+		struct Bone
 		{
-			boneInfoOut = m_BoneInfoByBoneName.at(name);
-			return true;
+			std::vector<glm::mat4> m_Frames;
+		};
+
+		std::string m_Name;
+		std::vector<Bone> m_Bones;
+
+		float m_FPS;
+	};
+
+	class GANYMEDE_API SkeletalMeshWorldObject : public MeshWorldObject
+	{
+	public:
+		using MeshWorldObject::MeshWorldObject;
+		void SetBoneInfoByName(const std::string& name, const BoneInfo& boneInfo)
+		{
+			m_BoneInfoByBoneName[name] = boneInfo;
 		}
 
-		return false;
-	}
+		bool HasBoneName(const std::string& name)
+		{
+			return m_BoneInfoByBoneName.count(name) > 0;
+		}
 
-	unsigned int GetBoneCount() const
-	{
-		return m_NumBones;
-	}
+		bool TryGetBoneInfoByName(const std::string& name, BoneInfo& boneInfoOut) const
+		{
+			if (m_BoneInfoByBoneName.count(name) > 0)
+			{
+				boneInfoOut = m_BoneInfoByBoneName.at(name);
+				return true;
+			}
 
-	Type GetType() const override { return Type::SkeletalMesh; }
+			return false;
+		}
 
-private:
-	friend class AssetLoader;
-	std::unordered_map<std::string, BoneInfo> m_BoneInfoByBoneName;
-	unsigned int m_NumBones = 0;
-};
+		unsigned int GetBoneCount() const
+		{
+			return m_NumBones;
+		}
+
+		//REWORK: Rework this bonecount- ref thingy...just done to fix the namespace dependencies
+		unsigned int& GetBoneCountRef() { return m_NumBones; }
+		const std::unordered_map<std::string, BoneInfo>& GetBoneInfoByBoneNameRef() const { return m_BoneInfoByBoneName; }
+
+		Type GetType() const override { return Type::SkeletalMesh; }
+
+	private:
+		std::unordered_map<std::string, BoneInfo> m_BoneInfoByBoneName;
+		unsigned int m_NumBones = 0;
+	};
+}

@@ -1,14 +1,35 @@
 #include "Ganymede/World/MeshWorldObjectInstance.h"
 #include "Ganymede/Physics/PhysicsWorld.h"
+#include "Ganymede/World/MeshWorldObject.h"
 
-void MeshWorldObjectInstance::MakeRigidBody(float mass)
+namespace Ganymede
 {
-	ASSERT(m_PhysicsWorld != nullptr);
-	if (!m_RigidBody.IsValid())
+	MeshWorldObjectInstance::MeshWorldObjectInstance(const MeshWorldObject* meshWorldObject) :
+		WorldObjectInstance(meshWorldObject),
+		m_MeshWorldObject(meshWorldObject),
+		m_CastShadows(meshWorldObject->GetCastShadows())
 	{
-		//REWORK: Implement proper physics and rigidbody property-ing. Maybe move physics code out of Worldobjectinstance and into meshworldobjectinstance
-		//Maybe remove from instance at all
-		m_RigidBody = m_PhysicsWorld->AddRigidBodyFromMeshWorldObject(*this, mass);
-		m_RigidBody.SetDamping(.1f, .1f);
+		for (const MeshWorldObject::Mesh* mesh : meshWorldObject->m_Meshes)
+		{
+			AddMaterial(mesh->m_Material);
+		}
+	};
+
+	const MeshWorldObject* MeshWorldObjectInstance::GetMeshWorldObject() const
+	{
+		return m_MeshWorldObject;
 	}
+
+	void MeshWorldObjectInstance::MakeRigidBody(float mass)
+	{
+		ASSERT(m_PhysicsWorld != nullptr);
+		if (!m_RigidBody.IsValid())
+		{
+			//REWORK: Implement proper physics and rigidbody property-ing. Maybe move physics code out of Worldobjectinstance and into meshworldobjectinstance
+			//Maybe remove from instance at all
+			m_RigidBody = m_PhysicsWorld->AddRigidBodyFromMeshWorldObject(*this, mass);
+			m_RigidBody.SetDamping(.1f, .1f);
+		}
+	}
+
 }

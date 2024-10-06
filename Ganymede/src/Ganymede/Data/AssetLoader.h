@@ -10,54 +10,54 @@
 #include "Ganymede/World/SkeletalMeshWorldObject.h"
 
 
-
 class aiAnimation;
 class aiNode;
 struct aiScene;
 struct aiLight;
 struct aiMesh;
 struct aiTexture;
-class WorldObject;
-class Texture;
 
-class GANYMEDE_API AssetLoader
+namespace Ganymede
 {
-public:
-	AssetLoader(const AssetLoader&) = delete;
-	AssetLoader& operator=(const AssetLoader&) = delete;
+	class Texture;
 
-	AssetLoader();
-	~AssetLoader();
+	class GANYMEDE_API AssetLoader
+	{
+	private:
 
-	static AssetLoader& GetInstance() {
-		static AssetLoader instance;
-		return instance;
-	}
 
-	std::vector<const WorldObject*> LoadFromPath(const std::string& path);
-	const WorldObject* GetWorldObjectByName(const std::string& name) const;
+	public:
+		AssetLoader();
+		AssetLoader(const AssetLoader&) = delete;
+		AssetLoader& operator=(const AssetLoader&) = delete;
 
-	const Animation* GetAnimationByName(const std::string& name) const;
+		~AssetLoader();
 
-	const Texture* TryLoadTextureFromPath(const std::string& path);
+		std::vector<const WorldObject*> LoadFromPath(const std::string& path);
+		const WorldObject* GetWorldObjectByName(const std::string& name) const;
 
-	ShaderManager& GetShaderManager();
+		const Animation* GetAnimationByName(const std::string& name) const;
 
-private:
-	ShaderManager m_ShaderManager;
-	const Texture* TryLoadAndStoreRAWTexture(const aiTexture* rawTexture);
+		const Texture* TryLoadTextureFromPath(const std::string& path);
 
-	void LoadNodeData(const aiNode& node, const aiScene& scene, std::vector<const WorldObject*>& loadedAssetsStorage, const std::unordered_map<std::string, aiLight*>& lightsByNameLookup);
-	void LoadMesh(MeshWorldObject* meshWorldObject, const aiMesh& mesh, const aiNode& node, const aiScene& scene);
-	void LoadBones(SkeletalMeshWorldObject* smwo, const aiMesh& mesh, const aiScene& scene);
-	void LoadAnimation(const SkeletalMeshWorldObject& skeletalMwo, const aiAnimation& animation, const aiNode* rootNode);
+		ShaderManager& GetShaderManager();
 
-	std::unordered_map<std::string, const WorldObject*> m_WorldObjects;
-	std::unordered_map<std::string, const Texture*> m_Textures;
-	std::unordered_map<std::string, Animation> m_SceneAnimations;
-	std::unordered_map<std::string, MeshWorldObject::Mesh> m_WorldObjectMeshes;
+	private:
+		ShaderManager m_ShaderManager;
+		const Texture* TryLoadAndStoreRAWTexture(const aiTexture* rawTexture);
 
-	const Texture* m_DefaultWhite;
-	const Texture* m_DefaultBlack;
-	const Texture* m_DefaultNormal;
-};
+		void LoadNodeData(const aiNode& node, const aiScene& scene, std::vector<const WorldObject*>& loadedAssetsStorage, const std::unordered_map<std::string, aiLight*>& lightsByNameLookup);
+		void LoadMesh(MeshWorldObject* meshWorldObject, const aiMesh& mesh, const aiNode& node, const aiScene& scene);
+		void LoadBones(SkeletalMeshWorldObject* smwo, const aiMesh& mesh, const aiScene& scene);
+		void LoadAnimation(const SkeletalMeshWorldObject& skeletalMwo, const aiAnimation& animation, const aiNode* rootNode);
+
+		std::unordered_map<std::string, const WorldObject*> m_WorldObjects;
+		std::unordered_map<std::string, const Texture*> m_Textures;
+		std::unordered_map<std::string, Animation> m_SceneAnimations;
+		std::unordered_map<std::string, MeshWorldObject::Mesh> m_WorldObjectMeshes;
+
+		const Texture* m_DefaultWhite;
+		const Texture* m_DefaultBlack;
+		const Texture* m_DefaultNormal;
+	};
+}

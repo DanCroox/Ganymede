@@ -3,17 +3,20 @@
 
 #include <unordered_map>
 
-class Shader;
-
-class GANYMEDE_API ShaderManager
+namespace Ganymede
 {
-public:
-	~ShaderManager();
+	class Shader;
 
-	Shader* RegisterAndLoadShader(const char* aShaderName);
-	void UnloadAndRemoveShader(const char* aShaderName);
-	Shader* GetShader(const char* aShaderName);
+	class GANYMEDE_API ShaderManager
+	{
+	public:
+		~ShaderManager();
 
-private:
-	std::unordered_map<const char*, Shader*> m_LoadedShaders;
-};
+		Shader* RegisterAndLoadShader(const char* aShaderName);
+		void UnloadAndRemoveShader(const char* aShaderName);
+		Shader* GetShader(const char* aShaderName);
+
+	private:
+		std::unordered_map<std::string, Shader*> m_LoadedShaders;
+	};
+}

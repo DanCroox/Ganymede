@@ -1,27 +1,31 @@
 #pragma once
-#include <vector>
 
-class PointlightWorldObjectInstance;
+#include "Ganymede/Core/Core.h"
 
-class LightsManager
+namespace Ganymede
 {
-public:
-	enum LightingState
+	class PointlightWorldObjectInstance;
+
+	class GANYMEDE_API LightsManager
 	{
-		Initialize,
-		DynamicShadow,
-		StaticShadow,
-		NoShadow
+	public:
+		enum class LightingState
+		{
+			Initialize,
+			DynamicShadow,
+			StaticShadow,
+			NoShadow
+		};
+
+		static unsigned int MAX_POINTLIGHTS_STATICS_SHADOWS;
+		static unsigned int MAX_POINTLIGHTS_DYNAMIC_SHADOWS;
+
+		LightsManager();
+		~LightsManager() {};
+
+		void Update(const std::vector<PointlightWorldObjectInstance*>& pointlightsSortedByDistanceToCamera);
+
+	private:
+		std::vector<int> m_LightIDStorage;
 	};
-
-	static unsigned int MAX_POINTLIGHTS_STATICS_SHADOWS;
-	static unsigned int MAX_POINTLIGHTS_DYNAMIC_SHADOWS;
-
-	LightsManager();
-	~LightsManager() {};
-
-	void Update(const std::vector<PointlightWorldObjectInstance*>& pointlightsSortedByDistanceToCamera);
-
-private:
-	std::vector<int> m_LightIDStorage;
-};
+}

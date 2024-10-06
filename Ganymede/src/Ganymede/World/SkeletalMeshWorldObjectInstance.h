@@ -1,19 +1,24 @@
 #pragma once
+
+#include "Ganymede/Core/Core.h"
+
+
 #include "MeshWorldObjectInstance.h"
-#include "SkeletalMeshWorldObject.h"
 
-class SkeletalMeshWorldObjectInstance : public MeshWorldObjectInstance
+
+namespace Ganymede
 {
-public:
-	using MeshWorldObjectInstance::MeshWorldObjectInstance;
-
-	const SkeletalMeshWorldObject* GetSkeletalMeshWorldObject() const
+	class SkeletalMeshWorldObject;
+	class GANYMEDE_API SkeletalMeshWorldObjectInstance : public MeshWorldObjectInstance
 	{
-		return static_cast<const SkeletalMeshWorldObject*>(m_MeshWorldObject);
-	}
+	public:
+		using MeshWorldObjectInstance::MeshWorldObjectInstance;
 
-	const std::vector<glm::mat4>& GetAnimationBoneData() const { return m_AnimationBoneData; }
+		const SkeletalMeshWorldObject* GetSkeletalMeshWorldObject() const;
 
-protected:
-	std::vector<glm::mat4> m_AnimationBoneData;
-};
+		const std::vector<glm::mat4>& GetAnimationBoneData() const { return m_AnimationBoneData; }
+
+	protected:
+		std::vector<glm::mat4> m_AnimationBoneData;
+	};
+}

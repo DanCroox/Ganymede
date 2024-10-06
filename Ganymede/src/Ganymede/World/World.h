@@ -1,40 +1,89 @@
 #pragma once
-#include "Ganymede/World/WorldObjectInstance.h"
-#include "Ganymede/World/MeshWorldObject.h"
+
+#include "Ganymede/Core/Core.h"
+
+
+
 #include "Ganymede/World/WorldObject.h"
-#include "Ganymede/World/PointlightWorldObject.h"
+#include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <typeindex>
 #include <typeinfo> 
 
-class MeshWorldObjectInstance;
 
-class World
+
+namespace Ganymede
 {
-public:
-	World() = default;
-	~World();
+	class Thread;
+	class AssetLoader;
+	class MeshWorldObject;
+	class WorldObjectInstance;
+	class PointlightWorldObjectInstance;
 
-	void AddToWorld(WorldObjectInstance* instance);
+	class GANYMEDE_API World
+	{
+	public:
+		World(AssetLoader& assetLoader);
+		~World();
 
-	WorldObjectInstance* CreateWorldObjectInstance(const std::string& worldObjectName);
+		void Tick(double deltaTime);
 
-	const WorldObject* FindWorldObjectByName(WorldObject::Type objectType, const std::string& worldObjectName);
-	// TODO: Create "DestroyWorldObjectInstance"
+		AssetLoader& m_AssetLoader;
 
-	template<class T>
-	T* CreateEmptyWorldObjectInstance();
+		void AddToWorld(WorldObjectInstance* instance);
 
-	template<class T>
-	const std::vector<T*>* GetWorldObjectInstancesByType() const;
+		WorldObjectInstance* CreateWorldObjectInstance(const std::string& worldObjectName);
 
-	const std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>>& GetAllWorldObjectInstances() { return m_WorldObjectInstancesByType; }
+		const WorldObject* FindWorldObjectByName(WorldObject::Type objectType, const std::string& worldObjectName);
+		// TODO: Create "DestroyWorldObjectInstance"
 
-	const std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>>& GetMeshInstances() const { return m_MeshesInstances; }
+		template<class T>
+		T* CreateEmptyWorldObjectInstance();
 
-private:
-	std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>> m_WorldObjectInstancesByType;
-	std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>> m_MeshesInstances;
-};
+		template<class T>
+		const std::vector<T*>* GetWorldObjectInstancesByType() const = delete;
+
+		template<>
+		inline const std::vector<MeshWorldObjectInstance*>* GetWorldObjectInstancesByType() const
+		{
+			auto it = m_WorldObjectInstancesByType.find(WorldObject::Type::Mesh);
+			auto instances = it != m_WorldObjectInstancesByType.end() ? &it->second : nullptr;
+			if (instances == nullptr)
+				return nullptr;
+
+			return reinterpret_cast<const std::vector<MeshWorldObjectInstance*>*>(instances);
+		}
+
+		template<>
+		inline const std::vector<SkeletalMeshWorldObjectInstance*>* GetWorldObjectInstancesByType() const
+		{
+			auto it = m_WorldObjectInstancesByType.find(WorldObject::Type::SkeletalMesh);
+			auto instances = it != m_WorldObjectInstancesByType.end() ? &it->second : nullptr;
+			if (instances == nullptr)
+				return nullptr;
+
+			return reinterpret_cast<const std::vector<SkeletalMeshWorldObjectInstance*>*>(instances);
+		}
+
+		template<>
+		inline const std::vector<PointlightWorldObjectInstance*>* GetWorldObjectInstancesByType() const
+		{
+			auto it = m_WorldObjectInstancesByType.find(WorldObject::Type::PointLight);
+			auto instances = it != m_WorldObjectInstancesByType.end() ? &it->second : nullptr;
+			if (instances == nullptr)
+				return nullptr;
+
+			return reinterpret_cast<const std::vector<PointlightWorldObjectInstance*>*>(instances);
+		}
+
+		const std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>>& GetAllWorldObjectInstances() const;
+		const std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>>& GetMeshInstances() const;
+
+	private:
+		std::unique_ptr<std::array<Thread, 80>> m_TickThreadPool = nullptr;
+		std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>> m_WorldObjectInstancesByType;
+		std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>> m_MeshesInstances;
+	};
+}

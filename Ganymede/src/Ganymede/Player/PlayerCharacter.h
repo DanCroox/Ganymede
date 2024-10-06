@@ -1,56 +1,67 @@
 #pragma once
 
+#include "Ganymede/Core/Core.h"
+
+#include <memory>
 #include "Ganymede/World/WorldObjectInstance.h"
 #include "Ganymede/World/MeshWorldObjectInstance.h"
+#include "Ganymede/Physics/PhysicsWorld.h"
 
+	class GLFWwindow;
 
-class CreateMeshWorldObjectInstance;
-class btKinematicCharacterController;
-class PointlightWorldObjectInstance;
-class GLFWwindow;
-class PhysicsWorld;
-class FPSCamera;
+	namespace Ganymede
+	{
+		class EventCallbackHandle;
+		class KeyPressEvent;
+		class KeyReleaseEvent;
+		class PhysicsWorld;
+		class FPSCamera;
+		class CreatureMeshWorldObjectInstance;
+		class PointlightWorldObjectInstance;
 
-class PlayerCharacter
-{
-public:
-	PlayerCharacter() = delete;
-	PlayerCharacter(World& world, PhysicsWorld& physicsWorld, FPSCamera& camera);
-	~PlayerCharacter();
+		class GANYMEDE_API PlayerCharacter
+		{
+		public:
+			PlayerCharacter() = delete;
+			PlayerCharacter(World& world, PhysicsWorld& physicsWorld, FPSCamera& camera);
+			~PlayerCharacter();
 
-	void Tick(float deltaTime);
+			void Tick(float deltaTime);
 
-	glm::vec3 GetPosition() const { return m_Position; }
+			glm::vec3 GetPosition() const { return m_Position; }
 
-	CreateMeshWorldObjectInstance* creature = nullptr;
-private:
+			CreatureMeshWorldObjectInstance* creature = nullptr;
 
-	FPSCamera* m_Camera;
-	World* m_World;
-	PhysicsWorld* m_PhysicsWorld;
-	glm::vec3 m_Position;
-	// TODO : replace by proper input system
-	bool m_MouseDown = false;
-	bool m_MouseDown2 = false;
-	bool m_FireButtonDown = false;
-	glm::vec3 start;
-	glm::vec3 end;
+		private:
+			std::unique_ptr<EventCallbackHandle> m_KeyPressEventCBHandle;
+			void OnKeyPressEvent(KeyPressEvent& event);
 
-	bool m_JumpBTNDown = false;
-	bool m_BtnOcclusionOnOffDown = false;
-	float m_TargetMoveSpeed = 0;
-	glm::vec3 m_TargetWalkDirection = glm::vec3(0);
+			std::unique_ptr<EventCallbackHandle> m_KeyReleaseEventCBHandle;
+			void OnKeyReleaseEvent(KeyReleaseEvent& event);
 
-	float m_WalkSpeed = .025;
-	float m_RunSpeed = .5;
+			FPSCamera* m_Camera;
+			World* m_World;
+			PhysicsWorld* m_PhysicsWorld;
+			glm::vec3 m_Position;
+			// TODO : replace by proper input system
+			bool m_MouseDown = false;
+			bool m_MouseDown2 = false;
+			bool m_FireButtonDown = false;
+			glm::vec3 start;
+			glm::vec3 end;
 
-	KinematicCharacterController m_character;
+			bool m_JumpBTNDown = false;
+			bool m_BtnOcclusionOnOffDown = false;
+			float m_TargetMoveSpeed = 0;
+			glm::vec3 m_TargetWalkDirection = glm::vec3(0);
 
-	WorldObjectInstance* myOBJ2 = nullptr;
+			float m_WalkSpeed = .025;
 
-	PointlightWorldObjectInstance* light;
+			float m_MoveSpeed = 0;
 
-	GLFWwindow* m_GLFWWindow;
+			KinematicCharacterController m_character;
+			WorldObjectInstance* myOBJ2 = nullptr;
 
-	float m_HeadBobSineModulatedTime = 0;
-};
+			float m_HeadBobSineModulatedTime = 0;
+		};
+	}

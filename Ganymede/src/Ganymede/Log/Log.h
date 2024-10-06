@@ -1,20 +1,6 @@
 #pragma once
 
-#ifdef GM_RETAIL
-	#define GM_INIT_LOGGER
-
-	#define GM_CORE_TRACE
-	#define GM_CORE_INFO
-	#define GM_CORE_WARN
-	#define GM_CORE_ERROR
-	#define GM_CORE_CRITICAL
-
-	#define GM_TRACE
-	#define GM_INFO
-	#define GM_WARN
-	#define GM_ERROR
-	#define GM_CRITICAL
-#else
+#ifndef GM_RETAIL
 	// Needed to unlock all loglevels for the SPDLOG_LOGGER_TRACE/DEBUG... defines. Leave it like that and change loglevel at the respective logger.
 	#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 
@@ -53,4 +39,18 @@
 	#define GM_WARN(...) SPDLOG_LOGGER_WARN(Ganymede::Logger::GetClientLogger(), __VA_ARGS__);
 	#define GM_ERROR(...) SPDLOG_LOGGER_ERROR(Ganymede::Logger::GetClientLogger(), __VA_ARGS__);
 	#define GM_CRITICAL(...) SPDLOG_LOGGER_CRITICAL(Ganymede::Logger::GetClientLogger(), __VA_ARGS__);
+#else
+	#define GM_INIT_LOGGER
+
+	#define GM_CORE_TRACE
+	#define GM_CORE_INFO
+	#define GM_CORE_WARN
+	#define GM_CORE_ERROR
+	#define GM_CORE_CRITICAL
+
+	#define GM_TRACE
+	#define GM_INFO
+	#define GM_WARN
+	#define GM_ERROR
+	#define GM_CRITICAL
 #endif // GM_RETAIL

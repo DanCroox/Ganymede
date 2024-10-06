@@ -1,16 +1,18 @@
 #include "Event.h"
 
-
-void EventSystem::NotifyEvent(Event& event)
+namespace Ganymede
 {
-	auto eventIterator = m_SubscribedEvents.find(event.GetClassID());
-	if (eventIterator != m_SubscribedEvents.end())
+	void EventSystem::NotifyEvent(Event& event)
 	{
-		auto& subscribedEvents = eventIterator->second;
-		std::for_each(subscribedEvents.begin(), subscribedEvents.end(),
-			[&event](EventCallbackHandle* funcHandle)
-			{
-				funcHandle->GetFunction()(event);
-			});
+		auto eventIterator = m_SubscribedEvents.find(event.GetClassID());
+		if (eventIterator != m_SubscribedEvents.end())
+		{
+			auto& subscribedEvents = eventIterator->second;
+			std::for_each(subscribedEvents.begin(), subscribedEvents.end(),
+				[&event](EventCallbackHandle* funcHandle)
+				{
+					funcHandle->GetFunction()(event);
+				});
+		}
 	}
 }

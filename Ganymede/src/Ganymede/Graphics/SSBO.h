@@ -1,21 +1,27 @@
 #pragma once
 
+#include "Ganymede/Core/Core.h"
+
 #include <string>
 
-class SSBO
+namespace Ganymede
 {
-public:
-	SSBO(unsigned int bindingPointID, unsigned int bufferSize);
 
-	~SSBO();
+	class GANYMEDE_API SSBO
+	{
+	public:
+		SSBO(unsigned int bindingPointID, unsigned int bufferSize);
 
-	unsigned int GetBindingPointID() const { return m_BindingPointID; }
-	void Write(unsigned int offset, unsigned int byteCount, void* data) const;
+		~SSBO();
 
-private:
-	unsigned int m_RendererID;
+		unsigned int GetBindingPointID() const { return m_BindingPointID; }
+		void Write(unsigned int offset, unsigned int byteCount, void* data) const;
 
-	unsigned int m_BufferSize;
+	private:
+		unsigned int m_RendererID;
 
-	unsigned int m_BindingPointID;
-};
+		unsigned int m_BufferSize;
+
+		unsigned int m_BindingPointID;
+	};
+}
