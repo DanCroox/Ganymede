@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Ganymede/Events/Event.h"
+#include "Ganymede/Input/KeyCodes.h"
+#include "Ganymede/Input/MouseButtonCodes.h"
 
 namespace Ganymede
 {
@@ -73,11 +75,11 @@ namespace Ganymede
 	public:
 		CREATE_EVENT_CLASS_ID();
 
-		KeyPressEvent(int keyCode) : m_KeyCode(keyCode) {};
-		int GetKeyCode() const { return m_KeyCode; }
+		KeyPressEvent(KeyCode keyCode) : m_KeyCode(keyCode) {};
+		KeyCode GetKeyCode() const { return m_KeyCode; }
 
 	private:
-		int m_KeyCode = -1;
+		KeyCode m_KeyCode = KeyCode::_Invalid;
 	};
 
 	class GANYMEDE_API KeyReleaseEvent : public Event
@@ -85,10 +87,10 @@ namespace Ganymede
 	public:
 		CREATE_EVENT_CLASS_ID();
 
-		KeyReleaseEvent(int keyCode) : m_KeyCode(keyCode) {};
-		int GetKeyCode() const { return m_KeyCode; }
+		KeyReleaseEvent(KeyCode keyCode) : m_KeyCode(keyCode) {};
+		KeyCode GetKeyCode() const { return m_KeyCode; }
 
 	private:
-		int m_KeyCode = -1;
+		KeyCode m_KeyCode = KeyCode::_Invalid;
 	};
 }

@@ -14,6 +14,7 @@
 #include "Ganymede/World/MeshWorldObjectInstanceDoor.h"
 #include "Ganymede/Events/Event.h"
 #include "Ganymede/Runtime/WindowEvents.h"
+#include "Ganymede/Input/KeyCodes.h"
 
 #include "glm/gtx/matrix_decompose.hpp"
 #include "glm/gtx/euler_angles.hpp"
@@ -39,12 +40,42 @@ namespace Ganymede
 
 	void PlayerCharacter::OnKeyPressEvent(KeyPressEvent& event)
 	{
-		m_MoveSpeed = m_WalkSpeed;
+		if (event.GetKeyCode() == KeyCode::Key_W)
+		{
+			m_ForwardMotion = 1.0f;
+		}
+		else if (event.GetKeyCode() == KeyCode::Key_S)
+		{
+			m_ForwardMotion = -1.0f;
+		}
+		else if (event.GetKeyCode() == KeyCode::Key_D)
+		{
+			m_SidewayMotion = 1.0f;
+		}
+		else if (event.GetKeyCode() == KeyCode::Key_A)
+		{
+			m_SidewayMotion = -1.0f;
+		}
 	}
 
 	void PlayerCharacter::OnKeyReleaseEvent(KeyReleaseEvent& event)
 	{
-		m_MoveSpeed = 0.0f;
+		if (event.GetKeyCode() == KeyCode::Key_W)
+		{
+			m_ForwardMotion = 0.0f;
+		}
+		else if (event.GetKeyCode() == KeyCode::Key_S)
+		{
+			m_ForwardMotion = 0.0f;
+		}
+		else if (event.GetKeyCode() == KeyCode::Key_D)
+		{
+			m_SidewayMotion = 0.0f;
+		}
+		else if (event.GetKeyCode() == KeyCode::Key_A)
+		{
+			m_SidewayMotion = 0.0f;
+		}
 	}
 
 	PlayerCharacter::~PlayerCharacter()
@@ -69,41 +100,34 @@ namespace Ganymede
 		glm::vec4 perspective;
 		glm::decompose(physicsMat, scale, rotation, translation, skew, perspective);
 
+		//translation = glm::vec3(physicsMat[3]);
+
 		cam.Update(deltaTime);
 
-		glm::vec3 walkDirection = cam.GetFrontVector();
-		walkDirection.y = 0;
-		walkDirection = glm::normalize(walkDirection);
-		glm::vec3 up = cam.GetUpVector();
-		glm::vec3 left = glm::normalize(glm::cross(walkDirection, up));
+		glm::vec3 forwardDirection = cam.GetFrontVector();
+		glm::vec3 rightDirection = cam.GetRightVector();
 
-		if (glm::length(walkDirection) > 0.00001f)
+		glm::vec3 walkDirection = (forwardDirection * m_ForwardMotion) + (rightDirection * m_SidewayMotion);
+		walkDirection *= m_WalkSpeed;
+
+		m_character.SetWalkDirection(walkDirection);
+		cam.SetPosition(translation + glm::vec3(0, 1.2, 0));
+		return;
+		if (glm::length(forwardDirection) > 0.00001f)
 		{
-			walkDirection = glm::normalize(walkDirection);
+			forwardDirection = glm::normalize(forwardDirection);
 		}
 
 		const glm::vec3 from = cam.GetPosition();
 		const glm::vec3 to = from + (cam.GetFrontVector() * 1000.f);
 
-		/**/
-		const RayResult hitResult = m_PhysicsWorld->RayCast(from, to);
-		if (hitResult.m_HasHit)
-		{
-			MeshWorldObjectInstance* mwoi = reinterpret_cast<MeshWorldObjectInstance*>(hitResult.m_CollisionObject);
-			//TODO Globals::worldPartitionManager->m_DebugNode = Globals::worldPartitionManager->FindWorldPartitionNodesByMeshWorldObjectInstance(mwoi);	
-		}
-
-		walkDirection *= m_MoveSpeed;
-
 		// Todo: Add air resistance
 		if (m_character.CanJump())
-			m_TargetWalkDirection += ((walkDirection - m_TargetWalkDirection) * deltaTime * 10.f);
+			m_TargetWalkDirection += ((forwardDirection - m_TargetWalkDirection) * deltaTime * 10.f);
 
 		m_TargetMoveSpeed += ((m_MoveSpeed - m_TargetMoveSpeed) * deltaTime);
 
 		m_character.SetWalkDirection(m_TargetWalkDirection);
-		m_Position = translation;
-
 
 		// Head bobbing
 		m_HeadBobSineModulatedTime += deltaTime * glm::length(m_TargetWalkDirection) * 350.0f;
@@ -113,7 +137,7 @@ namespace Ganymede
 		glm::vec3 translationHeadBob = translation + glm::vec3(0, glm::sin(m_HeadBobSineModulatedTime) * .03f, 0);
 
 		//glm::vec3 camRightVecor = glm::cross(cam.GetFrontVector(), cam.GetUpVector());
-		translationHeadBob += left * glm::sin(leftHeadBobSineTime) * .03f;
+		translationHeadBob += rightDirection * glm::sin(leftHeadBobSineTime) * .03f;
 
 		cam.SetPosition(translationHeadBob + glm::vec3(0, 1.2, 0));
 		//cam.SetRollInDegree((glm::sin(leftHeadBobSineTime) * 2.f - 1.f) * .15f);

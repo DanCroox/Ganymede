@@ -6,39 +6,27 @@
 #include "GLFW/glfw3.h"
 #include "Ganymede/Log/Log.h"
 #include "Ganymede/Runtime/WindowEvents.h"
-#include "Ganymede/Core/Application.h"
+
 
 #include <algorithm>
 
 namespace Ganymede
 {
-    Window* Window::Create()
+    Window* Window::Create(EventSystem& eventSystem)
     {
-        return new WindowsWindow();
+        return new WindowsWindow(eventSystem);
     }
 
     WindowsWindow::~WindowsWindow()
     {
-        if (m_GLFWWindow == nullptr)
-        {
-            glfwTerminate();
-            return;
-        }
-
-        glfwDestroyWindow(m_GLFWWindow);
-        glfwTerminate();
+        TerminateWindow();
     }
 
-    void* WindowsWindow::GetNativeWindow()
-    {
-        return m_GLFWWindow;
-    }
-
-    bool WindowsWindow::TryStart()
+    bool WindowsWindow::Initialize()
     {
         if (!glfwInit())
         {
-            GM_CORE_ERROR("glfwInit failed");
+            GM_CORE_CRITICAL("glfwInit failed");
             return false;
         }
         GM_CORE_INFO("glfwInit succeeded");
@@ -50,7 +38,7 @@ namespace Ganymede
         m_GLFWWindow = glfwCreateWindow(1920, 1080, "Render View", NULL, NULL);
         if (m_GLFWWindow == nullptr)
         {
-            GM_CORE_ERROR("glfwCreateWindow failed");
+            GM_CORE_CRITICAL("glfwCreateWindow failed");
             glfwTerminate();
             return false;
         }
@@ -64,7 +52,7 @@ namespace Ganymede
         // Init Glew
         if (glewInit() != GLEW_OK)
         {
-            GM_CORE_ERROR("glewInit failed");
+            GM_CORE_CRITICAL("glewInit failed");
             return false;
         }
         GM_CORE_INFO("glewInit succeeded");
@@ -75,40 +63,17 @@ namespace Ganymede
             glfwSetInputMode(m_GLFWWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
 
-        glfwSetWindowSizeCallback(m_GLFWWindow, [](GLFWwindow* window, int width, int height) {
-            WindowResizeEvent event({ width, height });
-            Application::Get().GetEventSystem().NotifyEvent(event);
-            });
+        return true;
+    }
 
-        glfwSetCursorPosCallback(m_GLFWWindow, [](GLFWwindow* window, double xpos, double ypos) {
-            MouseMoveEvent event({ xpos, ypos });
-            Application::Get().GetEventSystem().NotifyEvent(event);
-            });
+    void* WindowsWindow::GetNativeWindow()
+    {
+        return m_GLFWWindow;
+    }
 
-        glfwSetScrollCallback(m_GLFWWindow, [](GLFWwindow* window, double xOffset, double yOffset) {
-            MouseScrollEvent event({ xOffset, yOffset });
-            Application::Get().GetEventSystem().NotifyEvent(event);
-            });
-
-        glfwSetKeyCallback(m_GLFWWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-            switch (action)
-            {
-            case GLFW_PRESS:
-            {
-                KeyPressEvent event({ key });
-                Application::Get().GetEventSystem().NotifyEvent(event);
-                break;
-            }
-            case GLFW_RELEASE:
-            {
-                KeyReleaseEvent event({ key });
-                Application::Get().GetEventSystem().NotifyEvent(event);
-                break;
-            }
-            }
-            });
-
-        Application::Get().GetEventSystem().NotifyEvent(WindowInitializeEvent());
+    bool WindowsWindow::TryStart()
+    {
+        m_EventSystem.NotifyEvent(WindowInitializeEvent());
 
         double gameTime = glfwGetTime();
         double deltaTime = 0;
@@ -120,18 +85,15 @@ namespace Ganymede
 
             deltaTime = glfwGetTime() - gameTime;
             gameTime = glfwGetTime();
-            Application::Get().GetEventSystem().NotifyEvent(WindowTickEvent(deltaTime, gameTime, frameIndex));
+            m_EventSystem.NotifyEvent(WindowTickEvent(deltaTime, gameTime, frameIndex));
             ++frameIndex;
 
             glfwSwapBuffers(m_GLFWWindow);
         }
 
-        glfwDestroyWindow(m_GLFWWindow);
-        glfwTerminate();
+        TerminateWindow();
 
-        GM_CORE_INFO("glfw terminated");
-
-        Application::Get().GetEventSystem().NotifyEvent(WindowCloseEvent());
+        m_EventSystem.NotifyEvent(WindowCloseEvent());
 
         return true;
     }
@@ -145,6 +107,15 @@ namespace Ganymede
     bool WindowsWindow::IsVSyncEnabled() const
     {
         return m_IsVSyncEnabled;
+    }
+
+    void WindowsWindow::TerminateWindow()
+    {
+        glfwDestroyWindow(m_GLFWWindow);
+        GM_CORE_INFO("glfw window destroyed.");
+
+        glfwTerminate();
+        GM_CORE_INFO("glfw window terminated.");
     }
 }
 #endif //GM_PLATFORM_WINDOWS

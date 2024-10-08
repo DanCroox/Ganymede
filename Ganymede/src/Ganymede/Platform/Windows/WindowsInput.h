@@ -9,7 +9,14 @@ namespace Ganymede
 	class WindowsInput : public InputSystem
 	{
 	public:
-		virtual bool IsKeyPressedImpl(int keyCode) override;
+		bool Initialize() override;
+
+		virtual bool IsNativeKeyPressed(int nativeKeyCode) override;
+		virtual bool IsNativeMouseButtonPressed(int nativeButtonCode) override;
+		virtual glm::vec2 GetNativeMousePosition() override;
+
+	protected:
+		using InputSystem::InputSystem;
 	};
 }
 

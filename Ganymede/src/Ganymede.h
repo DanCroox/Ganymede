@@ -20,6 +20,9 @@
 #include <Ganymede/World/MeshWorldObjectInstance.h>
 #include <Ganymede/World/SkeletalMeshWorldObjectInstance.h>
 #include <Ganymede/World/World.h>
+#include <Ganymede/Platform/Input.h>
+#include <Ganymede/Input/KeyCodes.h>
+#include <Ganymede/Input/MouseButtonCodes.h>
 
 // --------- Application entry point ---------- //
 #include "Ganymede/Core/EntryPoint.h"

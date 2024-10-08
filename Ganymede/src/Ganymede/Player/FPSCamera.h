@@ -64,10 +64,11 @@ namespace Ganymede
 			return mat;
 		}
 
-		void SetPosition(glm::vec3 position) { m_Position = position; }
-		glm::vec3 GetPosition() const { return m_Position; }
-		glm::vec3 GetFrontVector() const { return m_FrontVector; }
-		glm::vec3 GetUpVector() const { return m_UpVector; }
+		inline void SetPosition(glm::vec3 position) { m_Position = position; }
+		inline glm::vec3 GetPosition() const { return m_Position; }
+		inline glm::vec3 GetFrontVector() const { return m_FrontVector; }
+		inline glm::vec3 GetUpVector() const { return m_UpVector; }
+		inline glm::vec3 GetRightVector() const { return glm::normalize(glm::cross(GetFrontVector(), GetUpVector())); }
 
 		void SetRollInDegree(float roll) { m_RollInDegree = roll; }
 		float GetRollInDegree() const { return m_RollInDegree; }

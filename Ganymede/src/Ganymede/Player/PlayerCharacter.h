@@ -55,6 +55,8 @@
 			float m_TargetMoveSpeed = 0;
 			glm::vec3 m_TargetWalkDirection = glm::vec3(0);
 
+			float m_ForwardMotion = 0.0f;
+			float m_SidewayMotion = 0.0f;
 			float m_WalkSpeed = .025;
 
 			float m_MoveSpeed = 0;

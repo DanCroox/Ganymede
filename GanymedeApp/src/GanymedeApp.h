@@ -9,9 +9,6 @@ using namespace Ganymede;
 class GanymedeApp : public Ganymede::Application
 {
 public:
-	GanymedeApp() = default;
-	~GanymedeApp() = default;
-
 	void Run() override;
 
 	void GameInit(Ganymede::WindowInitializeEvent&);

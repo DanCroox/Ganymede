@@ -39,6 +39,7 @@ namespace Ganymede
 		/// </summary>
 		/// <returns>EventSystem reference</returns>
 		EventSystem& GetEventSystem();
+		const EventSystem& GetEventSystem() const;
 
 		/// <summary>
 		/// Application specific InputSystem to poll for user inputs (keyboard, mouse etc.)
@@ -57,9 +58,9 @@ namespace Ganymede
 	private:
 		static Application* m_Instance;
 
-		EventSystem* m_EventSystem;
-		InputSystem* m_InputSystem;
-		Window* m_RenderWindow;
+		EventSystem* m_EventSystem = nullptr;
+		InputSystem* m_InputSystem = nullptr;
+		Window* m_RenderWindow = nullptr;
 	};
 
 	/// <summary>
