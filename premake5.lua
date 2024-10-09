@@ -47,6 +47,7 @@ project "DetourRecast"
         location "Ganymede/vendor/recastnavigation"
         kind "StaticLib"
         language "C++"
+	staticruntime "Off"
 
         targetdir (bindir .. outputdir .. "/%{prj.name}")
 	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
@@ -73,7 +74,6 @@ project "DetourRecast"
 
         filter "system:windows"
 		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 
 	filter "configurations:Debug"
@@ -87,6 +87,7 @@ project "stb_image"
 	location "Ganymede/vendor/stb_image"
 	kind "StaticLib"
 	language "C"
+	staticruntime "Off"
 
 	targetdir (bindir .. outputdir .. "/%{prj.name}")
 	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
@@ -104,7 +105,6 @@ project "stb_image"
 
 
 	filter "system:windows"
-		staticruntime "On"
 		systemversion "latest"
 
 	filter "configurations:Debug"
@@ -120,6 +120,7 @@ project "Ganymede"
 	location "Ganymede"
 	kind "SharedLib"
 	language "C++"
+	staticruntime "Off"
 
 	flags { "MultiProcessorCompile" }
 
@@ -153,7 +154,6 @@ project "Ganymede"
 
 	filter "system:windows"
 		cppdialect "C++20"
-		staticruntime "On"
 		systemversion "latest"
 
 		defines
@@ -243,6 +243,7 @@ project "GanymedeApp"
 	location "GanymedeApp"
 	kind "ConsoleApp"
 	language "C++"
+	staticruntime "Off"
 
 	flags { "MultiProcessorCompile" }
 
@@ -276,7 +277,6 @@ project "GanymedeApp"
 
 	filter "system:windows"
 		cppdialect "C++20"
-		staticruntime "On"
 		systemversion "latest"
 
 		defines

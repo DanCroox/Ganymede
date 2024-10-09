@@ -215,7 +215,7 @@ namespace Ganymede
 		return;
 		*/
 
-		if (aiGotoWaypoints.size() == 0)
+		if (aiGotoWaypoints.size() <= aiCurrentWaypointIndex + 1)
 			return;
 
 		const glm::vec3 from = aiGotoWaypoints[aiCurrentWaypointIndex];
