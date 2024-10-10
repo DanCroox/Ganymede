@@ -32,23 +32,14 @@ namespace Ganymede
 		{
 			m_IdleAnimation = m_AssetLoader->GetAnimationByName(std::string("Idle"));
 			m_WalkingAnimation = m_AssetLoader->GetAnimationByName(std::string("Walking"));
-			motionSpeed = Helpers::Random::RandomFloatInRange(2.2f, 2.2f);
+			motionSpeed = Helpers::Random::RandomFloatInRange(1.8f, 2.2f);
 			SetScale(Helpers::Random::RandomFloatInRange(.75f, .85f));
-		}
-
-		if (std::strcmp(GetWorldObject()->GetName().c_str(), "Object_6") == 0)
-		{
-			m_WalkingAnimation = m_AssetLoader->GetAnimationByName(std::string("mixamo.com"));
-			m_AnimationPlaySpeedWalking = 2.f;
-			m_AnimationPlaySpeedIdle = 2.f;
-			motionSpeed = Helpers::Random::RandomFloatInRange(.25f, .85f);
-			motionSpeed = .05f;
-			//SetScale(Helpers::Random::RandomFloatInRange(1.3f, 1.5f));
 		}
 
 		m_WalkingAnimationFrame = Helpers::Random::RandomFloatInRange(0, 50);
 		m_IdleAnimationFrame = Helpers::Random::RandomFloatInRange(0, 50);
 
+		// Spawn creature in a circular distance to world 0 position
 		float distance = 100;
 		float innerDistance = 10;
 		glm::vec3 randompoint;
@@ -65,75 +56,82 @@ namespace Ganymede
 		}
 		float z = randompoint.z;
 
+		// Set initial world position of the creature
 		SetPosition(x, GetPosition().y, z);
 
-		//m_NaviAgentID = m_NavMesh->TryRegisterAgent(GetPosition());
-
-		TryGoto(m_PlayerCharacter->GetPosition());
+		// Set random point of walk-to destination
+		m_NavMesh->GetRandomPointOnNavMesh(randompoint, glm::vec3(0), 10.f);
+		TryGoto(randompoint);
 	}
 
 	void CreatureMeshWorldObjectInstance::Tick(float deltaTime)
 	{
 		const glm::vec3 thisPostion = GetPosition();
-
 		const glm::vec3 creatureForward = glm::rotate(GetQuaternion(), glm::vec3(0, 0, -1));
-		const glm::vec3 creaturePosition = thisPostion + glm::vec3(0, 1, 0);
-
+		const glm::vec3 creatureEyePosition = thisPostion + glm::vec3(0, 1, 0);
 		const glm::vec3 rootPlayerPosition = m_PlayerCharacter->GetPosition();
-		const glm::vec3 playerPosition = rootPlayerPosition + glm::vec3(0, 1, 0);
+		const glm::vec3 playerEyePosition = rootPlayerPosition + glm::vec3(0, 1, 0);
+		const glm::vec3 creatureToPlayer = glm::normalize(creatureEyePosition - playerEyePosition);
 
-		const glm::vec3 creatureToPlayer = glm::normalize(creaturePosition - playerPosition);
-
-		const float angle = glm::degrees(glm::acos(glm::dot(glm::normalize(creatureForward), glm::normalize(creatureToPlayer))));
-
-		if (aiState == AIState::Attacking)
+		// Update AI State
+		const float creaturePlayerSightAngle = glm::degrees(glm::acos(glm::dot(glm::normalize(creatureForward), glm::normalize(creatureToPlayer))));
+		if (m_AIState == AIState::Attacking)
 		{
-			// Check last frame ai state. AI shall go to last known player location by finishing the path
-			aiState = AIState::Searching;
+			// Check last frame ai state. AI shall go to last known player location by finishing the currently stored path
+			// We concider this action as "Searching"
+			m_AIState = AIState::Searching;
 		}
-		else if (aiState != AIState::Searching)
-			aiState = AIState::Patroling;
-
-		if (angle <= 80)
+		else if (m_AIState != AIState::Searching)
 		{
-			
-			const RayResult result = m_PhysicsWorld->RayCast(creaturePosition, playerPosition);
-			if (!result.m_HasHit)
-			{
-				aiState = AIState::Attacking;
-			}
+			m_AIState = AIState::Patroling;
 		}
 
-		switch (aiState)
+		// Test if player is in angular sight of creature and not hidden behind obstacle
+		if (creaturePlayerSightAngle <= 80 && !m_PhysicsWorld->RayCast(creatureEyePosition, playerEyePosition).m_HasHit)
 		{
-		case AIState::Patroling:
+			m_AIState = AIState::Attacking;
+		}
 
-			if (!aiGotoWaypointsInProgress)
+		switch (m_AIState)
+		{
+			case AIState::Patroling:
 			{
-				glm::vec3 randomPoint(1);
-				if (m_NavMesh->GetRandomPointOnNavMesh(randomPoint, glm::vec3(0), 10.f))
+				if (m_AIGotoWaypointsInProgress)
 				{
-
-					TryGoto(randomPoint);
+					// Finish current path first before picking a new one
 				}
+				else
+				{
+					// Find new random waypoint and move to
+					glm::vec3 randomPoint(1);
+					if (m_NavMesh->GetRandomPointOnNavMesh(randomPoint, glm::vec3(0), 10.f))
+					{
+						TryGoto(randomPoint);
+					}
+				}
+				break;
 			}
-			break;
-		case AIState::Attacking:
-			if (GMTime::s_Time - m_LastUpdateTime > 1)
+			case AIState::Attacking:
 			{
-				TryGoto(rootPlayerPosition);
-				m_LastUpdateTime = GMTime::s_Time;
+				if (GMTime::s_Time - m_LastUpdateTime > 1)
+				{
+					TryGoto(rootPlayerPosition);
+					m_LastUpdateTime = GMTime::s_Time;
+				}
+				break;
 			}
-			break;
-		case AIState::Searching:
-			if (!aiGotoWaypointsInProgress)
-				aiState = AIState::Patroling;
-			break;
+			case AIState::Searching:
+			{
+				if (!m_AIGotoWaypointsInProgress)
+				{
+					m_AIState = AIState::Patroling;
+				}
+				break;
+			}
 		}
 
+		// Find other creatures to keep distance from. Also let other creatures share awareness of player.
 		float closestNPCDistance = 100000.f;
-
-
 		const std::vector<SkeletalMeshWorldObjectInstance*>& npcs = *m_World->GetWorldObjectInstancesByType<SkeletalMeshWorldObjectInstance>();
 		for (const SkeletalMeshWorldObjectInstance* npc : npcs)
 		{
@@ -142,9 +140,9 @@ namespace Ganymede
 
 			if (const CreatureMeshWorldObjectInstance* creatur = dynamic_cast<const CreatureMeshWorldObjectInstance*>(npc))
 			{
-				if (creatur->aiState == AIState::Attacking && aiState != AIState::Attacking)
+				if (creatur->m_AIState == AIState::Attacking && m_AIState != AIState::Attacking)
 				{
-					aiState = AIState::Attacking;
+					m_AIState = AIState::Attacking;
 					TryGoto(rootPlayerPosition);
 				}
 			}
@@ -161,127 +159,69 @@ namespace Ganymede
 			if (distanceToNPC < closestNPCDistance)
 				closestNPCDistance = distanceToNPC;
 		}
-
 		motionSpeedMulti = closestNPCDistance - .5f;
 		motionSpeedMulti = glm::clamp(motionSpeedMulti, 0.f, 1.f);
-
 		float distanceToPlayer = glm::length(thisPostion - rootPlayerPosition);
 		distanceToPlayer = glm::pow(distanceToPlayer, 100.f);
-
 		motionSpeedMulti *= glm::clamp(distanceToPlayer, 0.f, 1.f);
 
-		//motionSpeedMulti = 1.f;
-		//Globals::navMesh->SetAgentSpeed(m_NaviAgentID, motionSpeedMulti);
 		UpdateMotion(deltaTime);
 		UpdateAnimation(deltaTime);
-		
 	};
 
 	void CreatureMeshWorldObjectInstance::UpdateMotion(float deltaTime)
 	{
-		if (!aiGotoWaypointsInProgress)
-		{
+		if (!m_AIGotoWaypointsInProgress || m_AIGotoWaypoints.size() < 2) {
 			return;
 		}
 
-		/*
-		NavMesh& navmesh = *Globals::navMesh;
-		const float* newpos = navmesh.m_Crowd->getAgent(m_NaviAgentID)->npos;
-		const float* newDir = navmesh.m_Crowd->getAgent(m_NaviAgentID)->vel;
-		glm::vec3 newPosiion = glm::vec3(newpos[0], newpos[1], newpos[2]);
-		glm::vec3 newDirection = -glm::vec3(newDir[0], newDir[1], newDir[2]);
-
-
-		//motionSpeedMulti = glm::clamp(glm::length(newDirection), 0.f,1.f);
-
-
-		newDirection = glm::normalize(newDirection);
-
-		glm::mat4 rot = glm::lookAt(newPosiion, newPosiion + newDirection, glm::vec3(0, 1.f, 0));
-		glm::vec3 eulerAngles;
-		glm::quat orientation = glm::conjugate(glm::toQuat(rot));
-
-		SetQuaternion(orientation);
-		SetQuaternion(glm::slerp(GetQuaternion(), orientation, .5f));
-
-
-		SetPosition(newPosiion);
-		if (glm::length(m_NavDestionation - newPosiion) < -.2f)
-		{
-			aiGotoWaypointsInProgress = false;
+		// Ensure we don't go out of bounds by checking if we're at the last waypoint
+		if (m_AICurrentWaypointIndex >= m_AIGotoWaypoints.size() - 1) {
+			m_AIGotoWaypointsInProgress = false;
+			return;
 		}
 
-		return;
-		*/
-
-		if (aiGotoWaypoints.size() == 0)
-			return;
-
-		const glm::vec3 from = aiGotoWaypoints[aiCurrentWaypointIndex];
-		const glm::vec3 to = aiGotoWaypoints[aiCurrentWaypointIndex + 1];
+		const auto& from = m_AIGotoWaypoints[m_AICurrentWaypointIndex];
+		const auto& to = m_AIGotoWaypoints[m_AICurrentWaypointIndex + 1];
 
 		float distance = glm::distance(from, to);
 
-		aiWaypointLerp += (deltaTime * (1.f / distance) * motionSpeed * motionSpeedMulti);
-		aiWaypointLerp = glm::min(1.0f, aiWaypointLerp);
+		aiWaypointLerp = glm::min(1.0f, aiWaypointLerp + (deltaTime * motionSpeed * motionSpeedMulti) / distance);
+		aiRotationLerp = glm::min(1.0f, aiRotationLerp + deltaTime * 4);
 
-		aiRotationLerp += deltaTime * 4;
-		aiRotationLerp = glm::min(1.0f, aiRotationLerp);
+		SetPosition(glm::mix(from, to, aiWaypointLerp));
 
-		glm::vec3 newPosition = glm::mix(from, to, aiWaypointLerp);
+		glm::vec3 lookAt = glm::normalize(from - to);
+		glm::vec3 lookAt2D = glm::normalize(glm::vec3(lookAt.x, 0.f, lookAt.z));
 
-		SetPosition(newPosition + glm::vec3(0, -.05f, 0));
+		glm::mat4 rot = glm::lookAt(glm::vec3(0), lookAt2D, glm::vec3(0, 1.f, 0));
+		glm::quat targetOrientation = glm::conjugate(glm::toQuat(rot));
+		SetQuaternion(glm::slerp(aiFromRotation, targetOrientation, aiRotationLerp));
 
-		const glm::vec3 lookAt = glm::normalize(from - to);
-		glm::vec3 lookAt2D(lookAt.x, 0.f, lookAt.z);
-		lookAt2D = glm::normalize(lookAt2D);
-
-		glm::mat4 rot = glm::lookAt(newPosition, newPosition + lookAt2D, glm::vec3(0, 1.f, 0));
-		glm::vec3 eulerAngles;
-		glm::quat orientation = glm::conjugate(glm::toQuat(rot));
-
-		SetQuaternion(glm::slerp(aiFromRotation, orientation, aiRotationLerp));
-
-		if (aiWaypointLerp == 1.0f && aiCurrentWaypointIndex < aiGotoWaypoints.size() - 1)
-		{
-			++aiCurrentWaypointIndex;
+		if (aiWaypointLerp >= 1.0f && m_AICurrentWaypointIndex < m_AIGotoWaypoints.size() - 1) {
+			m_AICurrentWaypointIndex++;
 			aiWaypointLerp = 0;
 			aiRotationLerp = 0;
 			aiFromRotation = GetQuaternion();
 		}
 
-		if (aiCurrentWaypointIndex == aiGotoWaypoints.size() - 1)
-		{
-			aiGotoWaypointsInProgress = false;
+		if (m_AICurrentWaypointIndex == m_AIGotoWaypoints.size() - 1) {
+			m_AIGotoWaypointsInProgress = false;
 		}
-
-
 	}
 
 	bool CreatureMeshWorldObjectInstance::TryGoto(glm::vec3 destination)
 	{
-		/*
-	m_NavDestionation = destination;
-	Globals::navMesh->NavigateAgentToDestination(m_NaviAgentID, destination);
-	//aiGotoWaypointsInProgress = true;
-	return true;
-	*/
-
 		glm::vec3 start = GetPosition();
-		const int result = m_NavMesh->FindPath(&start.x, &destination.x, 0, 0, aiGotoWaypoints);
-
-		if (result > 0)
-		{
-			aiGotoWaypointsInProgress = true;
-			aiCurrentWaypointIndex = 0;
-			aiWaypointLerp = 0;
-		}
+		const int numWaypoints = m_NavMesh->FindPath(start, destination, 0, 0, m_AIGotoWaypoints);
+		m_AIGotoWaypointsInProgress = numWaypoints > 0;
+		m_AICurrentWaypointIndex = 0;
+		aiWaypointLerp = 0;
 
 		aiFromRotation = GetQuaternion();
 		aiRotationLerp = 0;
 
-		return result > 0;
-
+		return numWaypoints > 0;
 	}
 
 	void CreatureMeshWorldObjectInstance::UpdateAnimation(float frameDelta)

@@ -9,9 +9,6 @@
 #include "Ganymede/Player/PlayerCharacter.h"
 #include <iostream>
 
-
-
-
 namespace Ganymede
 {
 
@@ -40,7 +37,7 @@ namespace Ganymede
 		void UpdateAnimation(float deltaTime);
 		bool TryGoto(glm::vec3 destination);
 
-		AIState aiState = AIState::Patroling;
+		AIState m_AIState = AIState::Patroling;
 
 		World* m_World;
 		PhysicsWorld* m_PhysicsWorld;
@@ -48,9 +45,9 @@ namespace Ganymede
 		PlayerCharacter* m_PlayerCharacter;
 		AssetLoader* m_AssetLoader;
 
-		std::vector<glm::vec3> aiGotoWaypoints;
-		bool aiGotoWaypointsInProgress = false;
-		unsigned int aiCurrentWaypointIndex = 0;
+		std::vector<glm::vec3> m_AIGotoWaypoints;
+		bool m_AIGotoWaypointsInProgress = false;
+		unsigned int m_AICurrentWaypointIndex = 0;
 		float aiWaypointLerp = 0;
 		glm::quat aiFromRotation;
 		float aiRotationLerp = .5f;
@@ -74,5 +71,4 @@ namespace Ganymede
 		glm::vec3 m_NavDestionation;
 		glm::vec3 test;
 	};
-
 }

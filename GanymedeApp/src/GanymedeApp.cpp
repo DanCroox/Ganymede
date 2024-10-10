@@ -122,13 +122,6 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 	auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - duration;
 	GM_INFO("Nav mesh generation done in {} ms.", dur.count());
 
-	for (int i = 0; i < 20; ++i)
-	{
-		glm::vec3 outi;
-		m_NavMesh->GetRandomPointOnNavMesh(outi, glm::vec3(0), 10.f);
-		GM_TRACE("Point: {}, {}, {}", outi.x, outi.y, outi.z);
-	}
-
 	const std::vector<MeshWorldObjectInstance*>& allMeshWorldObjectsInstances = *m_World->GetWorldObjectInstancesByType<MeshWorldObjectInstance>();
 	for (const auto& mwoi : allMeshWorldObjectsInstances)
 	{

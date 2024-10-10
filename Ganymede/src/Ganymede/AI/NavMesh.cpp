@@ -517,96 +517,71 @@ namespace Ganymede
 	// 0 for the slot to save the path too, and 0 as the "target", to remember what the path was for.
 	// will return a negative number if the search for a path failed.
 
-	dtPolyRef PolyPath[MAX_PATHPOLY];
-	int nPathCount = 0;
-
-	int NavMesh::FindPath(float* pStartPos, float* pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut)
+	int NavMesh::FindPath(const glm::vec3& pStartPos, const glm::vec3& pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut)
 	{
-		std::scoped_lock lock(m_Mutex);
-
 		pathOut.clear();
 
 		dtStatus status;
-		float pExtents[3] = { 32.0f, 32.0f, 32.0f }; // size of box around start/end points to look for nav polygons
+		float pExtents[3] = { 16.0f, 16.0f, 16.0f };
 		dtPolyRef StartPoly;
 		float StartNearest[3];
 		dtPolyRef EndPoly;
 		float EndNearest[3];
-		
+		dtPolyRef PolyPath[MAX_PATHPOLY];
+		int nPathCount = 0;
 		float StraightPath[MAX_PATHVERT * 3];
 		int nVertCount = 0;
 
-
-		// setup the filter
+		// Setup filter with dynamic costs and flexible flags
 		dtQueryFilter Filter;
-		Filter.setIncludeFlags(0xFFFF);
-		Filter.setExcludeFlags(0);
-		Filter.setAreaCost(SAMPLE_POLYAREA_GROUND, 1.0f);
+		Filter.setIncludeFlags(0xFFFF);   // Include all areas
+		Filter.setExcludeFlags(0);        // Dont exclude any areas
+		Filter.setAreaCost(SAMPLE_POLYAREA_GROUND, 1.0f);  // Ground less cost
+		Filter.setAreaCost(SAMPLE_POLYAREA_WATER, 10.0f);  // Example: Water might have higher costs
 
-		for (int i = 0; i < nPathCount; ++i) {
-			dtPolyRef poly = PolyPath[i];
+		// Find the nearest polygon for the start point
+		status = m_navQuery->findNearestPoly(&pStartPos.x, pExtents, &Filter, &StartPoly, StartNearest);
+		if (dtStatusFailed(status)) return -1;
 
-			// Erhöhe die Kosten für die benutzten Polygone
-			float currentCost = Filter.getAreaCost(poly);  // Aktuelle Kosten abrufen
-			Filter.setAreaCost(poly, currentCost + 100000.0f);  // Kosten für diese Fläche erhöhen
-		}
+		// Find the nearest polygon for the end point
+		status = m_navQuery->findNearestPoly(&pEndPos.x, pExtents, &Filter, &EndPoly, EndNearest);
+		if (dtStatusFailed(status)) return -2;
 
-		nPathCount = 0;
-
-		// find the start polygon
-		status = m_navQuery->findNearestPoly(pStartPos, pExtents, &Filter, &StartPoly, StartNearest);
-		if ((status & DT_FAILURE) || (status & DT_STATUS_DETAIL_MASK)) return -1; // couldn't find a polygon
-
-		// find the end polygon
-		status = m_navQuery->findNearestPoly(pEndPos, pExtents, &Filter, &EndPoly, EndNearest);
-		if ((status & DT_FAILURE) || (status & DT_STATUS_DETAIL_MASK)) return -2; // couldn't find a polygon
-
+		// Find the path through polygons
 		status = m_navQuery->findPath(StartPoly, EndPoly, StartNearest, EndNearest, &Filter, PolyPath, &nPathCount, MAX_PATHPOLY);
-		if ((status & DT_FAILURE) || (status & DT_STATUS_DETAIL_MASK)) return -3; // couldn't create a path
-		if (nPathCount == 0) return -4; // couldn't find a path
+		if (dtStatusFailed(status) || nPathCount == 0) return -3;
 
-		status = m_navQuery->findStraightPath(StartNearest, EndNearest, PolyPath, nPathCount, StraightPath, NULL, NULL, &nVertCount, MAX_PATHVERT);
-		if ((status & DT_FAILURE) || (status & DT_STATUS_DETAIL_MASK)) return -5; // couldn't create a path
-		if (nVertCount == 0) return -6; // couldn't find a path
+		// Generate the straight path along the polygon path
+		status = m_navQuery->findStraightPath(StartNearest, EndNearest, PolyPath, nPathCount, StraightPath, nullptr, nullptr, &nVertCount, MAX_PATHVERT);
+		if (dtStatusFailed(status) || nVertCount == 0) return -4;
 
-		// At this point we have our path.  Copy it to the path store
+		// Copy the path directly into pathOut and m_PathStore in one loop
+		pathOut.reserve(nVertCount);
 		int nIndex = 0;
 		for (int nVert = 0; nVert < nVertCount; nVert++)
 		{
-			m_PathStore[nPathSlot].PosX[nVert] = StraightPath[nIndex++];
-			m_PathStore[nPathSlot].PosY[nVert] = StraightPath[nIndex++];
-			m_PathStore[nPathSlot].PosZ[nVert] = StraightPath[nIndex++];
+			glm::vec3 position = glm::vec3(StraightPath[nIndex], StraightPath[nIndex + 1], StraightPath[nIndex + 2]);
+			nIndex += 3;
 
-			//sprintf(m_chBug, "Path Vert %i, %f %f %f", nVert, m_PathStore[nPathSlot].PosX[nVert], m_PathStore[nPathSlot].PosY[nVert], m_PathStore[nPathSlot].PosZ[nVert]) ;
-			//m_pLog->logMessage(m_chBug);
-		}
-		m_PathStore[nPathSlot].MaxVertex = nVertCount;
-		m_PathStore[nPathSlot].Target = nTarget;
-
-		for (int i = 0; i < nVertCount; ++i)
-		{
-			const glm::vec3 pos = { m_PathStore->PosX[i],
-			m_PathStore->PosY[i],
-			m_PathStore->PosZ[i] };
-
-			pathOut.push_back(pos);
+			// Add to pathOut directly
+			pathOut.push_back(position);
 		}
 
-		return nVertCount;
+		GM_CORE_TRACE("Creature Pos: {},{},{}", pStartPos.x, pStartPos.y, pStartPos.z);
+		GM_CORE_TRACE("First    Pos: {},{},{}", pathOut[0].x, pathOut[0].y, pathOut[0].z);
+
+		return nVertCount;  // Return the number of vertices in the path
 	}
+
 
 	void NavMesh::NavigateAgentToDestination(int agentID, glm::vec3 to)
 	{
-		std::scoped_lock lock(m_Mutex);
-
-
 		dtPolyRef target_poly;
 
 		dtStatus status;
 		float pExtents[3] = { 32.0f, 32.0f, 32.0f }; // size of box around start/end points to look for nav polygons
 		dtPolyRef DestPoly;
 		float DestNearest[3];
-
 
 		// setup the filter
 		dtQueryFilter Filter;
@@ -622,8 +597,6 @@ namespace Ganymede
 			return;
 
 		m_Crowd->requestMoveTarget(agentID, DestPoly, &to.x);
-
-
 	}
 
 	namespace NavMesh_Private
@@ -636,18 +609,14 @@ namespace Ganymede
 
 	bool NavMesh::GetRandomPointOnNavMesh(glm::vec3& pointOut, glm::vec3 center, float distance)
 	{
-		std::scoped_lock lock(m_Mutex);
-		using namespace NavMesh_Private;
-
 		if (m_navQuery == nullptr)
 			return false;
 
-		//const dtQueryFilter filter; // Use default query filter
-		const dtQueryFilter filter; // Use default query filter
+		const dtQueryFilter filter;
 		float randPoint[3];
 
 		dtPolyRef randPoly;
-		const dtStatus status = m_navQuery->findRandomPoint(&filter, &GetRandomSeed, &randPoly, randPoint);
+		const dtStatus status = m_navQuery->findRandomPoint(&filter, &NavMesh_Private::GetRandomSeed, &randPoly, randPoint);
 
 		if (status & DT_FAILURE)
 			return false;
@@ -710,6 +679,7 @@ namespace Ganymede
 				return agentID;
 			}
 		}
+
 		return -1;
 	};
 

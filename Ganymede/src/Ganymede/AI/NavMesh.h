@@ -136,7 +136,7 @@ namespace Ganymede
 		bool Generate(const std::vector<MeshWorldObjectInstance*> instances);
 		void CleanUp();
 
-		int FindPath(float* pStartPos, float* pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut);
+		int FindPath(const glm::vec3& pStartPos, const glm::vec3& pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut);
 
 		void NavigateAgentToDestination(int agentID, glm::vec3 to);
 
