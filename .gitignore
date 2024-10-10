@@ -3,8 +3,10 @@
 _bin/
 _intermediate/
 GanymedeApp/res/models/
+Ganymede/vendor/glew/build/cmake/build/
 
 # Files
+*.sln
 *.user
 *.vcxproj
 *.filters

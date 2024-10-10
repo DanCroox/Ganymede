@@ -1,8 +1,9 @@
 #pragma once
+#include "Ganymede/Core/Core.h"
 
 namespace Ganymede
 {
-	class GMTime
+	class GANYMEDE_API GMTime
 	{
 	public:
 		static float s_DeltaTime;

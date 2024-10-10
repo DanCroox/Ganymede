@@ -23,6 +23,8 @@
 #include <Ganymede/Platform/Input.h>
 #include <Ganymede/Input/KeyCodes.h>
 #include <Ganymede/Input/MouseButtonCodes.h>
+#include <Ganymede/Common/Helpers.h>
+#include <Ganymede/Runtime/GMTime.h>
 
 // --------- Application entry point ---------- //
 #include "Ganymede/Core/EntryPoint.h"

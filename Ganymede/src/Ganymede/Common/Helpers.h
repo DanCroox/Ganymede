@@ -87,10 +87,14 @@ namespace Ganymede
 			static std::unordered_map<const char*, unsigned int> m_NamedCounts;
 		};
 
-#define SCOPED_TIMER(msg)
+#define SCOPED_TIMER(msg) \
+Helpers::ScopedTimer timer = Helpers::ScopedTimer(msg); \
+static_cast<void>(timer); \
 
-#define NAMED_COUNTER(msg)
-#define NUMBERED_NAMED_COUNTER(msg, number)
+#define NAMED_COUNTER(msg)\
+Helpers::NamedCounter::Increment(msg);
+#define NUMBERED_NAMED_COUNTER(msg, number)\
+Helpers::NamedCounter::Increment(msg, number); 
 
 		static std::string ParseFileNameFromPath(const std::string& path)
 		{

@@ -57,7 +57,7 @@
 
 			float m_ForwardMotion = 0.0f;
 			float m_SidewayMotion = 0.0f;
-			float m_WalkSpeed = .025;
+			float m_WalkSpeed = .07;
 
 			float m_MoveSpeed = 0;
 

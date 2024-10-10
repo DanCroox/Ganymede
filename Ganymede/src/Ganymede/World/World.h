@@ -82,7 +82,9 @@ namespace Ganymede
 		const std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>>& GetMeshInstances() const;
 
 	private:
-		std::unique_ptr<std::array<Thread, 80>> m_TickThreadPool = nullptr;
+		typedef std::array<Thread, 80> TickThreadPool;
+
+		std::unique_ptr<TickThreadPool> m_TickThreadPool = nullptr;
 		std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>> m_WorldObjectInstancesByType;
 		std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>> m_MeshesInstances;
 	};

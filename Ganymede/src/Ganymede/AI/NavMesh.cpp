@@ -2,6 +2,8 @@
 
 #include <math.h>
 #include <string.h>
+#include "Ganymede/Log/Log.h"
+#include "Ganymede/Common/Helpers.h"
 
 #include "Recast.h"
 #include "DetourNavMesh.h"
@@ -11,13 +13,16 @@
 
 #include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/World/MeshWorldObjectInstance.h"
+#include "Ganymede/Graphics/Renderer.h"
 
 namespace Ganymede
 {
-	NavMesh::NavMesh()
+	NavMesh::NavMesh(Renderer& renderer)
 	{
 		m_Agents.resize(1000);
-		m_cfg = new rcConfig();
+		m_cfgPtr = new rcConfig();
+
+		m_Renderer = &renderer;
 	}
 
 	bool NavMesh::Generate(const std::vector<MeshWorldObjectInstance*> instances)
@@ -26,6 +31,8 @@ namespace Ganymede
 		{
 			return false;
 		}
+
+		rcConfig& m_cfg = *m_cfgPtr;
 
 		float* rc_verts;
 		unsigned int rc_nverts;
@@ -50,7 +57,7 @@ namespace Ganymede
 
 		for (const MeshWorldObjectInstance* instance : instances)
 		{
-			if (instance->GetMobility() != WorldObjectInstance::Mobility::Static)
+			if (instance->GetMobility() != WorldObjectInstance::Mobility::Static || instance->GetMeshWorldObject()->GetExcludeFromNavigationMesh())
 			{
 				// Only static geometry will be used to create the navigation mesh
 				continue;
@@ -113,28 +120,27 @@ namespace Ganymede
 		m_keepInterResults = false;
 
 		// Init build configuration from GUI
-		//memset(&m_cfg, 0, sizeof(rcConfig));
-		memset(m_cfg, 0, sizeof(rcConfig));
-		m_cfg->cs = m_agentRadius / 3.0f;
-		m_cfg->ch = m_cfg->cs / 2.0f;
-		m_cfg->walkableSlopeAngle = 45;
-		m_cfg->walkableHeight = (int)ceilf(m_agentHeight / m_cfg->ch);
-		m_cfg->walkableClimb = (int)ceilf((m_agentHeight * .2f) / m_cfg->ch);
-		m_cfg->walkableRadius = (int)ceilf(m_agentRadius / m_cfg->cs);
-		m_cfg->maxEdgeLen = (int)(m_cfg->walkableRadius * 8);
-		m_cfg->maxSimplificationError = 1.3f;
-		m_cfg->minRegionArea = (int)rcSqr(m_regionMinSize);		// Note: area = size*size
-		m_cfg->mergeRegionArea = (int)rcSqr(m_regionMergeSize);	// Note: area = size*size
-		m_cfg->maxVertsPerPoly = (int)m_vertsPerPoly;
-		m_cfg->detailSampleDist = m_detailSampleDist < 0.9f ? 0 : m_cfg->cs * m_detailSampleDist;
-		m_cfg->detailSampleMaxError = m_cfg->ch * m_detailSampleMaxError;
+		memset(&m_cfg, 0, sizeof(m_cfg));
+		m_cfg.cs = m_agentRadius / 3.0f;
+		m_cfg.ch = m_cfg.cs / 2.0f;
+		m_cfg.walkableSlopeAngle = 45;
+		m_cfg.walkableHeight = (int)ceilf(m_agentHeight / m_cfg.ch);
+		m_cfg.walkableClimb = (int)ceilf((m_agentHeight * .2f) / m_cfg.ch);
+		m_cfg.walkableRadius = (int)ceilf(m_agentRadius / m_cfg.cs);
+		m_cfg.maxEdgeLen = (int)(m_cfg.walkableRadius * 8);
+		m_cfg.maxSimplificationError = 1.3f;
+		m_cfg.minRegionArea = (int)rcSqr(m_regionMinSize);		// Note: area = size*size
+		m_cfg.mergeRegionArea = (int)rcSqr(m_regionMergeSize);	// Note: area = size*size
+		m_cfg.maxVertsPerPoly = (int)m_vertsPerPoly;
+		m_cfg.detailSampleDist = m_detailSampleDist < 0.9f ? 0 : m_cfg.cs * m_detailSampleDist;
+		m_cfg.detailSampleMaxError = m_cfg.ch * m_detailSampleMaxError;
 
 		// Set the area where the navigation will be build.
 		// Here the bounds of the input mesh are used, but the
 		// area could be specified by an user defined box, etc.
-		rcVcopy(m_cfg->bmin, rc_bmin);
-		rcVcopy(m_cfg->bmax, rc_bmax);
-		rcCalcGridSize(m_cfg->bmin, m_cfg->bmax, m_cfg->cs, &m_cfg->width, &m_cfg->height);
+		rcVcopy(m_cfg.bmin, rc_bmin);
+		rcVcopy(m_cfg.bmax, rc_bmax);
+		rcCalcGridSize(m_cfg.bmin, m_cfg.bmax, m_cfg.cs, &m_cfg.width, &m_cfg.height);
 
 		// Reset build times gathering.
 		m_ctx->resetTimers();
@@ -142,9 +148,9 @@ namespace Ganymede
 		// Start the build process.	
 		m_ctx->startTimer(RC_TIMER_TOTAL);
 
-		m_ctx->log(RC_LOG_PROGRESS, "Building navigation:");
-		m_ctx->log(RC_LOG_PROGRESS, " - %d x %d cells", m_cfg->width, m_cfg->height);
-		m_ctx->log(RC_LOG_PROGRESS, " - %.1fK verts, %.1fK tris", rc_nverts / 1000.0f, rc_ntris / 1000.0f);
+		GM_CORE_TRACE("Building navigation:");
+		GM_CORE_TRACE(" - %d x %d cells", m_cfg.width, m_cfg.height);
+		GM_CORE_TRACE(" - %.1fK verts, %.1fK tris", rc_nverts / 1000.0f, rc_ntris / 1000.0f);
 
 		//
 		// Step 2. Rasterize input polygon soup.
@@ -154,12 +160,12 @@ namespace Ganymede
 		m_solid = rcAllocHeightfield();
 		if (!m_solid)
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'solid'.");
+			GM_CORE_ERROR("buildNavigation: Out of memory 'solid'.");
 			return false;
 		}
-		if (!rcCreateHeightfield(m_ctx, *m_solid, m_cfg->width, m_cfg->height, m_cfg->bmin, m_cfg->bmax, m_cfg->cs, m_cfg->ch))
+		if (!rcCreateHeightfield(m_ctx, *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
+			GM_CORE_ERROR("buildNavigation: Could not create solid heightfield.");
 			return false;
 		}
 
@@ -169,7 +175,7 @@ namespace Ganymede
 		m_triareas = new unsigned char[rc_ntris];
 		if (!m_triareas)
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'm_triareas' (%d).", rc_ntris);
+			GM_CORE_ERROR("buildNavigation: Out of memory 'm_triareas' (%d).", rc_ntris);
 			return false;
 		}
 
@@ -177,10 +183,10 @@ namespace Ganymede
 		// If your input data is multiple meshes, you can transform them here, calculate
 		// the are type for each of the meshes and rasterize them.
 		memset(m_triareas, 0, rc_ntris * sizeof(unsigned char));
-		rcMarkWalkableTriangles(m_ctx, m_cfg->walkableSlopeAngle, rc_verts, rc_nverts, rc_tris, rc_ntris, m_triareas);
-		if (!rcRasterizeTriangles(m_ctx, rc_verts, rc_nverts, rc_tris, m_triareas, rc_ntris, *m_solid, m_cfg->walkableClimb))
+		rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, rc_verts, rc_nverts, rc_tris, rc_ntris, m_triareas);
+		if (!rcRasterizeTriangles(m_ctx, rc_verts, rc_nverts, rc_tris, m_triareas, rc_ntris, *m_solid, m_cfg.walkableClimb))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
+			GM_CORE_ERROR("buildNavigation: Could not rasterize triangles.");
 			return false;
 		}
 
@@ -198,11 +204,11 @@ namespace Ganymede
 		// remove unwanted overhangs caused by the conservative rasterization
 		// as well as filter spans where the character cannot possibly stand.
 		if (m_filterLowHangingObstacles)
-			rcFilterLowHangingWalkableObstacles(m_ctx, m_cfg->walkableClimb, *m_solid);
+			rcFilterLowHangingWalkableObstacles(m_ctx, m_cfg.walkableClimb, *m_solid);
 		if (m_filterLedgeSpans)
-			rcFilterLedgeSpans(m_ctx, m_cfg->walkableHeight, m_cfg->walkableClimb, *m_solid);
+			rcFilterLedgeSpans(m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid);
 		if (m_filterWalkableLowHeightSpans)
-			rcFilterWalkableLowHeightSpans(m_ctx, m_cfg->walkableHeight, *m_solid);
+			rcFilterWalkableLowHeightSpans(m_ctx, m_cfg.walkableHeight, *m_solid);
 
 
 		//
@@ -215,12 +221,12 @@ namespace Ganymede
 		m_chf = rcAllocCompactHeightfield();
 		if (!m_chf)
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'chf'.");
+			GM_CORE_ERROR("buildNavigation: Out of memory 'chf'.");
 			return false;
 		}
-		if (!rcBuildCompactHeightfield(m_ctx, m_cfg->walkableHeight, m_cfg->walkableClimb, *m_solid, *m_chf))
+		if (!rcBuildCompactHeightfield(m_ctx, m_cfg.walkableHeight, m_cfg.walkableClimb, *m_solid, *m_chf))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
+			GM_CORE_ERROR("buildNavigation: Could not build compact data.");
 			return false;
 		}
 
@@ -231,9 +237,9 @@ namespace Ganymede
 		}
 
 		// Erode the walkable area by agent radius.
-		if (!rcErodeWalkableArea(m_ctx, m_cfg->walkableRadius, *m_chf))
+		if (!rcErodeWalkableArea(m_ctx, m_cfg.walkableRadius, *m_chf))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
+			GM_CORE_ERROR("buildNavigation: Could not erode.");
 			return false;
 		}
 
@@ -276,14 +282,14 @@ namespace Ganymede
 			// Prepare for region partitioning, by calculating distance field along the walkable surface.
 			if (!rcBuildDistanceField(m_ctx, *m_chf))
 			{
-				m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
+				GM_CORE_ERROR("buildNavigation: Could not build distance field.");
 				return false;
 			}
 
 			// Partition the walkable surface into simple regions without holes.
-			if (!rcBuildRegions(m_ctx, *m_chf, 0, m_cfg->minRegionArea, m_cfg->mergeRegionArea))
+			if (!rcBuildRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 			{
-				m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
+				GM_CORE_ERROR("buildNavigation: Could not build watershed regions.");
 				return false;
 			}
 		}
@@ -291,18 +297,18 @@ namespace Ganymede
 		{
 			// Partition the walkable surface into simple regions without holes.
 			// Monotone partitioning does not need distancefield.
-			if (!rcBuildRegionsMonotone(m_ctx, *m_chf, 0, m_cfg->minRegionArea, m_cfg->mergeRegionArea))
+			if (!rcBuildRegionsMonotone(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 			{
-				m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build monotone regions.");
+				GM_CORE_ERROR("buildNavigation: Could not build monotone regions.");
 				return false;
 			}
 		}
 		else // SAMPLE_PARTITION_LAYERS
 		{
 			// Partition the walkable surface into simple regions without holes.
-			if (!rcBuildLayerRegions(m_ctx, *m_chf, 0, m_cfg->minRegionArea))
+			if (!rcBuildLayerRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea))
 			{
-				m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build layer regions.");
+				GM_CORE_ERROR("buildNavigation: Could not build layer regions.");
 				return false;
 			}
 		}
@@ -315,12 +321,12 @@ namespace Ganymede
 		m_cset = rcAllocContourSet();
 		if (!m_cset)
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'cset'.");
+			GM_CORE_ERROR("buildNavigation: Out of memory 'cset'.");
 			return false;
 		}
-		if (!rcBuildContours(m_ctx, *m_chf, m_cfg->maxSimplificationError, m_cfg->maxEdgeLen, *m_cset))
+		if (!rcBuildContours(m_ctx, *m_chf, m_cfg.maxSimplificationError, m_cfg.maxEdgeLen, *m_cset))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
+			GM_CORE_ERROR("buildNavigation: Could not create contours.");
 			return false;
 		}
 
@@ -332,12 +338,12 @@ namespace Ganymede
 		m_pmesh = rcAllocPolyMesh();
 		if (!m_pmesh)
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmesh'.");
+			GM_CORE_ERROR("buildNavigation: Out of memory 'pmesh'.");
 			return false;
 		}
-		if (!rcBuildPolyMesh(m_ctx, *m_cset, m_cfg->maxVertsPerPoly, *m_pmesh))
+		if (!rcBuildPolyMesh(m_ctx, *m_cset, m_cfg.maxVertsPerPoly, *m_pmesh))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
+			GM_CORE_ERROR("buildNavigation: Could not triangulate contours.");
 			return false;
 		}
 
@@ -348,13 +354,13 @@ namespace Ganymede
 		m_dmesh = rcAllocPolyMeshDetail();
 		if (!m_dmesh)
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'pmdtl'.");
+			GM_CORE_ERROR("buildNavigation: Out of memory 'pmdtl'.");
 			return false;
 		}
 
-		if (!rcBuildPolyMeshDetail(m_ctx, *m_pmesh, *m_chf, m_cfg->detailSampleDist, m_cfg->detailSampleMaxError, *m_dmesh))
+		if (!rcBuildPolyMeshDetail(m_ctx, *m_pmesh, *m_chf, m_cfg.detailSampleDist, m_cfg.detailSampleMaxError, *m_dmesh))
 		{
-			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+			GM_CORE_ERROR("buildNavigation: Could not build detail mesh.");
 			return false;
 		}
 
@@ -375,7 +381,7 @@ namespace Ganymede
 
 		// The GUI may allow more max points per polygon than Detour can handle.
 		// Only build the detour navmesh if we do not exceed the limit.
-		if (m_cfg->maxVertsPerPoly <= DT_VERTS_PER_POLYGON)
+		if (m_cfg.maxVertsPerPoly <= DT_VERTS_PER_POLYGON)
 		{
 			unsigned char* navData = 0;
 			int navDataSize = 0;
@@ -422,13 +428,13 @@ namespace Ganymede
 			params.walkableClimb = m_agentMaxClimb;
 			rcVcopy(params.bmin, m_pmesh->bmin);
 			rcVcopy(params.bmax, m_pmesh->bmax);
-			params.cs = m_cfg->cs;
-			params.ch = m_cfg->ch;
+			params.cs = m_cfg.cs;
+			params.ch = m_cfg.ch;
 			params.buildBvTree = true;
 
 			if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
 			{
-				m_ctx->log(RC_LOG_ERROR, "Could not build Detour navmesh.");
+				GM_CORE_ERROR("Could not build Detour navmesh.");
 				return false;
 			}
 
@@ -436,7 +442,7 @@ namespace Ganymede
 			if (!m_navMesh)
 			{
 				dtFree(navData);
-				m_ctx->log(RC_LOG_ERROR, "Could not create Detour navmesh");
+				GM_CORE_ERROR("Could not create Detour navmesh");
 				return false;
 			}
 
@@ -446,7 +452,7 @@ namespace Ganymede
 			if (dtStatusFailed(status))
 			{
 				dtFree(navData);
-				m_ctx->log(RC_LOG_ERROR, "Could not init Detour navmesh");
+				GM_CORE_ERROR("Could not init Detour navmesh");
 				return false;
 			}
 
@@ -454,12 +460,12 @@ namespace Ganymede
 			status = m_navQuery->init(m_navMesh, 2048);
 			if (dtStatusFailed(status))
 			{
-				m_ctx->log(RC_LOG_ERROR, "Could not init Detour navmesh query");
+				GM_CORE_ERROR("Could not init Detour navmesh query");
 				return false;
 			}
 
 			MeshWorldObject::Mesh dMesh;
-			//Renderer::DebugDrawMesh* ddMesh = new Renderer::DebugDrawMesh();
+			Renderer::DebugDrawMesh* ddMesh = new Renderer::DebugDrawMesh();
 
 			const int numPolys = m_pmesh->npolys;
 			const int nvp = m_pmesh->nvp;
@@ -489,8 +495,8 @@ namespace Ganymede
 
 						dMesh.m_VertexIndicies.push_back(vertidx);
 
-						//ddMesh->m_VertexPositions.push_back({x, y, z});
-						//ddMesh->m_VertexIndices.push_back(vertidx);
+						ddMesh->m_VertexPositions.push_back({x, y, z});
+						ddMesh->m_VertexIndices.push_back(vertidx);
 						++vertidx;
 					}
 				}
@@ -498,15 +504,22 @@ namespace Ganymede
 
 			}
 
+			m_Renderer->AddDebugDrawMesh(dMesh);
+
 			m_Crowd = dtAllocCrowd();
 			m_Crowd->init(m_Agents.size(), 2.f, m_navMesh);
 		}
 
 		m_ctx->stopTimer(RC_TIMER_TOTAL);
+
 	}
 
 	// 0 for the slot to save the path too, and 0 as the "target", to remember what the path was for.
 	// will return a negative number if the search for a path failed.
+
+	dtPolyRef PolyPath[MAX_PATHPOLY];
+	int nPathCount = 0;
+
 	int NavMesh::FindPath(float* pStartPos, float* pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut)
 	{
 		std::scoped_lock lock(m_Mutex);
@@ -519,8 +532,7 @@ namespace Ganymede
 		float StartNearest[3];
 		dtPolyRef EndPoly;
 		float EndNearest[3];
-		dtPolyRef PolyPath[MAX_PATHPOLY];
-		int nPathCount = 0;
+		
 		float StraightPath[MAX_PATHVERT * 3];
 		int nVertCount = 0;
 
@@ -530,6 +542,16 @@ namespace Ganymede
 		Filter.setIncludeFlags(0xFFFF);
 		Filter.setExcludeFlags(0);
 		Filter.setAreaCost(SAMPLE_POLYAREA_GROUND, 1.0f);
+
+		for (int i = 0; i < nPathCount; ++i) {
+			dtPolyRef poly = PolyPath[i];
+
+			// Erhöhe die Kosten für die benutzten Polygone
+			float currentCost = Filter.getAreaCost(poly);  // Aktuelle Kosten abrufen
+			Filter.setAreaCost(poly, currentCost + 100000.0f);  // Kosten für diese Fläche erhöhen
+		}
+
+		nPathCount = 0;
 
 		// find the start polygon
 		status = m_navQuery->findNearestPoly(pStartPos, pExtents, &Filter, &StartPoly, StartNearest);
@@ -608,7 +630,7 @@ namespace Ganymede
 	{
 		float GetRandomSeed()
 		{
-			return 0.0f;
+			return Helpers::Random::RandomFloatInRange(0.f, 1.f);
 		}
 	}
 

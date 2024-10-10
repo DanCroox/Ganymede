@@ -74,7 +74,7 @@ namespace Ganymede
 		// Wait for all threads to finish
 		if (m_TickThreadPool != nullptr)
 		{
-			std::array<Thread, 80>& threadPool = *m_TickThreadPool;
+			TickThreadPool& threadPool = *m_TickThreadPool;
 			for (const Thread& thread : threadPool)
 			{
 				while (thread.IsRunning());

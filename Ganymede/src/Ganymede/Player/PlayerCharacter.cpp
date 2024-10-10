@@ -112,6 +112,8 @@ namespace Ganymede
 
 		m_character.SetWalkDirection(walkDirection);
 		cam.SetPosition(translation + glm::vec3(0, 1.2, 0));
+
+		m_Position = translation;
 		return;
 		if (glm::length(forwardDirection) > 0.00001f)
 		{
@@ -128,7 +130,7 @@ namespace Ganymede
 		m_TargetMoveSpeed += ((m_MoveSpeed - m_TargetMoveSpeed) * deltaTime);
 
 		m_character.SetWalkDirection(m_TargetWalkDirection);
-
+		
 		// Head bobbing
 		m_HeadBobSineModulatedTime += deltaTime * glm::length(m_TargetWalkDirection) * 350.0f;
 		float leftHeadBobSineTime = m_HeadBobSineModulatedTime * .5;

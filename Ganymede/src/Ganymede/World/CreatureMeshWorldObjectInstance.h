@@ -72,6 +72,7 @@ namespace Ganymede
 		int m_NaviAgentID = -1;
 
 		glm::vec3 m_NavDestionation;
+		glm::vec3 test;
 	};
 
 }

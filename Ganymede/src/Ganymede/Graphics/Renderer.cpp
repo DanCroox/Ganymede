@@ -937,27 +937,37 @@ namespace Ganymede
 		//inline const std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>>& GetAllWorldObjectInstances() { return m_WorldObjectInstancesByType; }
 
 		cameraRenderData.clear(); 
-		const auto& reff = *m_World->GetWorldObjectInstancesByType<MeshWorldObjectInstance>();
-		for (const MeshWorldObjectInstance* mwoi : reff)
+		const auto& reff = m_World->GetAllWorldObjectInstances();
+		
+		for (const auto& [key, value] : reff)
 		{
-			for (const MeshWorldObject::Mesh* mesh : mwoi->GetMeshWorldObject()->m_Meshes)
+			auto& mwois = reff.find(key)->second;
+			for (const auto* woi : mwois)
 			{
-				const auto& it = cameraRenderData.find(mesh);
-
-				std::vector<MeshInstancess>* minstances;
-				if (it == cameraRenderData.end())
+				const MeshWorldObjectInstance* mwoi = dynamic_cast<const MeshWorldObjectInstance*>(woi);
+				if (mwoi == nullptr)
 				{
-					auto [itpl, insertedpl] = cameraRenderData.emplace(mesh, std::vector<MeshInstancess>());
-					minstances = &(*itpl).second;
+					continue;
 				}
-				else
+				for (const MeshWorldObject::Mesh* mesh : mwoi->GetMeshWorldObject()->m_Meshes)
 				{
-					minstances = &it->second;
+					const auto& it = cameraRenderData.find(mesh);
+
+					std::vector<MeshInstancess>* minstances;
+					if (it == cameraRenderData.end())
+					{
+						auto [itpl, insertedpl] = cameraRenderData.emplace(mesh, std::vector<MeshInstancess>());
+						minstances = &(*itpl).second;
+					}
+					else
+					{
+						minstances = &it->second;
+					}
+
+					glm::mat4 camMv = m_Camera->GetTransform() * mwoi->GetTransform();
+
+					minstances->push_back({ mwoi, camMv, 0,0 });
 				}
-
-				glm::mat4 camMv = m_Camera->GetTransform() * mwoi->GetTransform();
-
-				minstances->push_back({ mwoi, camMv, 0,0 });
 			}
 		}
 
@@ -1133,7 +1143,6 @@ namespace Ganymede
 		m_CurrentShader = nullptr;
 		m_CurrentMaterial = nullptr;
 
-		std::unordered_map<const MeshWorldObject::Mesh*, std::vector<MeshInstancess>>::const_iterator iterator = meshInstances.begin();
 		for (const MeshWorldObject::Mesh* mesh : meshesSortedByMaterial)
 		{
 			const std::vector<MeshInstancess>& mInstances = meshInstances.find(mesh)->second;
@@ -1248,12 +1257,12 @@ namespace Ganymede
 				{
 					instanceTransform = mwoi->GetTransform();
 				}
-
+				
 				IData pd;
 				pd.instance = instanceTransform;
 				pd.pid = { (float)instance.m_LightIndex, (float)instance.m_TargetLayerID };
 				pd.mv = instance.m_MVP;
-
+				
 				// Uploaded animation matrices if skeletalmesh
 				if (const SkeletalMeshWorldObjectInstance* smwoi = dynamic_cast<const SkeletalMeshWorldObjectInstance*>(instance.m_Instance))
 				{
@@ -1275,6 +1284,7 @@ namespace Ganymede
 						pd.pid.m_AnimationDataOffset = iter->second;
 					}
 				}
+				
 
 				GLCall(glBufferSubData(GL_ARRAY_BUFFER, ptrOffset, sizeof(IData), (void*)&pd));
 				ptrOffset += sizeof(IData);
@@ -1900,7 +1910,6 @@ namespace Ganymede
 
 	void Renderer::DebugDrawPass(const FPSCamera& camera)
 	{
-		return;
 		SCOPED_TIMER("Debug pass");
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

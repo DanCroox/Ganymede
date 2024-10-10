@@ -1,5 +1,6 @@
 #include "CreatureMeshWorldObjectInstance.h"
 #include "World.h"
+#include "Ganymede/Log/Log.h"
 
 #include "Ganymede/Log/Log.h"
 #include "Ganymede/Runtime/GMTime.h"
@@ -27,20 +28,17 @@ namespace Ganymede
 
 	void CreatureMeshWorldObjectInstance::OnCreate()
 	{
-		
 		if (std::strcmp(GetWorldObject()->GetName().c_str(), "Matschkopf") == 0)
 		{
-			AssetLoader& assetLoader = *m_AssetLoader;
-			m_IdleAnimation = assetLoader.GetAnimationByName(std::string("Idle"));
-			m_WalkingAnimation = assetLoader.GetAnimationByName(std::string("Walking"));
+			m_IdleAnimation = m_AssetLoader->GetAnimationByName(std::string("Idle"));
+			m_WalkingAnimation = m_AssetLoader->GetAnimationByName(std::string("Walking"));
 			motionSpeed = Helpers::Random::RandomFloatInRange(2.2f, 2.2f);
 			SetScale(Helpers::Random::RandomFloatInRange(.75f, .85f));
 		}
 
 		if (std::strcmp(GetWorldObject()->GetName().c_str(), "Object_6") == 0)
 		{
-			AssetLoader& assetLoader = *m_AssetLoader;
-			m_WalkingAnimation = assetLoader.GetAnimationByName(std::string("mixamo.com"));
+			m_WalkingAnimation = m_AssetLoader->GetAnimationByName(std::string("mixamo.com"));
 			m_AnimationPlaySpeedWalking = 2.f;
 			m_AnimationPlaySpeedIdle = 2.f;
 			motionSpeed = Helpers::Random::RandomFloatInRange(.25f, .85f);
@@ -69,8 +67,7 @@ namespace Ganymede
 
 		SetPosition(x, GetPosition().y, z);
 
-		m_NaviAgentID = m_NavMesh->TryRegisterAgent(GetPosition());
-
+		//m_NaviAgentID = m_NavMesh->TryRegisterAgent(GetPosition());
 
 		TryGoto(m_PlayerCharacter->GetPosition());
 	}
@@ -99,6 +96,7 @@ namespace Ganymede
 
 		if (angle <= 80)
 		{
+			
 			const RayResult result = m_PhysicsWorld->RayCast(creaturePosition, playerPosition);
 			if (!result.m_HasHit)
 			{
@@ -168,7 +166,7 @@ namespace Ganymede
 		motionSpeedMulti = glm::clamp(motionSpeedMulti, 0.f, 1.f);
 
 		float distanceToPlayer = glm::length(thisPostion - rootPlayerPosition);
-		distanceToPlayer = glm::pow(distanceToPlayer, 50.f);
+		distanceToPlayer = glm::pow(distanceToPlayer, 100.f);
 
 		motionSpeedMulti *= glm::clamp(distanceToPlayer, 0.f, 1.f);
 
@@ -176,6 +174,7 @@ namespace Ganymede
 		//Globals::navMesh->SetAgentSpeed(m_NaviAgentID, motionSpeedMulti);
 		UpdateMotion(deltaTime);
 		UpdateAnimation(deltaTime);
+		
 	};
 
 	void CreatureMeshWorldObjectInstance::UpdateMotion(float deltaTime)
@@ -215,7 +214,7 @@ namespace Ganymede
 		return;
 		*/
 
-		if (aiGotoWaypoints.size() <= aiCurrentWaypointIndex + 1)
+		if (aiGotoWaypoints.size() == 0)
 			return;
 
 		const glm::vec3 from = aiGotoWaypoints[aiCurrentWaypointIndex];
@@ -256,16 +255,17 @@ namespace Ganymede
 			aiGotoWaypointsInProgress = false;
 		}
 
+
 	}
 
 	bool CreatureMeshWorldObjectInstance::TryGoto(glm::vec3 destination)
 	{
 		/*
-		m_NavDestionation = destination;
-		Globals::navMesh->NavigateAgentToDestination(m_NaviAgentID, destination);
-		//aiGotoWaypointsInProgress = true;
-		return true;
-		*/
+	m_NavDestionation = destination;
+	Globals::navMesh->NavigateAgentToDestination(m_NaviAgentID, destination);
+	//aiGotoWaypointsInProgress = true;
+	return true;
+	*/
 
 		glm::vec3 start = GetPosition();
 		const int result = m_NavMesh->FindPath(&start.x, &destination.x, 0, 0, aiGotoWaypoints);
@@ -281,6 +281,7 @@ namespace Ganymede
 		aiRotationLerp = 0;
 
 		return result > 0;
+
 	}
 
 	void CreatureMeshWorldObjectInstance::UpdateAnimation(float frameDelta)
@@ -315,3 +316,10 @@ namespace Ganymede
 		ASSERT(m_WalkingAnimationFrame < m_WalkingAnimation->m_Bones[0].m_Frames.size());
 	}
 }
+
+
+
+
+
+
+

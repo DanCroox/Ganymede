@@ -104,13 +104,15 @@ namespace Ganymede
 		const float m_distance;
 	};
 	*/
-
+	class Renderer;
 	class GANYMEDE_API NavMesh
 	{
 	public:
 
 
-		NavMesh();
+		NavMesh(Renderer& renderer);
+
+		Renderer* m_Renderer;
 
 		struct Agent
 		{
@@ -167,7 +169,7 @@ namespace Ganymede
 		unsigned int m_offMeshConId[MAX_OFFMESH_CONNECTIONS];
 		int m_offMeshConCount;
 
-		rcConfig* m_cfg;
+		rcConfig* m_cfgPtr;
 		rcHeightfield* m_solid;
 		unsigned char* m_triareas;
 		bool m_keepInterResults;
