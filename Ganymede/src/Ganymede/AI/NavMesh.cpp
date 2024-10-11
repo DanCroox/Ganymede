@@ -567,9 +567,6 @@ namespace Ganymede
 			pathOut.push_back(position);
 		}
 
-		GM_CORE_TRACE("Creature Pos: {},{},{}", pStartPos.x, pStartPos.y, pStartPos.z);
-		GM_CORE_TRACE("First    Pos: {},{},{}", pathOut[0].x, pathOut[0].y, pathOut[0].z);
-
 		return nVertCount;  // Return the number of vertices in the path
 	}
 

@@ -3,12 +3,12 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <typeindex>
 
-#if defined(_MSC_VER) || defined(__clang__) || defined(__GNUC__)
-	#define GM_GENERATE_STATIC_CLASS_ID static int GetStaticClassID() { return __COUNTER__; }
-#else
-	#error COMPILER_NAME Ganymede only supported on MSVC, Clang and GCC
-#endif
+typedef size_t ClassID;
+
+#define GM_GENERATE_CLASS_ID(VarName, Class) static const ClassID id = static_cast<ClassID>(std::type_index(typeid(Class)).hash_code());
+#define GM_GENERATE_STATIC_CLASS_ID(Class) static ClassID GetStaticClassID() { GM_GENERATE_CLASS_ID(id, Class); return id; }
 
 // Make sure to implement all platform interfaces in the "Platform" folder for supported platforms
 #ifdef GM_PLATFORM_WINDOWS

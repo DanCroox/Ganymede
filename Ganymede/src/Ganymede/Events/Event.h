@@ -8,8 +8,8 @@
 #include <unordered_map>
 
 
-#define CREATE_EVENT_CLASS_ID() GM_GENERATE_STATIC_CLASS_ID \
-								virtual int GetClassID() const override { return GetStaticClassID(); }
+#define CREATE_EVENT_CLASS_ID(Class) GM_GENERATE_STATIC_CLASS_ID(Class) \
+								virtual ClassID GetClassID() const override { return GetStaticClassID(); }
 
 #define EVENT_BIND_TO_MEMBER(func) std::bind(&func, this, std::placeholders::_1)
 
@@ -21,7 +21,7 @@ namespace Ganymede
 		Event() = default;
 		virtual ~Event() = default;
 
-		virtual int GetClassID() const = 0;
+		virtual ClassID GetClassID() const = 0;
 	};
 
 
@@ -97,6 +97,6 @@ namespace Ganymede
 		inline void NotifyEvent(Event&& event) { NotifyEvent(event); }
 
 	private:
-		std::unordered_map<int, std::vector<EventCallbackHandle*>> m_SubscribedEvents;
+		std::unordered_map<ClassID, std::vector<EventCallbackHandle*>> m_SubscribedEvents;
 	};
 }

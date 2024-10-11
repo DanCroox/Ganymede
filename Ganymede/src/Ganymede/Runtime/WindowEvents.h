@@ -9,13 +9,13 @@ namespace Ganymede
 	class GANYMEDE_API WindowInitializeEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(WindowInitializeEvent);
 	};
 
 	class GANYMEDE_API WindowResizeEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(WindowResizeEvent);
 
 		WindowResizeEvent(glm::ivec2 size) : m_Size(size) {};
 		inline glm::ivec2 GetSize() const { return m_Size; }
@@ -27,7 +27,7 @@ namespace Ganymede
 	class GANYMEDE_API WindowTickEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(WindowTickEvent);
 
 		WindowTickEvent(double frameDelta, double gameTime, unsigned int frameIndex) : m_FrameDelta(frameDelta), m_GameTime(gameTime), m_FrameIndex(frameIndex) {};
 		inline double GetFrameDelta() const { return m_FrameDelta; }
@@ -43,13 +43,13 @@ namespace Ganymede
 	class GANYMEDE_API WindowCloseEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(WindowCloseEvent);
 	};
 
 	class GANYMEDE_API MouseMoveEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(MouseMoveEvent);
 
 		MouseMoveEvent(glm::vec2 position) : m_Position(position) {};
 		inline glm::vec2 GetPosition() const { return m_Position; }
@@ -61,7 +61,7 @@ namespace Ganymede
 	class GANYMEDE_API MouseScrollEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(MouseScrollEvent);
 
 		MouseScrollEvent(glm::vec2 offset) : m_Offset(offset) {};
 		glm::vec2 GetPosition() const { return m_Offset; }
@@ -73,7 +73,7 @@ namespace Ganymede
 	class GANYMEDE_API KeyPressEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(KeyPressEvent);
 
 		KeyPressEvent(KeyCode keyCode) : m_KeyCode(keyCode) {};
 		KeyCode GetKeyCode() const { return m_KeyCode; }
@@ -85,7 +85,7 @@ namespace Ganymede
 	class GANYMEDE_API KeyReleaseEvent : public Event
 	{
 	public:
-		CREATE_EVENT_CLASS_ID();
+		CREATE_EVENT_CLASS_ID(KeyReleaseEvent);
 
 		KeyReleaseEvent(KeyCode keyCode) : m_KeyCode(keyCode) {};
 		KeyCode GetKeyCode() const { return m_KeyCode; }
