@@ -50,67 +50,74 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 
 	glm::vec3 worldBoundsMin(Numbers::MAX_FLOAT);
 	glm::vec3 worldBoundsMax(Numbers::MIN_FLOAT);
+
+	SCOPED_TIMER("Initializing static world objects");
+	for (auto asset : loadedAssets)
 	{
-		SCOPED_TIMER("Initializing static world objects");
-		for (auto asset : loadedAssets)
+		if (const SkeletalMeshWorldObject* smeshwo = dynamic_cast<const SkeletalMeshWorldObject*>(asset))
 		{
-			if (const SkeletalMeshWorldObject* smeshwo = dynamic_cast<const SkeletalMeshWorldObject*>(asset))
+			SkeletalMeshWorldObjectInstance* instance;
+			if (asset->GetName().find("Matschkopf") == 0)
 			{
-				SkeletalMeshWorldObjectInstance* instance;
-				if (asset->GetName().find("Matschkopf") == 0)
-				{
-					// In the glb file there is an object with above name. We create multiple autonomous intances of this npc
+				// In the glb file there is an object with above name. We create multiple autonomous intances of this npc
 					for (int i = 0; i < 800; ++i)
-					{
-						instance = new CreatureMeshWorldObjectInstance(smeshwo, *m_NavMesh, *m_PlayerCharacter, *m_PhysicsWorld, *m_World, *m_AssetLoader);
-						instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
-						m_World->AddToWorld(instance);
-					}
-				}
-				else
 				{
-					// Skeletal meshes are objects that are likely to change location and/or change bounding box dimension so set to mobility to "Dynamic"
-					// TODO: Skeletal meshes dont have physics boddies yet
-					if (instance = (SkeletalMeshWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName()))
-					{
-						// REWORK: SkeletalMeshWorldObjectInstance wont be stored automatically right now! Needs proper impelmenting (the entire type loading needs some touch up to be more generic) 
-						instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
-					}
-				}
-			}
-			else if (const MeshWorldObject* meshwo = dynamic_cast<const MeshWorldObject*>(asset))
-			{
-				MeshWorldObjectInstance* instance = (MeshWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName());
-
-				const glm::vec3& bbVertMin = instance->GetTransform() * glm::vec4(instance->GetMeshWorldObject()->m_Meshes[0]->m_BoundingBoxVertices[7].m_Position, 1.0f); //Left Bottom Front
-				const glm::vec3& bbVertMax = instance->GetTransform() * glm::vec4(instance->GetMeshWorldObject()->m_Meshes[0]->m_BoundingBoxVertices[1].m_Position, 1.0f); //Right Top Back
-
-				worldBoundsMin = glm::min(worldBoundsMin, bbVertMin);
-				worldBoundsMax = glm::max(worldBoundsMax, bbVertMax);
-				
-				instance->SetPhysicsWorld(*m_PhysicsWorld);
-
-				if (meshwo->GetPreferredPhysicsState() == MeshWorldObject::PreferredPhysicsState::Dynamic)
-				{
-					instance->MakeRigidBody(10);
-					instance->GetRigidBody().SetFriction(300.f);
-					instance->GetRigidBody().SetRestitution(.001f); // bouncyness ... less is less bouncy
-					instance->GetRigidBody().SetSleepingThresholds(5.f, 5.f);
+					instance = new CreatureMeshWorldObjectInstance(smeshwo, *m_NavMesh, *m_PlayerCharacter, *m_PhysicsWorld, *m_World, *m_AssetLoader);
 					instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
-				}
-				else if (meshwo->GetPreferredPhysicsState() == MeshWorldObject::PreferredPhysicsState::Static &&
-					!meshwo->GetExcludeFromNavigationMesh())
-				{
-					instance->MakeRigidBody(0);
+					m_World->AddToWorld(instance);
+					m_World->AddWorldObjectInstance(instance);
 				}
 			}
-			else if (dynamic_cast<const PointlightWorldObject*>(asset) != nullptr)
+			else
 			{
-				// Pointlights are also "WorldObjects" which can be used to create an instance of this pointlight data into the world. 
-				PointlightWorldObjectInstance* pointlight = (PointlightWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName());
+				// Skeletal meshes are objects that are likely to change location and/or change bounding box dimension so set to mobility to "Dynamic"
+				// TODO: Skeletal meshes dont have physics boddies yet
+				if (instance = (SkeletalMeshWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName()))
+				{
+					// REWORK: SkeletalMeshWorldObjectInstance wont be stored automatically right now! Needs proper impelmenting (the entire type loading needs some touch up to be more generic) 
+					instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
+					m_World->AddWorldObjectInstance(instance);
+				}
+			}
+
+				
+		}
+		else if (const MeshWorldObject* meshwo = dynamic_cast<const MeshWorldObject*>(asset))
+		{
+			MeshWorldObjectInstance* instance = (MeshWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName());
+			m_World->AddWorldObjectInstance(instance);
+
+			const glm::vec3& bbVertMin = instance->GetTransform() * glm::vec4(instance->GetMeshWorldObject()->m_Meshes[0]->m_BoundingBoxVertices[7].m_Position, 1.0f); //Left Bottom Front
+			const glm::vec3& bbVertMax = instance->GetTransform() * glm::vec4(instance->GetMeshWorldObject()->m_Meshes[0]->m_BoundingBoxVertices[1].m_Position, 1.0f); //Right Top Back
+
+			worldBoundsMin = glm::min(worldBoundsMin, bbVertMin);
+			worldBoundsMax = glm::max(worldBoundsMax, bbVertMax);
+				
+			instance->SetPhysicsWorld(*m_PhysicsWorld);
+
+			if (meshwo->GetPreferredPhysicsState() == MeshWorldObject::PreferredPhysicsState::Dynamic)
+			{
+				instance->MakeRigidBody(10);
+				instance->GetRigidBody().SetFriction(300.f);
+				instance->GetRigidBody().SetRestitution(.001f); // bouncyness ... less is less bouncy
+				instance->GetRigidBody().SetSleepingThresholds(5.f, 5.f);
+				instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
+			}
+			else if (meshwo->GetPreferredPhysicsState() == MeshWorldObject::PreferredPhysicsState::Static &&
+				!meshwo->GetExcludeFromNavigationMesh())
+			{
+				instance->MakeRigidBody(0);
 			}
 		}
+		else if (dynamic_cast<const PointlightWorldObject*>(asset) != nullptr)
+		{
+			// Pointlights are also "WorldObjects" which can be used to create an instance of this pointlight data into the world. 
+			PointlightWorldObjectInstance* pointlight = (PointlightWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName());
+
+			m_World->AddWorldObjectInstance(pointlight);
+		}
 	}
+
 	GM_INFO("World loaded. Size: {}, {}, {} x {}, {}, {}", worldBoundsMin.x, worldBoundsMin.y, worldBoundsMin.z, worldBoundsMax.x, worldBoundsMax.y, worldBoundsMax.z);
 
 	// Generate world partition octree

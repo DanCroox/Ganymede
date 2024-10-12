@@ -15,6 +15,8 @@ namespace Ganymede
 	class GANYMEDE_API CreatureMeshWorldObjectInstance : public SkeletalMeshWorldObjectInstance
 	{
 	public:
+		GM_GENERATE_CLASSTYPEINFO(CreatureMeshWorldObjectInstance, SkeletalMeshWorldObjectInstance);
+
 		enum AIState
 		{
 			Patroling,

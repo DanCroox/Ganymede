@@ -19,6 +19,8 @@ namespace Ganymede
 	class GANYMEDE_API WorldObjectInstance
 	{
 	public:
+		GM_GENERATE_BASE_CLASSTYPEINFO(WorldObjectInstance);
+
 		enum class Mobility
 		{
 			_Invalid,

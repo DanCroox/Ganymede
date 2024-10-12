@@ -15,6 +15,8 @@ namespace Ganymede
 	class GANYMEDE_API PointlightWorldObjectInstance : public WorldObjectInstance
 	{
 	public:
+		GM_GENERATE_CLASSTYPEINFO(PointlightWorldObjectInstance, WorldObjectInstance);
+
 		PointlightWorldObjectInstance(const PointlightWorldObject* pointLightWorldObject) :
 			WorldObjectInstance(pointLightWorldObject)
 		{

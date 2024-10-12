@@ -14,6 +14,8 @@ namespace Ganymede
 	class GANYMEDE_API MeshWorldObjectInstance : public WorldObjectInstance
 	{
 	public:
+		GM_GENERATE_CLASSTYPEINFO(MeshWorldObjectInstance, WorldObjectInstance);
+
 		struct OcclusionQueryInfo
 		{
 			unsigned int m_CollisionQueryID;

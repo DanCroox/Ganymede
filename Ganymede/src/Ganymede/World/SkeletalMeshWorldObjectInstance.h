@@ -12,6 +12,8 @@ namespace Ganymede
 	class GANYMEDE_API SkeletalMeshWorldObjectInstance : public MeshWorldObjectInstance
 	{
 	public:
+		GM_GENERATE_CLASSTYPEINFO(SkeletalMeshWorldObjectInstance, MeshWorldObjectInstance);
+
 		using MeshWorldObjectInstance::MeshWorldObjectInstance;
 
 		const SkeletalMeshWorldObject* GetSkeletalMeshWorldObject() const;

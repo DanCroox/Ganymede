@@ -13,6 +13,8 @@ namespace Ganymede
 		using MeshWorldObjectInstance::MeshWorldObjectInstance;
 
 	public:
+		GM_GENERATE_CLASSTYPEINFO(MeshWorldObjectInstanceDoor, MeshWorldObjectInstance);
+
 		void OnCreate() override;
 		void Tick(float deltaTime) override;
 
