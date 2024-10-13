@@ -79,8 +79,6 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 					m_World->AddWorldObjectInstance(instance);
 				}
 			}
-
-				
 		}
 		else if (const MeshWorldObject* meshwo = dynamic_cast<const MeshWorldObject*>(asset))
 		{

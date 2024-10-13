@@ -25,6 +25,7 @@
 #include <Ganymede/Input/MouseButtonCodes.h>
 #include <Ganymede/Common/Helpers.h>
 #include <Ganymede/Runtime/GMTime.h>
+#include <Ganymede/Core/TypeOrderedList.h>
 
 // --------- Application entry point ---------- //
 #include "Ganymede/Core/EntryPoint.h"
