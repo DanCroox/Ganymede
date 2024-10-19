@@ -32,42 +32,36 @@ namespace Ganymede
 
 	void World::Tick(double deltaTime)
 	{
-		const auto& worldObjectsInstances = GetAllWorldObjectInstances();
+		auto worldObjectsInstances = GetWorldObjectInstances<WorldObjectInstance>();
 		if (m_TickThreadPool == nullptr || m_TickThreadPool->size() == 0)
 		{
-			for (std::pair<WorldObject::Type, std::vector<WorldObjectInstance*>> element : worldObjectsInstances)
+			for (WorldObjectInstance* woi : worldObjectsInstances)
 			{
-				for (WorldObjectInstance* instance : element.second)
-				{
-					instance->InternalTick(deltaTime);
-				}
+				woi->InternalTick(deltaTime);
 			}
 		}
 		else
 		{
-			for (std::pair<WorldObject::Type, std::vector<WorldObjectInstance*>> element : worldObjectsInstances)
+			const unsigned int numThreads = m_TickThreadPool->size();
+			for (WorldObjectInstance* instance : worldObjectsInstances)
 			{
-				const unsigned int numThreads = m_TickThreadPool->size();
-				for (WorldObjectInstance* instance : element.second)
+				Thread* thread;
+				int threadIndex = 0;
+				while (true)
 				{
-					Thread* thread;
-					int threadIndex = 0;
-					while (true)
+					thread = &(*m_TickThreadPool)[threadIndex];
+					if (!thread->IsRunning())
 					{
-						thread = &(*m_TickThreadPool)[threadIndex];
-						if (!thread->IsRunning())
-						{
-							break;
-						}
-						threadIndex = (threadIndex + 1) % numThreads;
+						break;
 					}
-
-					thread->m_WorkerFunction = [instance, deltaTime]()
-						{
-							instance->InternalTick(deltaTime);
-						};
-					thread->Start();
+					threadIndex = (threadIndex + 1) % numThreads;
 				}
+
+				thread->m_WorkerFunction = [instance, deltaTime]()
+					{
+						instance->InternalTick(deltaTime);
+					};
+				thread->Start();
 			}
 		}
 
@@ -212,15 +206,4 @@ namespace Ganymede
 		worldObjectTypes.push_back(woInstance);
 		return woInstance;
 	}
-
-	const std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>>& World::GetAllWorldObjectInstances() const
-	{ 
-		return m_WorldObjectInstancesByType;
-	}
-
-	const std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>>& World::GetMeshInstances() const
-	{
-		return m_MeshesInstances;
-	}
-
 }

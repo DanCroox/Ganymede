@@ -8,6 +8,8 @@
 #include <mutex>
 #include "glm/glm.hpp"
 
+#include "Ganymede/World/Common/Types.h"
+
 class rcContext;
 class dtCrowd;
 class dtNavMesh;
@@ -133,7 +135,7 @@ namespace Ganymede
 			};
 		};
 
-		bool Generate(const std::vector<MeshWorldObjectInstance*> instances);
+		bool Generate(const ConstListSlice<MeshWorldObjectInstance*>& instances);
 		void CleanUp();
 
 		int FindPath(const glm::vec3& pStartPos, const glm::vec3& pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut);

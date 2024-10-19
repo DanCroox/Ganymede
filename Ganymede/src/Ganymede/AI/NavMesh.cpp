@@ -25,7 +25,7 @@ namespace Ganymede
 		m_Renderer = &renderer;
 	}
 
-	bool NavMesh::Generate(const std::vector<MeshWorldObjectInstance*> instances)
+	bool NavMesh::Generate(const ConstListSlice<MeshWorldObjectInstance*>& instances)
 	{
 		if (instances.size() == 0)
 		{

@@ -132,7 +132,8 @@ namespace Ganymede
 
 		// Find other creatures to keep distance from. Also let other creatures share awareness of player.
 		float closestNPCDistance = 100000.f;
-		const std::vector<SkeletalMeshWorldObjectInstance*>& npcs = *m_World->GetWorldObjectInstancesByType<SkeletalMeshWorldObjectInstance>();
+
+		const ConstListSlice<SkeletalMeshWorldObjectInstance*> npcs = m_World->GetWorldObjectInstances<SkeletalMeshWorldObjectInstance>();
 		for (const SkeletalMeshWorldObjectInstance* npc : npcs)
 		{
 			if (npc == this)

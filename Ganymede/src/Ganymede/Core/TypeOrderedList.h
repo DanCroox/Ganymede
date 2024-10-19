@@ -5,42 +5,159 @@
 
 namespace Ganymede
 {
-	template <typename T>
-	struct TypeListSection
-	{
-		typedef typename std::list<T>::iterator TypeListElement;
-
-		TypeListElement First;
-		TypeListElement LocalLast;
-		TypeListElement GlobalLast;
-		bool HasInstances = false;
-	};
-
-	template <typename T>
+	/// <summary>
+	/// TypeOrderedList is a 1 dimensional double linked list that stores objects according to its types in a special sorted order. 
+	/// Same types and derived types are stored in groups together, so that the most generic types are stored on top, followed by derivate types.
+	/// The start and end iterator of these groups are stored in a map with the given unique ClassID as key.
+	/// The TypeOrderedList allows to retrieve all objects of given type and/or all subtypes as a range of iterators. Lookups are fairly cheap, cause
+	/// it only requires a map lookup by a ClassID (which is a size_t in retail builds). This will return a const ObjectTypeGroup& which contains
+	/// the iterators for the requested block of types in the list.
+	/// </summary>
+	/// <typeparam name="DataEntryType">Type the container shall maintain</typeparam>
+	template <typename DataEntryType>
 	class TypeOrderedList
 	{
 	public:
-		template <typename SearchType>
-		TypeListSection<T> Get()
+		using DataContainerType = std::list<DataEntryType>;
+
+		// ObjectTypeGroup defines the type section within the list Data Container.
+		struct ObjectTypeGroup
 		{
-			const ClassID classID = SearchType::GetStaticClassTypeInfo().GetClassID();
+			using ObjectTypeElement = DataContainerType::iterator;
+
+			ObjectTypeElement First;
+			ObjectTypeElement LocalLast;
+			ObjectTypeElement GlobalLast;
+			bool HasInstances = false;
+		};
+
+		/// <summary>
+		/// Use by TransformView to transform iteratiors from base type into search type so client does not have to do it explicitly during iteration.
+		/// </summary>
+		/// <typeparam name="Iterator"></typeparam>
+		/// <typeparam name="ConversionType"></typeparam>
+		template<typename Iterator, typename ConversionType>
+		class StaticCastTransformIterator {
+		public:
+			StaticCastTransformIterator(Iterator iter)
+				: current(iter) {}
+
+			auto operator*() const {
+				return static_cast<ConversionType>(*current);
+			}
+
+			StaticCastTransformIterator& operator++() {
+				++current;
+				return *this;
+			}
+
+			bool operator!=(const StaticCastTransformIterator& other) const {
+				return current != other.current;
+			}
+
+		private:
+			Iterator current;
+		};
+
+		using iterator = DataContainerType::iterator;
+		using const_iterator = DataContainerType::const_iterator;
+
+		/// <summary>
+		/// Transforms the returned iterators into a view that transforms the base type (DataEntryType) into the search type, so client does not have to static_cast
+		/// elements during iteration.
+		/// </summary>
+		/// <typeparam name="ConversionType"></typeparam>
+		/// <typeparam name="IteratorType"></typeparam>
+		template<typename ConversionType, typename IteratorType>
+		class TransformView
+		{
+		public:
+			using QualifiedDataContainerType = std::conditional_t<std::is_same<IteratorType, const_iterator>::value, const DataContainerType, DataContainerType>;
+			using QualifiedIteratorType = std::conditional_t<std::is_same<IteratorType, const_iterator>::value, typename QualifiedDataContainerType::const_iterator, typename QualifiedDataContainerType::iterator>;
+
+			TransformView(QualifiedDataContainerType& container)
+				: m_Container(container), m_Begin(container.begin()), m_End(container.end()), m_Size(container.size()) {}
+			TransformView(QualifiedDataContainerType& container, QualifiedIteratorType begin, QualifiedIteratorType end)
+				: m_Container(container), m_Begin(begin), m_End(end), m_Size(container.size()) {}
+
+			// Implicit conversion from non-const iterator TransformView into const_iterator TransformView
+			operator TransformView<ConversionType, typename DataContainerType::const_iterator>() const
+			{
+				return TransformView<ConversionType, typename DataContainerType::const_iterator>(m_Container, m_Begin, m_End);
+			}
+
+			inline auto begin() const { return StaticCastTransformIterator<QualifiedIteratorType, ConversionType>(m_Begin); }
+			inline auto end() const { return StaticCastTransformIterator<QualifiedIteratorType, ConversionType>(m_End); }
+			inline unsigned int size() const { return m_Size; }
+			inline unsigned int empty() const { return m_Size == 0; }
+
+		private:
+			QualifiedDataContainerType& m_Container;
+			QualifiedIteratorType m_Begin;
+			QualifiedIteratorType m_End;
+			unsigned int m_Size;
+		};
+
+		/// <summary>
+		/// Returns an iterator view into the searched object group.
+		/// </summary>
+		/// <typeparam name="SearchType">Unqualified type to search for.</typeparam>
+		/// <typeparam name="IteratorType">Const or non const iterator selector (TypeOrderedList<T>::const_iterator or ::iterator)</typeparam>
+		/// <param name="includeChildren">True (Default) = Returns search type objects and all children. False = Will only return object of exact search type.</param>
+		/// <returns>View into the searched object type group in the list.</returns>
+		template <typename SearchType, typename IteratorType>
+		TransformView<SearchType, IteratorType> Get(bool includeChildren = true) const
+		{
+			using BaseSearchType = typename std::remove_cvref_t<std::remove_pointer_t<SearchType>>;
+			using BaseDataEntryType = typename std::remove_cvref_t<std::remove_pointer_t<DataEntryType>>;
+			static_assert(std::is_base_of<BaseDataEntryType, BaseSearchType>::value, "Search type is not base of list base type.");
+			const ClassID classID = BaseSearchType::GetStaticClassTypeInfo().GetClassID();
 
 			const auto sectionsIt = m_SectionsMapping.find(classID);
 			if (sectionsIt == m_SectionsMapping.end())
 			{
-				//static TypeListSection<T> empty = { m_SectionsMapping.begin(), m_SectionsMapping.end(), m_SectionsMapping.end(), false };
-				return TypeListSection<T>();
+				return TransformView<SearchType, IteratorType>(m_Elements, m_Elements.end(), m_Elements.end());
 			}
 
-			return sectionsIt->second;
+			ObjectTypeGroup mapping = sectionsIt->second;
+			return TransformView<SearchType, IteratorType> (m_Elements, mapping.First, includeChildren ? mapping.GlobalLast : mapping.LocalLast);
 		}
 
-		void Add(T instance)
+		/// <summary>
+		/// Returns an iterator view into the searched object group.
+		/// </summary>
+		/// <typeparam name="SearchType">Unqualified type to search for.</typeparam>
+		/// <typeparam name="IteratorType">Const or non const iterator selector (TypeOrderedList<T>::const_iterator or ::iterator)</typeparam>
+		/// <param name="includeChildren">True (Default) = Returns search type objects and all children. False = Will only return object of exact search type.</param>
+		/// <returns>View into the searched object type group in the list.</returns>
+		template <typename SearchType, typename IteratorType>
+		TransformView<SearchType, IteratorType> Get(bool includeChildren = true)
+		{
+			using BaseSearchType = typename std::remove_cvref_t<std::remove_pointer_t<SearchType>>;
+			using BaseDataEntryType = typename std::remove_cvref_t<std::remove_pointer_t<DataEntryType>>;
+			static_assert(std::is_base_of<BaseDataEntryType, BaseSearchType>::value, "Search type is not base of list base type.");
+			const ClassID classID = BaseSearchType::GetStaticClassTypeInfo().GetClassID();
+
+			const auto sectionsIt = m_SectionsMapping.find(classID);
+			if (sectionsIt == m_SectionsMapping.end())
+			{
+				return TransformView<SearchType, IteratorType>(m_Elements, m_Elements.end(), m_Elements.end());
+			}
+
+			ObjectTypeGroup mapping = sectionsIt->second;
+			return TransformView<SearchType, IteratorType>(m_Elements, mapping.First, includeChildren ? mapping.GlobalLast : mapping.LocalLast);
+		}
+
+		/// <summary>
+		/// Add new element into the list.
+		/// </summary>
+		/// <param name="instance"></param>
+		void Add(DataEntryType instance)
 		{
 			const ClassID templateClassID = instance->GetClassTypeInfo().GetClassID();
 
 			bool putOnTop = false;
-			typename TypeListSection<T>::TypeListElement newElement;
+			typename ObjectTypeGroup::ObjectTypeElement newElement;
 			if (m_SectionsMapping.empty())
 			{
 				// Empty instances array, just insert
@@ -61,7 +178,7 @@ namespace Ganymede
 					}
 					const bool isSubClassOrEqual = instance->GetClassTypeInfo().IsSubClassOf((*it->second.First)->GetClassTypeInfo());
 					putOnTop = (!isSubClassOrEqual) || templateClassID == classID;
-					const typename TypeListSection<T>::TypeListElement& insertLocation = putOnTop ? it->second.First : std::next(it->second.LocalLast);
+					const typename ObjectTypeGroup::ObjectTypeElement& insertLocation = putOnTop ? it->second.First : std::next(it->second.LocalLast);
 					newElement = m_Elements.insert(insertLocation, instance);
 					break;
 				}
@@ -76,10 +193,10 @@ namespace Ganymede
 				typeInfo = typeInfo->GetParentClassInfoType();
 
 				auto [it, inserted] = m_SectionsMapping.try_emplace(classID);
-				TypeListSection<T>& section = it->second;
-				typename TypeListSection<T>::TypeListElement& first = section.First;
-				typename TypeListSection<T>::TypeListElement& localLast = section.LocalLast;
-				typename TypeListSection<T>::TypeListElement& globalLast = section.GlobalLast;
+				ObjectTypeGroup& section = it->second;
+				typename ObjectTypeGroup::ObjectTypeElement& first = section.First;
+				typename ObjectTypeGroup::ObjectTypeElement& localLast = section.LocalLast;
+				typename ObjectTypeGroup::ObjectTypeElement& globalLast = section.GlobalLast;
 
 				if (templateClassID == classID)
 				{
@@ -104,7 +221,7 @@ namespace Ganymede
 					continue;
 				}
 
-				typename TypeListSection<T>::TypeListElement nextElementInList = std::next(newElement);
+				typename ObjectTypeGroup::ObjectTypeElement nextElementInList = std::next(newElement);
 				if (nextElementInList == m_Elements.end())
 				{
 					globalLast = newElement;
@@ -120,7 +237,7 @@ namespace Ganymede
 		}
 
 	private:
-		std::list<T> m_Elements;
-		std::unordered_map<ClassID, TypeListSection<T>> m_SectionsMapping;
+		DataContainerType m_Elements;
+		std::unordered_map<ClassID, ObjectTypeGroup> m_SectionsMapping;
 	};
 }

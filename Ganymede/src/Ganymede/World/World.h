@@ -2,8 +2,6 @@
 
 #include "Ganymede/Core/Core.h"
 
-
-
 #include "Ganymede/World/WorldObject.h"
 #include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
 #include <vector>
@@ -12,7 +10,7 @@
 #include <typeindex>
 #include <typeinfo> 
 #include <list> 
-#include "Ganymede/Core/TypeOrderedList.h"
+#include "Ganymede/World/Common/Types.h"
 
 namespace Ganymede
 {
@@ -21,16 +19,6 @@ namespace Ganymede
 	class MeshWorldObject;
 	class WorldObjectInstance;
 	class PointlightWorldObjectInstance;
-
-	typedef typename std::list<const WorldObjectInstance*>::iterator ListElement;
-
-	struct ListSection
-	{
-		ListElement First;
-		ListElement LocalLast;
-		ListElement GlobalLast;
-		bool HasInstances = false;
-	};
 
 	class GANYMEDE_API World
 	{
@@ -88,20 +76,21 @@ namespace Ganymede
 			return reinterpret_cast<const std::vector<PointlightWorldObjectInstance*>*>(instances);
 		}
 
-		const std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>>& GetAllWorldObjectInstances() const;
-		const std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>>& GetMeshInstances() const;
-
 		template <typename T>
-		TypeListSection<const WorldObjectInstance*> TryGetWorldObjectInstances()
+		ConstListSlice<T*> GetWorldObjectInstances() const
 		{
-			static_assert(std::is_base_of<WorldObjectInstance, T>::value, "You can only access instances of type WorldObjectInstance");
-			return m_WorldObjectInstancesSections.Get<T>();
+			return m_WorldObjectInstancesSections.Get<T*, WorldObjectInstanceList::const_iterator>();
 		}
 
 		template <typename T>
-		void AddWorldObjectInstance(const T* instance)
+		ListSlice<T*> GetWorldObjectInstances()
 		{
-			static_assert(std::is_base_of<WorldObjectInstance, T>::value, "You can only add instances of type WorldObjectInstance to world");
+			return m_WorldObjectInstancesSections.Get<T*, WorldObjectInstanceList::iterator>();
+		}
+
+		template <typename T>
+		void AddWorldObjectInstance(T* instance)
+		{
 			m_WorldObjectInstancesSections.Add(instance);
 		}
 
@@ -112,6 +101,6 @@ namespace Ganymede
 		std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>> m_WorldObjectInstancesByType;
 		std::unordered_map<const MeshWorldObject*, std::vector<MeshWorldObjectInstance*>> m_MeshesInstances;
 
-		TypeOrderedList<const WorldObjectInstance*> m_WorldObjectInstancesSections;
+		WorldObjectInstanceList m_WorldObjectInstancesSections;
 	};
 }

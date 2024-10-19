@@ -123,7 +123,7 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 	GM_INFO("World partitioning done.");
 
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-	m_NavMesh->Generate(*m_World->GetWorldObjectInstancesByType<MeshWorldObjectInstance>());
+	m_NavMesh->Generate(m_World->GetWorldObjectInstances<MeshWorldObjectInstance>());
 	auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - duration;
 	GM_INFO("Nav mesh generation done in {} ms.", dur.count());
 

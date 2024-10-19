@@ -562,7 +562,7 @@ namespace Ganymede
 
 		std::vector<LightWithCamDistance> lightsWithDistance;
 
-		const std::vector<PointlightWorldObjectInstance*>& lights = *world.GetWorldObjectInstancesByType<PointlightWorldObjectInstance>();
+		const auto lights = world.GetWorldObjectInstances<PointlightWorldObjectInstance>();
 		for (PointlightWorldObjectInstance* light : lights)
 		{
 			if (light->GetBrightness() <= 0 ||
@@ -937,37 +937,28 @@ namespace Ganymede
 		//inline const std::unordered_map<WorldObject::Type, std::vector<WorldObjectInstance*>>& GetAllWorldObjectInstances() { return m_WorldObjectInstancesByType; }
 
 		cameraRenderData.clear(); 
-		const auto& reff = m_World->GetAllWorldObjectInstances();
-		
-		for (const auto& [key, value] : reff)
+		const auto meshWorldObjectInstances = m_World->GetWorldObjectInstances<MeshWorldObjectInstance>();
+
+		for (const auto mwoi : meshWorldObjectInstances)
 		{
-			auto& mwois = reff.find(key)->second;
-			for (const auto* woi : mwois)
+			for (const MeshWorldObject::Mesh* mesh : mwoi->GetMeshWorldObject()->m_Meshes)
 			{
-				const MeshWorldObjectInstance* mwoi = dynamic_cast<const MeshWorldObjectInstance*>(woi);
-				if (mwoi == nullptr)
+				const auto& it = cameraRenderData.find(mesh);
+
+				std::vector<MeshInstancess>* minstances;
+				if (it == cameraRenderData.end())
 				{
-					continue;
+					auto [itpl, insertedpl] = cameraRenderData.emplace(mesh, std::vector<MeshInstancess>());
+					minstances = &(*itpl).second;
 				}
-				for (const MeshWorldObject::Mesh* mesh : mwoi->GetMeshWorldObject()->m_Meshes)
+				else
 				{
-					const auto& it = cameraRenderData.find(mesh);
-
-					std::vector<MeshInstancess>* minstances;
-					if (it == cameraRenderData.end())
-					{
-						auto [itpl, insertedpl] = cameraRenderData.emplace(mesh, std::vector<MeshInstancess>());
-						minstances = &(*itpl).second;
-					}
-					else
-					{
-						minstances = &it->second;
-					}
-
-					glm::mat4 camMv = m_Camera->GetTransform() * mwoi->GetTransform();
-
-					minstances->push_back({ mwoi, camMv, 0,0 });
+					minstances = &it->second;
 				}
+
+				glm::mat4 camMv = m_Camera->GetTransform() * mwoi->GetTransform();
+
+				minstances->push_back({ mwoi, camMv, 0,0 });
 			}
 		}
 
