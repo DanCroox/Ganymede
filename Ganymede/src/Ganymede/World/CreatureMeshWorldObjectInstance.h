@@ -63,8 +63,8 @@ namespace Ganymede
 		float m_AnimationPlaySpeedWalking = 0;
 		float m_AnimationPlaySpeedIdle = 0;
 
-		float interp;
-		float targetinterp;
+		float interp = 0.0f;
+		float targetinterp = 0.0f;
 
 		double m_LastUpdateTime = 0;
 
