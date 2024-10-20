@@ -64,7 +64,6 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 				{
 					instance = new CreatureMeshWorldObjectInstance(smeshwo, *m_NavMesh, *m_PlayerCharacter, *m_PhysicsWorld, *m_World, *m_AssetLoader);
 					instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
-					m_World->AddToWorld(instance);
 					m_World->AddWorldObjectInstance(instance);
 				}
 			}
@@ -127,7 +126,7 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 	auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - duration;
 	GM_INFO("Nav mesh generation done in {} ms.", dur.count());
 
-	const std::vector<MeshWorldObjectInstance*>& allMeshWorldObjectsInstances = *m_World->GetWorldObjectInstancesByType<MeshWorldObjectInstance>();
+	const auto allMeshWorldObjectsInstances = m_World->GetWorldObjectInstances<MeshWorldObjectInstance>();
 	for (const auto& mwoi : allMeshWorldObjectsInstances)
 	{
 		m_WorldPartitionManager->AddWorldObjectInstance(mwoi);

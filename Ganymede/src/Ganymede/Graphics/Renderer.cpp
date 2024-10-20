@@ -710,29 +710,21 @@ namespace Ganymede
 	{
 		SCOPED_TIMER("Collect Geometry For Rendering");
 
-		const std::vector<MeshWorldObjectInstance*>& mwois = *m_World->GetWorldObjectInstancesByType<MeshWorldObjectInstance>();
-		const std::vector<SkeletalMeshWorldObjectInstance*>* smwois = m_World->GetWorldObjectInstancesByType<SkeletalMeshWorldObjectInstance>();
-	
-		std::vector<MeshWorldObjectInstance*> allInstances;
-		allInstances.insert(allInstances.end(), mwois.begin(), mwois.end());
-		if (smwois != nullptr)
-			allInstances.insert(allInstances.end(), smwois->begin(), smwois->end());
+		const glm::mat4& cameraProjection = m_Camera->GetProjection();
+		const glm::mat4& cameraTransform = m_Camera->GetTransform();
+		const glm::mat4 cameraViewProjection = cameraProjection * cameraTransform;
 
-		const unsigned int numInstances = allInstances.size();
+		const auto instances = m_World->GetWorldObjectInstances<MeshWorldObjectInstance>();
+		const unsigned int numInstances = instances.size();
+		const unsigned int numThreads = m_RendererThreadPool.size();
+		const unsigned int threadsRequired = glm::min(numThreads, numInstances);
+		auto nextIterator = instances.begin();
 
-		unsigned int numThreads = m_RendererThreadPool.size();
-		unsigned int totalProcessed = 0;
-
-		const glm::mat4& proj = m_Camera->GetProjection();
-		const glm::mat4& trans = m_Camera->GetTransform();
-		const glm::mat4 camVP = proj * trans;
-
-		for (unsigned int threadIndex = 0; threadIndex < numThreads; ++threadIndex)
+		unsigned int numInstancesLeft = numInstances;
+		for (unsigned int threadIndex = 0; threadIndex < threadsRequired; ++threadIndex)
 		{
-			const unsigned int perThread = glm::ceil((float)(numInstances - totalProcessed) / (numThreads - threadIndex));
-			const unsigned int numIndicesToProcess = glm::min(numInstances - totalProcessed, perThread);
-			if (numIndicesToProcess <= 0)
-				break;
+			unsigned int currentIncrement = glm::ceil(static_cast<float>(numInstancesLeft) / (numThreads- threadIndex));
+			numInstancesLeft -= currentIncrement;
 
 			auto& outDataForCamera = m_RenderDataBuffer.m_CameraRenderDataBuffer[threadIndex];
 			auto& outDataForPointlights = m_RenderDataBuffer.m_PointlightsRenderDataBuffer[threadIndex];
@@ -740,51 +732,51 @@ namespace Ganymede
 			outDataForCamera.clear();
 			outDataForPointlights.clear();
 
-			m_RendererThreadPool[threadIndex].m_WorkerFunction = [totalProcessed, numIndicesToProcess, &allInstances, &camVP, &trans, &outDataForCamera, &outDataForPointlights, &pointlightsForOcclusionTest]()
+			Thread& thread = m_RendererThreadPool[threadIndex];
+			thread.m_WorkerFunction = [nextIterator, currentIncrement, &cameraViewProjection, &cameraTransform, &outDataForCamera, &outDataForPointlights, &pointlightsForOcclusionTest]() mutable
 			{
-				for (unsigned int i = totalProcessed; i < totalProcessed + numIndicesToProcess; ++i)
+				for (unsigned int instanceIndex = 0; instanceIndex < currentIncrement; ++instanceIndex)
 				{
-					MeshWorldObjectInstance* mwoi = allInstances[i];
-								
+					MeshWorldObjectInstance* mwoi = *nextIterator;
+
 					glm::mat4 instanceTransform = mwoi->GetTransform();
-					glm::mat4 camMvp = camVP * instanceTransform;
-					glm::mat4 camMv = trans * instanceTransform;
+					glm::mat4 camMvp = cameraViewProjection * instanceTransform;
+					glm::mat4 camMv = cameraTransform * instanceTransform;
 
 					for (const MeshWorldObject::Mesh* mesh : mwoi->GetMeshWorldObject()->m_Meshes)
 					{
-					
-							auto [it, inserted] = outDataForCamera.emplace(mesh, std::vector<MeshInstancess>());
-							std::vector<MeshInstancess>& meshInstancesCamera = (*it).second;
+						auto [it, inserted] = outDataForCamera.emplace(mesh, std::vector<MeshInstancess>());
+						std::vector<MeshInstancess>& meshInstancesCamera = (*it).second;
 
-							// Frustum cull from camera projection
-							MeshInstancess mInstance;
-							mInstance.m_MVP = camMv;
+						// Frustum cull from camera projection
+						MeshInstancess mInstance;
+						mInstance.m_MVP = camMv;
 
-							int clipSides[6];
-							for (const MeshWorldObject::Mesh::BoundingBoxVertex& bbVert : mesh->m_BoundingBoxVertices)
-							{
-								glm::vec4 clipPoint = camMvp * glm::vec4(bbVert.m_Position, 1);
+						int clipSides[6];
+						for (const MeshWorldObject::Mesh::BoundingBoxVertex& bbVert : mesh->m_BoundingBoxVertices)
+						{
+							glm::vec4 clipPoint = camMvp * glm::vec4(bbVert.m_Position, 1);
 
-								clipSides[0] += clipPoint.x < -clipPoint.w; //left of Left plane
-								clipSides[1] += clipPoint.x > clipPoint.w;  //right of Right plane
-								clipSides[2] += clipPoint.y < -clipPoint.w; //below Bottom plane
-								clipSides[3] += clipPoint.y > clipPoint.w;  //above Top plane
-								clipSides[4] += clipPoint.z < -clipPoint.w; //in front of Near plane
-								clipSides[5] += clipPoint.z > clipPoint.w;  //behind Far plane
-							}
+							clipSides[0] += clipPoint.x < -clipPoint.w; //left of Left plane
+							clipSides[1] += clipPoint.x > clipPoint.w;  //right of Right plane
+							clipSides[2] += clipPoint.y < -clipPoint.w; //below Bottom plane
+							clipSides[3] += clipPoint.y > clipPoint.w;  //above Top plane
+							clipSides[4] += clipPoint.z < -clipPoint.w; //in front of Near plane
+							clipSides[5] += clipPoint.z > clipPoint.w;  //behind Far plane
+						}
 
-							const bool isOutSideFrustum = clipSides[0] == 8 || clipSides[1] == 8 || clipSides[2] == 8 ||
-								clipSides[3] == 8 || clipSides[4] == 8 || clipSides[5] == 8;
+						const bool isOutSideFrustum = clipSides[0] == 8 || clipSides[1] == 8 || clipSides[2] == 8 ||
+							clipSides[3] == 8 || clipSides[4] == 8 || clipSides[5] == 8;
 
-							if (!isOutSideFrustum)
-							{
-								mInstance.m_Instance = mwoi;
-								meshInstancesCamera.push_back(mInstance);
-							}
-					
+						if (!isOutSideFrustum)
+						{
+							mInstance.m_Instance = mwoi;
+							meshInstancesCamera.push_back(mInstance);
+						}
 
 						if (!mwoi->GetCastShadows())
 						{
+							++nextIterator;
 							continue;
 						}
 						auto [itpl, insertedpl] = outDataForPointlights.emplace(mesh, std::vector<MeshInstancess>());
@@ -792,11 +784,10 @@ namespace Ganymede
 
 						// Frustum cull from poinlight cubemap faces projections
 						{
-
 							for (unsigned int lightIndex = 0; lightIndex < pointlightsForOcclusionTest.size(); ++lightIndex)
 							{
 								const PointLight& pl = pointlightsForOcclusionTest[lightIndex];
-							
+
 								//TODO: Add distace culling for geometry which is outside of light radius of this pointlight
 								for (int faceIdx = 0; faceIdx < 6; ++faceIdx)
 								{
@@ -816,7 +807,7 @@ namespace Ganymede
 										clipSides[4] += clipPoint.z < -clipPoint.w; //in front of Near plane
 										clipSides[5] += clipPoint.z > clipPoint.w;  //behind Far plane
 									}
-								
+
 									const bool isOutSideFrustum = clipSides[0] == 8 || clipSides[1] == 8 || clipSides[2] == 8 ||
 										clipSides[3] == 8 || clipSides[4] == 8 || clipSides[5] == 8;
 
@@ -832,14 +823,18 @@ namespace Ganymede
 							}
 						}
 					}
+					++nextIterator;
 				}
 			};
 
-			m_RendererThreadPool[threadIndex].Start();
-
-			totalProcessed += numIndicesToProcess;
+			thread.Start();
+			
+			// advance iterator
+			for (int i = 0; i < currentIncrement; ++i)
+			{
+				++nextIterator;
+			}
 		}
-
 		{
 			SCOPED_TIMER("Frustum Culling");
 
@@ -1105,8 +1100,8 @@ namespace Ganymede
 			//Update Transform buffer for instances
 			GLCall(glGenBuffers(1, &m_InstanceDataBuffer));
 			GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_InstanceDataBuffer));
-			GLCall(glBufferData(GL_ARRAY_BUFFER, 5000 * sizeof(IData), nullptr, GL_STREAM_DRAW));
-			GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+			GLCall(glBufferData(GL_ARRAY_BUFFER, 100000 * sizeof(IData), nullptr, GL_STREAM_DRAW)); // IMPORTANT: Size of PID (per instance data) should be concidered well.
+			GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));												// Remember omnilights uses instances for rendering every 6 side. PID can grow real quick.
 		}
 
 		std::vector<const MeshWorldObject::Mesh*> meshesSortedByMaterial;

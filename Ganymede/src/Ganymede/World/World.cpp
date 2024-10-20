@@ -1,16 +1,13 @@
 #include "World.h"
-#include "Ganymede/System/Types.h"
 
 #include "Ganymede/Data/AssetLoader.h"
-#include "PointlightWorldObjectInstance.h"
-#include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
-#include <algorithm>
-#include "PointlightWorldObjectInstance.h"
-#include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
-#include "Ganymede/World/PointlightWorldObject.h"
-#include "Ganymede/World/WorldObjectInstance.h"
-#include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/System/Thread.h"
+#include "Ganymede/System/Types.h"
+#include "Ganymede/World/MeshWorldObject.h"
+#include "Ganymede/World/PointlightWorldObject.h"
+#include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
+#include "Ganymede/World/WorldObjectInstance.h"
+#include "PointlightWorldObjectInstance.h"
 
 
 namespace Ganymede
@@ -19,15 +16,11 @@ namespace Ganymede
 
 	World::~World()
 	{
-		for (std::pair<WorldObject::Type, std::vector<WorldObjectInstance*>> element : m_WorldObjectInstancesByType)
+		auto instances = GetWorldObjectInstances<WorldObjectInstance>();
+		for (auto instance : instances)
 		{
-			for (WorldObjectInstance* instance : element.second)
-			{
-				delete instance;
-			}
+			delete instance;
 		}
-
-		m_WorldObjectInstancesByType.clear();
 	}
 
 	void World::Tick(double deltaTime)
@@ -76,71 +69,6 @@ namespace Ganymede
 		}
 	}
 
-	void World::AddToWorld(WorldObjectInstance* instance)
-	{
-		// TODO: Currently only isntances witha meshworld object are allowed... theoretically we could create them without a world object - but implement once needed
-		if (instance == nullptr)
-		{
-			return;
-		}
-
-		const WorldObject* worldObject = instance->GetWorldObject();
-
-		const WorldObject::Type worldObjectType = worldObject->GetType();
-
-		if (m_WorldObjectInstancesByType.find(worldObjectType) == m_WorldObjectInstancesByType.end())
-		{
-			m_WorldObjectInstancesByType.insert(std::make_pair(worldObjectType, std::vector<WorldObjectInstance*>()));
-		}
-
-		std::vector<WorldObjectInstance*>& worldObjectTypes = m_WorldObjectInstancesByType[worldObjectType];
-
-		if (worldObjectType == WorldObject::Type::Mesh || worldObjectType == WorldObject::Type::SkeletalMesh)
-		{
-			const MeshWorldObject* object = static_cast<const MeshWorldObject*>(instance->GetWorldObject());
-
-			instance->SetVisible(true);
-
-			if (m_MeshesInstances.find(object) == m_MeshesInstances.end())
-			{
-				m_MeshesInstances[object] = std::vector<MeshWorldObjectInstance*>();
-			}
-
-			std::vector<MeshWorldObjectInstance*>& meshInstances = m_MeshesInstances[object];
-			meshInstances.push_back(static_cast<MeshWorldObjectInstance*>(instance));
-
-			worldObjectTypes.push_back(instance);
-			return;
-		}
-
-		if (worldObjectType == WorldObject::Type::PointLight)
-		{
-			const PointlightWorldObject* object = static_cast<const PointlightWorldObject*>(worldObject);
-			PointlightWorldObjectInstance* woInstance = new PointlightWorldObjectInstance(object);
-			woInstance->SetVisible(true);
-
-			worldObjectTypes.push_back(woInstance);
-
-			return;
-		}
-
-		// unknown type
-		ASSERT("Unkown world object type!");
-	}
-
-	const WorldObject* World::FindWorldObjectByName(WorldObject::Type objectType, const std::string& worldObjectName)
-	{
-		const WorldObject* worldObject = m_AssetLoader.GetWorldObjectByName(worldObjectName);
-
-		if (worldObject == nullptr || worldObject->GetType() != objectType)
-		{
-			// No world object type with given name existent
-			return nullptr;
-		}
-
-		return worldObject;
-	}
-
 	WorldObjectInstance* World::CreateWorldObjectInstance(const std::string& worldObjectName)
 	{
 		const WorldObject* worldObject = m_AssetLoader.GetWorldObjectByName(worldObjectName);
@@ -152,12 +80,6 @@ namespace Ganymede
 		}
 
 		const WorldObject::Type worldObjectType = worldObject->GetType();
-		if (m_WorldObjectInstancesByType.find(worldObjectType) == m_WorldObjectInstancesByType.end())
-		{
-			m_WorldObjectInstancesByType.insert(std::make_pair(worldObjectType, std::vector<WorldObjectInstance*>()));
-		}
-
-		std::vector<WorldObjectInstance*>& worldObjectTypes = m_WorldObjectInstancesByType[worldObjectType];
 
 		if (worldObjectType == WorldObject::Type::Mesh || worldObjectType == WorldObject::Type::SkeletalMesh)
 		{
@@ -166,44 +88,18 @@ namespace Ganymede
 			MeshWorldObjectInstance* woInstance = new MeshWorldObjectInstance(object);
 			woInstance->SetVisible(true);
 
-			if (m_MeshesInstances.find(object) == m_MeshesInstances.end())
-			{
-				m_MeshesInstances[object] = std::vector<MeshWorldObjectInstance*>();
-			}
-
-			m_MeshesInstances[object].push_back(woInstance);
-
-			worldObjectTypes.push_back(woInstance);
 			return woInstance;
 		}
-
-		if (worldObjectType == WorldObject::Type::PointLight)
+		else if (worldObjectType == WorldObject::Type::PointLight)
 		{
 			const PointlightWorldObject* object = static_cast<const PointlightWorldObject*>(worldObject);
 			PointlightWorldObjectInstance* woInstance = new PointlightWorldObjectInstance(object);
 			woInstance->SetVisible(true);
 
-			worldObjectTypes.push_back(woInstance);
 			return woInstance;
 		}
 
 		// Type unknown or None!
 		return nullptr;
-	}
-
-	template<>
-	PointlightWorldObjectInstance* World::CreateEmptyWorldObjectInstance()
-	{
-		const WorldObject::Type worldObjectType = WorldObject::Type::PointLight;
-		if (m_WorldObjectInstancesByType.find(worldObjectType) == m_WorldObjectInstancesByType.end())
-		{
-			m_WorldObjectInstancesByType.insert(std::make_pair(worldObjectType, std::vector<WorldObjectInstance*>()));
-		}
-
-		std::vector<WorldObjectInstance*>& worldObjectTypes = m_WorldObjectInstancesByType[worldObjectType];
-		PointlightWorldObjectInstance* woInstance = new PointlightWorldObjectInstance(nullptr);
-
-		worldObjectTypes.push_back(woInstance);
-		return woInstance;
 	}
 }
