@@ -2,10 +2,11 @@
 
 #include "Ganymede/Core/Core.h"
 
-#include <iostream>
-#include <string>
 #include "glm/glm.hpp"
 #include <chrono>
+#include <iostream>
+#include <mutex>
+#include <string>
 #include <unordered_map>
 
 class btTransform;
@@ -28,7 +29,7 @@ namespace Ganymede
 		public:
 			ScopedTimer(const char* message)
 			{
-
+				std::scoped_lock(m_Mutex);
 				m_StartMicros = duration_cast<microseconds>(
 					system_clock::now().time_since_epoch()
 				).count();
@@ -37,29 +38,29 @@ namespace Ganymede
 
 			~ScopedTimer()
 			{
+				std::scoped_lock(m_Mutex);
 				const uint64_t endMicros = duration_cast<microseconds>(
 					system_clock::now().time_since_epoch()
 				).count();
 
 				const float msTakenFloat = static_cast<float>(endMicros - m_StartMicros);
-
-				std::unordered_map<const char*, float>::const_iterator it = m_Timings.find(m_Message);
-
-				float* time;
-				if (it == m_Timings.end())
+				const auto [it, inserted] = m_Timings.try_emplace(m_Message);
+				float& time = it->second;
+				if (inserted)
 				{
-					m_Timings[m_Message] = 0.f;
+					time = 0.0f;
 				}
-				time = &m_Timings[m_Message];
-
-				(*time) += msTakenFloat;
+				time += msTakenFloat;
 			}
 
-			static std::unordered_map<const char*, float> m_Timings;
+			static inline const std::unordered_map<const char*, float>& GetData() { return m_Timings; }
+			static inline void ClearData() { m_Timings.clear(); }
 
 		private:
+			static std::unordered_map<const char*, float> m_Timings;
 			double m_StartMicros;
 			const char* m_Message;
+			static std::mutex m_Mutex;
 		};
 
 		class GANYMEDE_API NamedCounter
@@ -67,16 +68,14 @@ namespace Ganymede
 		public:
 			static void Increment(const char* name, unsigned int number)
 			{
-				std::unordered_map<const char*, unsigned int>::const_iterator it = m_NamedCounts.find(name);
-
-				unsigned int* counts;
-				if (it == m_NamedCounts.end())
+				std::scoped_lock(m_Mutex);
+				const auto [it, inserted] = m_NamedCounts.try_emplace(name);
+				unsigned int& counts = it->second;
+				if (inserted)
 				{
-					m_NamedCounts[name] = 0;
+					counts = 0;
 				}
-				counts = &m_NamedCounts[name];
-
-				(*counts) += number;
+				counts += number;
 			}
 
 			static void Increment(const char* name)
@@ -84,7 +83,12 @@ namespace Ganymede
 				Increment(name, 1);
 			}
 
+			static inline const std::unordered_map<const char*, unsigned int>& GetData() { return m_NamedCounts; }
+			static inline void ClearData() { m_NamedCounts.clear(); }
+
+		private:
 			static std::unordered_map<const char*, unsigned int> m_NamedCounts;
+			static std::mutex m_Mutex;
 		};
 
 #define SCOPED_TIMER(msg) \
@@ -94,7 +98,7 @@ static_cast<void>(timer); \
 #define NAMED_COUNTER(msg)\
 Helpers::NamedCounter::Increment(msg);
 #define NUMBERED_NAMED_COUNTER(msg, number)\
-Helpers::NamedCounter::Increment(msg, number); 
+Helpers::NamedCounter::Increment(msg, number);
 
 		static std::string ParseFileNameFromPath(const std::string& path)
 		{

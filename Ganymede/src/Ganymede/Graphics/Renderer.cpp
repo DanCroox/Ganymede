@@ -1139,7 +1139,7 @@ namespace Ganymede
 			std::unordered_map<const MeshWorldObject::Mesh*, unsigned int>::const_iterator it = objectPtr.find(mesh);
 			if (it == objectPtr.end()) 
 			{
-				// IDs für das VAO und VBO
+				// IDs fï¿½r das VAO und VBO
 				unsigned int VBO;
 
 				// VAO erstellen
@@ -1233,6 +1233,7 @@ namespace Ganymede
 			GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_InstanceDataBuffer));
 			for (const MeshInstancess& instance : mInstances)
 			{
+				SCOPED_TIMER("Instance Data Preparation");
 				const MeshWorldObjectInstance* mwoi = instance.m_Instance;
 				glm::mat4 instanceTransform;
 				if (mwoi->GetRigidBody().IsValid() && renderPass == RenderPass::Debug)

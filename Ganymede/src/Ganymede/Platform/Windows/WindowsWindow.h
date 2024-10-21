@@ -28,6 +28,7 @@ namespace Ganymede
 		using Window::Window;
 
 	private:
+		void DrawStats(double deltaTime, double gameTime);
 		void TerminateWindow();
 
 		GLFWwindow* m_GLFWWindow = nullptr;

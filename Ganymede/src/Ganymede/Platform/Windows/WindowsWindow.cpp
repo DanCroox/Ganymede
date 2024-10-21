@@ -6,7 +6,11 @@
 #include "GLFW/glfw3.h"
 #include "Ganymede/Log/Log.h"
 #include "Ganymede/Runtime/WindowEvents.h"
+#include "Ganymede/Common/Helpers.h"
 
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 
 #include <algorithm>
 
@@ -63,6 +67,15 @@ namespace Ganymede
             glfwSetInputMode(m_GLFWWindow, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
 
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGui::StyleColorsDark();
+        ImGui_ImplGlfw_InitForOpenGL(m_GLFWWindow, true);
+#ifdef __EMSCRIPTEN__
+        ImGui_ImplGlfw_InstallEmscriptenCallbacks(window, "#canvas");
+#endif
+        ImGui_ImplOpenGL3_Init("#version 460");
+
         return true;
     }
 
@@ -79,15 +92,24 @@ namespace Ganymede
         double deltaTime = 0;
         unsigned int frameIndex = 0;
 
+        bool show_demo_window = true;
+        bool show_another_window = true;
+        ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 0.00f);
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
         while (!glfwWindowShouldClose(m_GLFWWindow))
         {
             glfwPollEvents();
 
             deltaTime = glfwGetTime() - gameTime;
             gameTime = glfwGetTime();
-            m_EventSystem.NotifyEvent(WindowTickEvent(deltaTime, gameTime, frameIndex));
-            ++frameIndex;
 
+            m_EventSystem.NotifyEvent(WindowTickEvent(deltaTime, gameTime, frameIndex));
+            DrawStats(deltaTime, gameTime);
+
+            ++frameIndex;
             glfwSwapBuffers(m_GLFWWindow);
         }
 
@@ -109,8 +131,46 @@ namespace Ganymede
         return m_IsVSyncEnabled;
     }
 
+    void WindowsWindow::DrawStats(double deltaTime, double gameTime)
+    {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+
+        ImGui::Begin("Overlay", nullptr, window_flags);
+        ImGui::Text("FPS: %f", 1.0f / deltaTime);
+        for (const auto& pair : Helpers::ScopedTimer::GetData())
+        {
+            ImGui::Text("%s: %f", pair.first, pair.second * 0.001f);
+        }
+        for (const auto& pair : Helpers::NamedCounter::GetData())
+        {
+            ImGui::Text("%s: %d", pair.first, pair.second);
+        }
+        Helpers::ScopedTimer::ClearData();
+        Helpers::NamedCounter::ClearData();
+
+        ImGui::End();
+
+        ImGui::Render();
+        int display_w, display_h;
+        glfwGetFramebufferSize(m_GLFWWindow, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
     void WindowsWindow::TerminateWindow()
     {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
         glfwDestroyWindow(m_GLFWWindow);
         GM_CORE_INFO("glfw window destroyed.");
 

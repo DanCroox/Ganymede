@@ -54,5 +54,4 @@ namespace Ganymede
 	{
 		return glm::quat(btQuat.w(), btQuat.x(), btQuat.y(), btQuat.z());
 	}
-
 }

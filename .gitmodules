@@ -16,3 +16,6 @@
 [submodule "Ganymede/vendor/recastnavigation"]
 	path = Ganymede/vendor/recastnavigation
 	url = https://github.com/DanCroox/recastnavigation
+[submodule "Ganymede/vendor/imgui"]
+	path = Ganymede/vendor/imgui
+	url = https://github.com/DanCroox/imgui

@@ -49,6 +49,8 @@ project "DetourRecast"
         language "C++"
 	staticruntime "Off"
 
+	flags { "MultiProcessorCompile" }
+
         targetdir (bindir .. outputdir .. "/%{prj.name}")
 	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
 
@@ -82,12 +84,50 @@ project "DetourRecast"
 	filter { "configurations:Release or configurations:Retail" }
     		optimize "On"
 
+project "imgui"
+	location "Ganymede/vendor/imgui"
+	kind "StaticLib"
+	language "C"
+	staticruntime "Off"
+
+	flags { "MultiProcessorCompile" }
+
+	targetdir (bindir .. outputdir .. "/%{prj.name}")
+	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
+
+	files
+	{
+		"Ganymede/vendor/imgui/*.h",
+		"Ganymede/vendor/imgui/*.cpp",
+		"Ganymede/vendor/imgui/backends/imgui_impl_glfw.cpp",
+		"Ganymede/vendor/imgui/backends/imgui_impl_glfw.h",
+		"Ganymede/vendor/imgui/backends/imgui_impl_opengl3.cpp",
+		"Ganymede/vendor/imgui/backends/imgui_impl_opengl3.h"
+	}
+
+	includedirs
+	{
+		"Ganymede/vendor/imgui",
+		"Ganymede/vendor/glfw/include"
+	}
+
+
+	filter "system:windows"
+		systemversion "latest"
+
+	filter "configurations:Debug"
+		symbols "On"
+
+	filter { "configurations:Release or configurations:Retail" }
+    		optimize "On"
 
 project "stb_image"
 	location "Ganymede/vendor/stb_image"
 	kind "StaticLib"
 	language "C"
 	staticruntime "Off"
+
+	flags { "MultiProcessorCompile" }
 
 	targetdir (bindir .. outputdir .. "/%{prj.name}")
 	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
@@ -102,7 +142,6 @@ project "stb_image"
 	{
 		"Ganymede/vendor/stb_image"
 	}
-
 
 	filter "system:windows"
 		systemversion "latest"
@@ -149,7 +188,8 @@ project "Ganymede"
 		"Ganymede/vendor/recastnavigation/DetourCrowd/include",
 		"Ganymede/vendor/recastnavigation/DetourTileCache/include",
 		"Ganymede/vendor/recastnavigation/Recast/include",
-		"Ganymede/vendor/stb_image"
+		"Ganymede/vendor/stb_image",
+		"Ganymede/vendor/imgui"
 	}
 
 	filter "system:windows"
@@ -182,6 +222,7 @@ project "Ganymede"
 		}
 		links
 		{
+			"imgui",
 			"stb_image",
 			"DetourRecast",
 			"opengl32.lib",
@@ -213,6 +254,7 @@ project "Ganymede"
     		}
     		links
     		{
+			"imgui",
 			"stb_image",
 			"DetourRecast",
 			"opengl32.lib",
