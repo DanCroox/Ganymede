@@ -60,7 +60,7 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 			if (asset->GetName().find("Matschkopf") == 0)
 			{
 				// In the glb file there is an object with above name. We create multiple autonomous intances of this npc
-					for (int i = 0; i < 800; ++i)
+					for (int i = 0; i < 100; ++i)
 				{
 					instance = new CreatureMeshWorldObjectInstance(smeshwo, *m_NavMesh, *m_PlayerCharacter, *m_PhysicsWorld, *m_World, *m_AssetLoader);
 					instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);

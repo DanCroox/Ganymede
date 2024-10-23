@@ -257,10 +257,3 @@ namespace Ganymede
 		ASSERT(m_WalkingAnimationFrame < m_WalkingAnimation->m_Bones[0].m_Frames.size());
 	}
 }
-
-
-
-
-
-
-

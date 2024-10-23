@@ -1,7 +1,7 @@
 #include "World.h"
 
+#include "Ganymede/Common/Helpers.h"
 #include "Ganymede/Data/AssetLoader.h"
-#include "Ganymede/System/Thread.h"
 #include "Ganymede/System/Types.h"
 #include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/World/PointlightWorldObject.h"
@@ -12,7 +12,7 @@
 
 namespace Ganymede
 {
-	World::World(AssetLoader& assetLoader) : m_AssetLoader(assetLoader) {};
+	World::World(AssetLoader& assetLoader) : m_AssetLoader(assetLoader) {}
 
 	World::~World()
 	{
@@ -25,8 +25,9 @@ namespace Ganymede
 
 	void World::Tick(double deltaTime)
 	{
+		SCOPED_TIMER("World Tick");
 		auto worldObjectsInstances = GetWorldObjectInstances<WorldObjectInstance>();
-		if (m_TickThreadPool == nullptr || m_TickThreadPool->size() == 0)
+		if (m_TickThreadPool.size() == 0)
 		{
 			for (WorldObjectInstance* woi : worldObjectsInstances)
 			{
@@ -35,18 +36,19 @@ namespace Ganymede
 		}
 		else
 		{
-			const unsigned int numThreads = m_TickThreadPool->size();
+			const unsigned int numThreads = m_TickThreadPool.size();
 			for (WorldObjectInstance* instance : worldObjectsInstances)
 			{
 				Thread* thread;
 				int threadIndex = 0;
 				while (true)
 				{
-					thread = &(*m_TickThreadPool)[threadIndex];
+					thread = &(m_TickThreadPool[threadIndex]);
 					if (!thread->IsRunning())
 					{
 						break;
 					}
+					// Check if next thread is not busy
 					threadIndex = (threadIndex + 1) % numThreads;
 				}
 
@@ -59,13 +61,10 @@ namespace Ganymede
 		}
 
 		// Wait for all threads to finish
-		if (m_TickThreadPool != nullptr)
+
+		for (Thread& thread : m_TickThreadPool)
 		{
-			TickThreadPool& threadPool = *m_TickThreadPool;
-			for (const Thread& thread : threadPool)
-			{
-				while (thread.IsRunning());
-			}
+			thread.Join();
 		}
 	}
 

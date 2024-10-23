@@ -39,7 +39,8 @@ namespace Ganymede
 		std::thread m_Thread;
 		std::mutex m_Mutex;
 		std::condition_variable m_CV;
-		volatile bool m_IsRunning; //TODO: Technically only this line needs volatile. For safety we use for both lines. No 100% sure yet why it is necessary. Need more investigation later.
-		volatile bool m_DoTerminate;
+
+		std::atomic<bool> m_IsRunning; //TODO: Technically only this line needs volatile. For safety we use for both lines. No 100% sure yet why it is necessary. Need more investigation later.
+		std::atomic<bool> m_DoTerminate;
 	};
 }

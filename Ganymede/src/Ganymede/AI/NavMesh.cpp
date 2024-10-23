@@ -516,9 +516,9 @@ namespace Ganymede
 
 	// 0 for the slot to save the path too, and 0 as the "target", to remember what the path was for.
 	// will return a negative number if the search for a path failed.
-
 	int NavMesh::FindPath(const glm::vec3& pStartPos, const glm::vec3& pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut)
 	{
+		std::scoped_lock lock(m_Mutex);
 		pathOut.clear();
 
 		dtStatus status;

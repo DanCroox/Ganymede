@@ -2,13 +2,15 @@
 
 #include "Ganymede/Core/Core.h"
 
+#include "Ganymede/System/Thread.h"
 #include "Ganymede/World/Common/Types.h"
 #include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
+#include <array>
 #include <string>
+
 
 namespace Ganymede
 {
-	class Thread;
 	class AssetLoader;
 	class MeshWorldObject;
 	class WorldObjectInstance;
@@ -44,8 +46,7 @@ namespace Ganymede
 
 	private:
 		AssetLoader& m_AssetLoader;
-		typedef std::array<Thread, 80> TickThreadPool;
-		std::unique_ptr<TickThreadPool> m_TickThreadPool = nullptr;
+		std::array<Thread, 20> m_TickThreadPool;
 		WorldObjectInstanceList m_WorldObjectInstances;
 	};
 }

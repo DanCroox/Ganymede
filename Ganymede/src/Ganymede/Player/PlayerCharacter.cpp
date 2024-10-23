@@ -30,12 +30,22 @@ namespace Ganymede
 		m_PhysicsWorld = &physicsWorld;
 		m_character = m_PhysicsWorld->CreateCapsule(.1, .5, 75, glm::vec3(0, 0, 0));
 
+		m_MouseButtonPressEventCBHandle = std::make_unique<EventCallbackHandle>();
 		m_KeyPressEventCBHandle = std::make_unique<EventCallbackHandle>();
 		m_KeyReleaseEventCBHandle = std::make_unique<EventCallbackHandle>();
 
 		EventSystem& eventSystem = Application::Get().GetEventSystem();
+		eventSystem.SubscribeEvent<MouseButtonPressEvent>(*m_KeyPressEventCBHandle, EVENT_BIND_TO_MEMBER(PlayerCharacter::OnMouseButtonPressEvent));
 		eventSystem.SubscribeEvent<KeyPressEvent>(*m_KeyPressEventCBHandle, EVENT_BIND_TO_MEMBER(PlayerCharacter::OnKeyPressEvent));
 		eventSystem.SubscribeEvent<KeyReleaseEvent>(*m_KeyReleaseEventCBHandle, EVENT_BIND_TO_MEMBER(PlayerCharacter::OnKeyReleaseEvent));	
+	}
+
+	void PlayerCharacter::OnMouseButtonPressEvent(MouseButtonPressEvent& event)
+	{
+		if (event.GetMouseButtonCode() == MouseButtonCode::Mouse_Left)
+		{
+			std::cout << "Pressed";
+		}
 	}
 
 	void PlayerCharacter::OnKeyPressEvent(KeyPressEvent& event)
@@ -84,6 +94,7 @@ namespace Ganymede
 		m_character.Delete();
 		
 		EventSystem& eventSystem = Application::Get().GetEventSystem();
+		eventSystem.UnsubscribeEvent<MouseButtonPressEvent>(*m_MouseButtonPressEventCBHandle);
 		eventSystem.UnsubscribeEvent<KeyPressEvent>(*m_KeyPressEventCBHandle);
 		eventSystem.UnsubscribeEvent<KeyReleaseEvent>(*m_KeyReleaseEventCBHandle);
 	}

@@ -70,6 +70,30 @@ namespace Ganymede
 		glm::vec2 m_Offset;
 	};
 
+	class GANYMEDE_API MouseButtonPressEvent : public Event
+	{
+	public:
+		CREATE_EVENT_CLASS_ID(MouseButtonPressEvent);
+
+		MouseButtonPressEvent(MouseButtonCode mouseButtonCode) : m_MouseButtonCode(mouseButtonCode) {};
+		MouseButtonCode GetMouseButtonCode() const { return m_MouseButtonCode; }
+
+	private:
+		MouseButtonCode m_MouseButtonCode;
+	};
+
+	class GANYMEDE_API MouseButtonReleaseEvent : public Event
+	{
+	public:
+		CREATE_EVENT_CLASS_ID(MouseButtonReleaseEvent);
+
+		MouseButtonReleaseEvent(MouseButtonCode mouseButtonCode) : m_MouseButtonCode(mouseButtonCode) {};
+		MouseButtonCode GetMouseButtonCode() const { return m_MouseButtonCode; }
+
+	private:
+		MouseButtonCode m_MouseButtonCode;
+	};
+
 	class GANYMEDE_API KeyPressEvent : public Event
 	{
 	public:

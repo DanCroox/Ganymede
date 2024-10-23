@@ -12,6 +12,7 @@
 	namespace Ganymede
 	{
 		class EventCallbackHandle;
+		class MouseButtonPressEvent;
 		class KeyPressEvent;
 		class KeyReleaseEvent;
 		class PhysicsWorld;
@@ -33,6 +34,9 @@
 			CreatureMeshWorldObjectInstance* creature = nullptr;
 
 		private:
+			std::unique_ptr<EventCallbackHandle> m_MouseButtonPressEventCBHandle;
+			void OnMouseButtonPressEvent(MouseButtonPressEvent& event);
+
 			std::unique_ptr<EventCallbackHandle> m_KeyPressEventCBHandle;
 			void OnKeyPressEvent(KeyPressEvent& event);
 

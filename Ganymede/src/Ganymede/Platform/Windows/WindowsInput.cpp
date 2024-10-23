@@ -1,12 +1,12 @@
 #ifdef GM_PLATFORM_WINDOWS
 
 #include "Ganymede/Core/Application.h"
+#include "Ganymede/Events/Event.h"
+#include "Ganymede/Log/Log.h"
 #include "Ganymede/Platform/Window.h"
 #include "Ganymede/Runtime/WindowEvents.h"
-#include "Ganymede/Events/Event.h"
-#include "WindowsInput.h"
-
 #include "GLFW/glfw3.h"
+#include "WindowsInput.h"
 
 namespace Ganymede
 {
@@ -175,6 +175,28 @@ namespace Ganymede
 			Application::Get().GetEventSystem().NotifyEvent(event);
 			});
 
+		glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+				switch (action)
+				{
+					case GLFW_PRESS:
+					{
+						const WindowsInput& input = *static_cast<WindowsInput*>(glfwGetWindowUserPointer(window));
+						MouseButtonPressEvent event(input.ConvertToMouseButtonCode(button));
+						input.m_EventSystem.NotifyEvent(event);
+						break;
+					}
+					case GLFW_RELEASE:
+					{
+						const WindowsInput& input = *static_cast<WindowsInput*>(glfwGetWindowUserPointer(window));
+						MouseButtonReleaseEvent event(input.ConvertToMouseButtonCode(button));
+						input.m_EventSystem.NotifyEvent(event);
+						break;
+					}
+					default:
+						break;
+				}
+			});
+
 		glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
 			{
 				switch (action)
@@ -193,6 +215,8 @@ namespace Ganymede
 						input.m_EventSystem.NotifyEvent(event);
 						break;
 					}
+					default:
+						break;
 				}
 			});
 
