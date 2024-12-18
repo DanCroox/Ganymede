@@ -11,3 +11,27 @@ The main reasons for the refactoring are:
 - Overall code clean-up
 
 Once this is done, the main branch of this repo will not be stable or fully functional at all. Later i will introduce a second branch with the latest codes changes (+main with stable version of the engine).
+
+Features:
+• Deferred HDR Physically Shading Renderer
+• Multisample Anti-Aliasing (MSAA)
+• Shadow mapping
+• Volumetric lighting
+• SSAO
+• Physical Bloom
+• SSR
+• Triplanar mapping shader (with proper normal mapping)
+• Material system
+• Physics
+• Skeletal animation system
+• Navigation mesh generation and pathfinding
+• Simple AI perception
+• Automatic batching- and instancing-system using indirect rendering
+• Frustum culling
+• Octree World Partitioning
+• Coherent Hierarchical Occlusion Culling
+• Object parenting system (scene graph)
+• Fully integrated to load complex glb files
+
+[![Skeletal Animation](https://img.youtube.com/vi/tOLcRtXjJxU/0.jpg)](https://www.youtube.com/watch?v=tOLcRtXjJxU)
+[![Skeletal Animation](https://img.youtube.com/vi/Lu8NDjkjdPw/0.jpg)](https://www.youtube.com/watch?v=Lu8NDjkjdPw)
