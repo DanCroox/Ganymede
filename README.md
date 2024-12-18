@@ -33,5 +33,5 @@ Features:
 • Object parenting system (scene graph)
 • Fully integrated to load complex glb files
 
-[![Skeletal Animation](https://img.youtube.com/vi/tOLcRtXjJxU/0.jpg)](https://www.youtube.com/watch?v=tOLcRtXjJxU)
-[![Skeletal Animation](https://img.youtube.com/vi/Lu8NDjkjdPw/0.jpg)](https://www.youtube.com/watch?v=Lu8NDjkjdPw)
+[![Skeletal Animation](https://img.youtube.com/vi/9tuvg-9W-SI/0.jpg)](https://www.youtube.com/watch?v=9tuvg-9W-SI)
+[![SSR](https://img.youtube.com/vi/Lu8NDjkjdPw/0.jpg)](https://www.youtube.com/watch?v=Lu8NDjkjdPw)
