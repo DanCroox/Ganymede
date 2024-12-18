@@ -13,25 +13,25 @@ The main reasons for the refactoring are:
 Once this is done, the main branch will provide stable and usable code of the engine, while a new "development" branch will be created to hold the latest version of the code (although not always working or fully functional).
 
 Features:
-• Deferred HDR Physically Shading Renderer
-• Multisample Anti-Aliasing (MSAA)
-• Shadow mapping
-• Volumetric lighting
-• SSAO
-• Physical Bloom
-• SSR
-• Triplanar mapping shader (with proper normal mapping)
-• Material system
-• Physics
-• Skeletal animation system
-• Navigation mesh generation and pathfinding
-• Simple AI perception
-• Automatic batching- and instancing-system using indirect rendering
-• Frustum culling
-• Octree World Partitioning
-• Coherent Hierarchical Occlusion Culling
-• Object parenting system (scene graph)
-• Fully integrated to load complex glb files
+- Deferred HDR Physically Shading Renderer
+- Multisample Anti-Aliasing (MSAA)
+- Shadow mapping
+- Volumetric lighting
+- SSAO
+- SSR
+- Physical Bloom
+- Triplanar mapping shader (with proper normal mapping)
+- Material system
+- Physics
+- Skeletal animation system
+- Navigation mesh generation and pathfinding
+- Simple AI perception
+- Automatic batching- and instancing-system using indirect rendering
+- Frustum culling
+- Octree World Partitioning
+- Coherent Hierarchical Occlusion Culling
+- Object parenting system (scene graph)
+- Fully integrated to load complex glb files
 
 [![Skeletal Animation](https://img.youtube.com/vi/9tuvg-9W-SI/0.jpg)](https://www.youtube.com/watch?v=9tuvg-9W-SI)
 [![SSR](https://img.youtube.com/vi/Lu8NDjkjdPw/0.jpg)](https://www.youtube.com/watch?v=Lu8NDjkjdPw)
