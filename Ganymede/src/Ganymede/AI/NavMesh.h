@@ -110,8 +110,6 @@ namespace Ganymede
 	class GANYMEDE_API NavMesh
 	{
 	public:
-
-
 		NavMesh(Renderer& renderer);
 
 		Renderer* m_Renderer;

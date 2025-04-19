@@ -18,8 +18,7 @@ namespace Ganymede
 		// 4 == rgba channels to load
 		unsigned char* buffer = stbi_load(path.c_str(), &m_Width, &m_Height, &m_ChannelCount, 4);
 
-		// file broken or not existant!
-		ASSERT(buffer != nullptr);
+		GM_CORE_ASSERT(buffer != nullptr, "File broken or not existent.");
 
 		PushTextureToGPU(buffer);
 

@@ -10,7 +10,6 @@ namespace Ganymede
 	void PointlightWorldObjectInstance::SetBrightness(float brightness)
 	{
 		m_Brightness = glm::max(brightness, 0.f);
-		m_BrightnessOriginal = m_Brightness;
 	}
 
 	void PointlightWorldObjectInstance::SetLightingState(LightsManager::LightingState lightingState)

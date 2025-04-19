@@ -38,7 +38,6 @@ namespace Ganymede
 		void SetColor(float r, float g, float b)
 		{
 			m_Color.r = r; m_Color.g = g; m_Color.b = b;
-			m_ColorOriginal = m_Color;
 		}
 
 		float GetBrightness() const { return m_Brightness; }
@@ -47,7 +46,8 @@ namespace Ganymede
 		void SetImportance(int importance) { m_Importance = importance; }
 		int GetImportance() const { return m_Importance; }
 
-		int GetLightID() const { return m_LightID; }
+		inline void SetLightID(int id) { m_LightID = id; }
+		inline int GetLightID() const { return m_LightID; }
 
 		LightsManager::LightingState GetLightingState() const { return m_LightingState; }
 
@@ -67,9 +67,7 @@ namespace Ganymede
 		unsigned int m_LightingStateUpdateFrame = 0;
 		int m_LightID = -1;
 		glm::vec3 m_Color = glm::vec3(1.0f);
-		glm::vec3 m_ColorOriginal = glm::vec3(1.0f);
 		float m_Brightness = 10.f;
-		float m_BrightnessOriginal = 1;
 
 		// Lights get culled automatically by distance. Lights with higher importance will not be culled although the distance to camera might be bigger.
 		// The other light will be culled with lower importance.

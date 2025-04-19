@@ -23,9 +23,6 @@ namespace Ganymede
 
 	class GANYMEDE_API AssetLoader
 	{
-	private:
-
-
 	public:
 		AssetLoader();
 		AssetLoader(const AssetLoader&) = delete;

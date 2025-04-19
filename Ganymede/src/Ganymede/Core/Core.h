@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <typeindex>
 #include <functional>
+#include <format>
 
 namespace Ganymede
 {
@@ -69,16 +70,16 @@ namespace Ganymede
 #endif // GM_RETAIL
 
 #ifdef GM_CORE_ASSERTS_ENABLED
-#define GM_CORE_ASSERT(condition, message)										\
-		{																		\
-			if (!(condition))													\
-			{																	\
-				std::cerr << "Assertion failed: " << #condition << std::endl;	\
-				std::cerr << "  file    : " << __FILE__ << std::endl;			\
-				std::cerr << "  line    : " << __LINE__	<< std::endl;			\
-				std::cerr << "  message : " << message << std::endl;			\
-				__debugbreak();													\
-			}																	\
+#define GM_CORE_ASSERT(condition, ...)													\
+		{																				\
+			if (!(condition))															\
+			{																			\
+				std::cerr << "Assertion failed: " << #condition << std::endl;			\
+				std::cerr << "  file    : " << __FILE__ << std::endl;					\
+				std::cerr << "  line    : " << __LINE__	<< std::endl;					\
+				std::cerr << "  message : " << std::format(__VA_ARGS__) << std::endl;	\
+				__debugbreak();															\
+			}																			\
 		}
 #else
 #define GM_CORE_ASSERT(condition, message)
@@ -107,7 +108,6 @@ namespace Ganymede
 		ClassTypeInfo() = default;
 		~ClassTypeInfo() = default;
 
-		//Avoid slicing
 		ClassTypeInfo(const ClassTypeInfo&) = delete;
 		ClassTypeInfo& operator=(const ClassTypeInfo&) = delete;
 

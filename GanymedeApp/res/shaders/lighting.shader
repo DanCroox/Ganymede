@@ -72,60 +72,22 @@ float normpdf3(in vec3 v, in float sigma)
     return 0.39894 * exp(-0.5 * dot(v, v) / (sigma * sigma)) / sigma;
 }
 
-float ShadowCalculation(int lightID, vec3 viewPos, vec3 fragPos, vec3 pointlightPos, vec3 fragNormal)
+float ShadowCalculation(int lightID, vec3 fragPos, vec3 pointlightPos, vec3 fragNormal)
 {
-    float ditherPattern2[4][4] = { { 0.0f, 0.5f, 0.125f, 0.625f},
-    { 0.75f, 0.22f, 0.875f, 0.375f},
-    { 0.1875f, 0.6875f, 0.0625f, 0.5625},
-    { 0.9375f, 0.4375f, 0.8125f, 0.3125} };
-
-    float ditherOffset = (ditherPattern2[int(mod(v_TexCoords.x * u_ViewportResolution.x+1, 4))][int(mod(v_TexCoords.y * u_ViewportResolution.y+1, 4))]);
-    float ditherOffset1 = (ditherPattern2[int(mod(v_TexCoords.x * u_ViewportResolution.x+2, 4))][int(mod(v_TexCoords.y * u_ViewportResolution.y+2, 4))]);
-    float ditherOffset2 = (ditherPattern2[int(mod(v_TexCoords.x * u_ViewportResolution.x, 4))][int(mod(v_TexCoords.y * u_ViewportResolution.y, 4))]);
-
-    vec3 sampleOffsetDirections[20] = vec3[]
-    (
-        vec3(1, 1, 1), vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, 1, 1),
-        vec3(1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
-        vec3(1, 1, 0), vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 1, 0),
-        vec3(1, 0, 1), vec3(-1, 0, 1), vec3(1, 0, -1), vec3(-1, 0, -1),
-        vec3(0, 1, 1), vec3(0, -1, 1), vec3(0, -1, -1), vec3(0, 1, -1)
-        );
-
-    float shadow = 0.0;
-    //float bias = (1 - dot(fragNormal, normalize(pointlightPos - fragPos))) * .5;
-    float bias = .2;
+    float bias = 0.2;
 
     vec3 fragToLight = fragPos - pointlightPos;
     float currentDepth = length(fragToLight);
-    
-    float offsetStrength = 0.03;
 
-    float closestDepth = texture(u_DepthCubemapTexture, vec4(fragToLight, lightID)).r;
-    closestDepth *= 1000;   // undo mapping [0;1]
-    bool inShadow = currentDepth - bias > closestDepth;
-
-    int i = 0;
-    for (int numSample = 0; numSample < 10; ++numSample)
+    float closestDepth = texture(u_DepthCubemapTexture, vec4(normalize(fragToLight), lightID)).r;
+    closestDepth *= 1000.0;   // undo mapping [0;1]
+    bool inShadow = (currentDepth - bias) > closestDepth;
+    if (inShadow)
     {
-        vec3 randSampleOffset = randomNormalizedVector(vec2(fragPos.xy + numSample));
-
-        float lightDepth = texture(u_DepthCubemapTexture, vec4(fragToLight + ((sampleOffsetDirections[numSample]) * offsetStrength), lightID)).r * 1000;
-        bool isFragmentInShadow = currentDepth - bias > lightDepth;
-
-        if (isFragmentInShadow)
-        {
-            shadow += 1;
-            ++i;
-        }
+        return 1;
     }
 
-    if (i == 0)
-    {
-        i = 1;
-    }
-
-    return shadow / 10;
+    return 0;
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
@@ -170,8 +132,33 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 
 uniform samplerCubeArray u_ColorCube;
 
+
+vec3 getFaceDir(int face, vec2 uv) {
+    vec2 p = uv * 2.0 - 1.0;
+
+    if(face == 0) return normalize(vec3( 1.0,  p.y, -p.x)); // +X
+    if(face == 1) return normalize(vec3(-1.0,  p.y,  p.x)); // -X
+    if(face == 2) return normalize(vec3( p.x,  1.0, -p.y)); // +Y
+    if(face == 3) return normalize(vec3( p.x, -1.0,  p.y)); // -Y
+    if(face == 4) return normalize(vec3( p.x,  p.y,  1.0)); // +Z
+    if(face == 5) return normalize(vec3(-p.x,  p.y, -1.0)); // -Z
+
+    return vec3(0.0);
+}
+
+
 void main()
 {
+    vec3 dir = getFaceDir(3, v_TexCoords);
+    vec3 distance = texture(u_DepthCubemapTexture, vec4(vec3(0.0, -1.0, 0.0), 0)).rgb;
+    distance = distance * vec3(1000.0);
+    if (distance.r == 0.0)
+    {
+        distance = vec3(1,0,0);
+    }
+    FragColor = vec4(distance, 1);
+
+
     ivec2 texel = ivec2(v_TexCoords * u_RenderResolution);
 
     float isc = texelFetch(u_ComplexFragment, texel, 0).r;
@@ -221,7 +208,7 @@ void main()
             
             if (pointLights[i].u_LightID > -1)
             {
-                ss = 1 - ShadowCalculation(pointLights[i].u_LightID, u_ViewPos, position, pointLights[i].u_PointlighWorldLocation, normal);
+                ss = 1 - ShadowCalculation(pointLights[i].u_LightID, position, pointLights[i].u_PointlighWorldLocation, normal);
                 if (ss == 0)
                     continue;
             }

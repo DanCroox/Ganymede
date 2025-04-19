@@ -122,7 +122,7 @@ namespace Ganymede
 		//void* ptr = glMapBufferRange(glBufferType, byteOffset, numBytes, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 		// NO INVALIDATING/DOUBLE BUFFER FOR NOW!
 		void* ptr = glMapBufferRange(glBufferType, byteOffset, numBytes, GL_MAP_WRITE_BIT);
-		ASSERT(ptr != nullptr);
+		GM_CORE_ASSERT(ptr != nullptr, "Returned buffer mapping must not be nullptr.");
 		return ptr;
 	}
 

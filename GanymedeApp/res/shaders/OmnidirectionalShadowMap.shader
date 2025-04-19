@@ -83,8 +83,8 @@ void main()
 
 	//gColor = vec4(1);
 
-	FragColor = vec3(0);
-	return;
+	//FragColor = vec3(0);
+	//return;
 	//gColor.xyz = vec3(.5);
 	//gColor.w = lightDistance;
 }

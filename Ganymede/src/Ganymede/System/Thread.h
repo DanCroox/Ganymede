@@ -23,7 +23,6 @@ namespace Ganymede
 		Thread& operator=(const Thread&) = delete;
 
 		Thread(Thread&& other) noexcept;
-
 		Thread& operator=(Thread&& other) noexcept;
 
 		void Loop();

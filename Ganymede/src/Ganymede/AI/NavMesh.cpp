@@ -504,7 +504,7 @@ namespace Ganymede
 
 			}
 
-			m_Renderer->AddDebugDrawMesh(dMesh);
+			//m_Renderer->AddDebugDrawMesh(dMesh);
 
 			m_Crowd = dtAllocCrowd();
 			m_Crowd->init(m_Agents.size(), 2.f, m_navMesh);

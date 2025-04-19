@@ -22,7 +22,7 @@ namespace Ganymede
 
 	void MeshWorldObjectInstance::MakeRigidBody(float mass)
 	{
-		ASSERT(m_PhysicsWorld != nullptr);
+		GM_CORE_ASSERT(m_PhysicsWorld != nullptr, "Physicsworld must not be nullptr.");
 		if (!m_RigidBody.IsValid())
 		{
 			//REWORK: Implement proper physics and rigidbody property-ing. Maybe move physics code out of Worldobjectinstance and into meshworldobjectinstance

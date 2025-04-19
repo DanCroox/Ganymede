@@ -334,7 +334,7 @@ namespace Ganymede
 
 		GLCall(glGenTextures(1, &m_MSGBufferIDs.m_Depth));
 		GLCall(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_MSGBufferIDs.m_Depth));
-		GLCall(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH_COMPONENT, m_ScreenSize.x * m_RenderScale, m_ScreenSize.y * m_RenderScale, GL_TRUE));
+		GLCall(glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH_COMPONENT32F, m_ScreenSize.x * m_RenderScale, m_ScreenSize.y * m_RenderScale, GL_TRUE));
 		GLCall(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, m_MSGBufferIDs.m_Depth, 0));
 
 		const unsigned int atts[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
@@ -486,7 +486,7 @@ namespace Ganymede
 		GLCall(glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0));
 	
 		GLCall(glGenTextures(1, &m_PositionCubemapTexture));
-		GLCall(glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, m_PositionCubemapTexture))
+		GLCall(glBindTexture(1, m_PositionCubemapTexture))
 		GLCall(glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_RGB, m_ShadowMapSize, m_ShadowMapSize, 6 * 300, 0, GL_RGB, GL_FLOAT, NULL));
 		//GLCall(glTexImage2D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_RGBA, m_ShadowMapSize* m_RenderScale, m_ShadowMapSize* m_RenderScale, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL));
 		GLCall(glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
@@ -639,62 +639,61 @@ namespace Ganymede
 
 		std::vector<PointLight> pointlightsTotal;
 		unsigned int numLights = 0;
+		
+		for (PointlightWorldObjectInstance* pointlight : pointlightsClosestToCamera)
 		{
-			for (PointlightWorldObjectInstance* pointlight : pointlightsClosestToCamera)
+			PointLight pl;
+			pl.m_LightColor = glm::vec4(pointlight->GetColor() * pointlight->GetBrightness(), 1);
+			const glm::vec3& lightPos = pointlight->GetPosition();
+			pl.lightPos = lightPos;
+			pl.u_LightID = pointlight->GetLightID();
+			pl.updateShadowMap.x = 0;
+
+			if (numLights < LightsManager::MAX_POINTLIGHTS_DYNAMIC_SHADOWS)
 			{
-				PointLight pl;
-				pl.m_LightColor = glm::vec4(pointlight->GetColor() * pointlight->GetBrightness(), 1);
-				const glm::vec3& lightPos = pointlight->GetPosition();
-				pl.lightPos = lightPos;
-				pl.u_LightID = pointlight->GetLightID();
-				pl.updateShadowMap.x = 0;
+				pointlight->SetLightingState(LightsManager::LightingState::DynamicShadow);
+				++numLights;
 
-				if (numLights < LightsManager::MAX_POINTLIGHTS_DYNAMIC_SHADOWS)
+				if (pointlight->DoUpdateShadowMap())
 				{
-					pointlight->SetLightingState(LightsManager::LightingState::DynamicShadow);
-					++numLights;
+					pl.updateShadowMap.x = 1;
 
-					if (pointlight->DoUpdateShadowMap())
-					{
-						pl.updateShadowMap.x = 1;
-
-						pl.u_ShadowMatrices[0] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-						pl.u_ShadowMatrices[1] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-						pl.u_ShadowMatrices[2] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-						pl.u_ShadowMatrices[3] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
-						pl.u_ShadowMatrices[4] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
-						pl.u_ShadowMatrices[5] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
+					pl.u_ShadowMatrices[0] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+					pl.u_ShadowMatrices[1] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+					pl.u_ShadowMatrices[2] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+					pl.u_ShadowMatrices[3] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
+					pl.u_ShadowMatrices[4] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
+					pl.u_ShadowMatrices[5] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
 
 
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 0));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 0));
-						GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 1));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 1));
-						GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 2));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 2));
-						GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 3));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 3));
-						GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 4));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 4));
-						GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 5));
-						GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 5));
-						GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
-					}
-
-					pointlightsForOcclusionTest.push_back(pl);
-				}
-				else if (pointlight->GetLightingState() != LightsManager::LightingState::Initialize)
-				{
-					pointlight->SetLightingState(LightsManager::LightingState::StaticShadow);
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 0));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 0));
+					GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 1));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 1));
+					GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 2));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 2));
+					GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 3));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 3));
+					GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 4));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 4));
+					GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 5));
+					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0, (pointlight->GetLightID() * 6) + 5));
+					GLCall(glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT));
 				}
 
-				pointlightsTotal.push_back(pl);
+				pointlightsForOcclusionTest.push_back(pl);
 			}
+			else if (pointlight->GetLightingState() != LightsManager::LightingState::Initialize)
+			{
+				pointlight->SetLightingState(LightsManager::LightingState::StaticShadow);
+			}
+
+			pointlightsTotal.push_back(pl);
 		}
 
 		GLCall(glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_PositionCubemapTexture, 0));
@@ -1156,35 +1155,37 @@ namespace Ganymede
 				// Positionsattribut (vec3)
 				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_Position));
 				glEnableVertexAttribArray(0);
+				GLCall(glVertexAttribDivisor(0, 0));
 
 				// UV Attribut (vec2)
 				glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_UV));
 				glEnableVertexAttribArray(1);
+				GLCall(glVertexAttribDivisor(1, 0));
 
 				// Normalenattribut (vec3)
 				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_Normal));
 				glEnableVertexAttribArray(2);
+				GLCall(glVertexAttribDivisor(2, 0));
 
 				// Tangent Attribut (vec3)
 				glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_Tangent));
 				glEnableVertexAttribArray(3);
+				GLCall(glVertexAttribDivisor(3, 0));
 
 				// Bitangent Attribut (vec3)
 				glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_Bitangent));
 				glEnableVertexAttribArray(4);
+				GLCall(glVertexAttribDivisor(4, 0));
 
 				// Bone Index
-				glVertexAttribIPointer(5, 4, GL_INT, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_BoneIndex));
+				glVertexAttribIPointer(5, 4, GL_UNSIGNED_INT, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_BoneIndex));
 				glEnableVertexAttribArray(5);
+				GLCall(glVertexAttribDivisor(5, 0));
 
 				// Bone weight (influence)
 				glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(MeshWorldObject::Mesh::Vertex), (const void*)offsetof(MeshWorldObject::Mesh::Vertex, m_BoneWeight));
 				glEnableVertexAttribArray(6);
-
-				unsigned int idxID = 0;
-				GLCall(glGenBuffers(1, &idxID));
-				GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxID));
-				GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * mesh->m_VertexIndicies.size(), (void*)&mesh->m_VertexIndicies[0], GL_STATIC_DRAW));
+				GLCall(glVertexAttribDivisor(6, 0));
 
 				// Create vertex data <-> instance data buffer bindings
 				GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_InstanceDataBuffer));
@@ -1217,6 +1218,13 @@ namespace Ganymede
 				GLCall(glEnableVertexAttribArray(15));
 				GLCall(glVertexAttribPointer(15, 3, GL_FLOAT, GL_FALSE, sizeof(IData), (const void*)128));
 				GLCall(glVertexAttribDivisor(15, 1));
+
+
+				unsigned int idxID = 0;
+				GLCall(glGenBuffers(1, &idxID));
+				GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxID));
+				GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)* mesh->m_VertexIndicies.size(), (void*)&mesh->m_VertexIndicies[0], GL_STATIC_DRAW));
+
 
 				objectPtr.emplace(mesh, vaoID);
 			}

@@ -4,11 +4,8 @@
 #include <functional>
 #include <limits>
 
-
-#define ASSERT(condition, message) if (!(condition)) __debugbreak();
 namespace Ganymede
 {
-
 	namespace Numbers
 	{
 		constexpr float MAX_FLOAT = std::numeric_limits<float>::max();

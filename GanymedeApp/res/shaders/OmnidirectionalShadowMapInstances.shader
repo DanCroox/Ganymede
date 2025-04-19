@@ -3,7 +3,6 @@
 #version 460 core
 #extension GL_NV_viewport_array2 : require
 
-
 layout(location = 0) in vec3 Position;
 layout(location = 5) in ivec4 BoneIndices;
 layout(location = 6) in vec4 BoneWeights;
@@ -80,40 +79,8 @@ void main()
 	float lightDistance = length(v_FragPos.xyz - v_PointlightWorldPos);
 
 	// map to [0;1] range by dividing by far_plane
-	lightDistance = lightDistance / far_plane;
+	lightDistance = lightDistance / 1000.0;
 
 	// write this as modified depth
 	gl_FragDepth = lightDistance;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

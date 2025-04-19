@@ -253,7 +253,7 @@ namespace Ganymede
 
 		m_WalkingAnimationFrame = std::fmod((m_WalkingAnimationFrame + GMTime::s_DeltaTime * m_WalkingAnimation->m_FPS * .75f * motionSpeed), m_WalkingAnimation->m_Bones[0].m_Frames.size());
 		m_IdleAnimationFrame = std::fmod((m_IdleAnimationFrame + GMTime::s_DeltaTime * m_IdleAnimation->m_FPS), m_IdleAnimation->m_Bones[0].m_Frames.size());
-		ASSERT(m_IdleAnimationFrame < m_IdleAnimation->m_Bones[0].m_Frames.size());
-		ASSERT(m_WalkingAnimationFrame < m_WalkingAnimation->m_Bones[0].m_Frames.size());
+		GM_CORE_ASSERT(m_IdleAnimationFrame < m_IdleAnimation->m_Bones[0].m_Frames.size(), "Current frame must not exceed total number of frames for idle animation.");
+		GM_CORE_ASSERT(m_WalkingAnimationFrame < m_WalkingAnimation->m_Bones[0].m_Frames.size(), "Current frame must not exceed total number of frames for walking animation.");
 	}
 }

@@ -16,6 +16,8 @@ public:
 	void GameEnd(Ganymede::WindowCloseEvent&);
 
 private:
+	void Render();
+
 	std::unique_ptr<AssetLoader> m_AssetLoader = nullptr;
 	std::unique_ptr<PlayerCharacter> m_PlayerCharacter = nullptr;
 	std::unique_ptr<World> m_World = nullptr;

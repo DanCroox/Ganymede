@@ -39,13 +39,13 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 	m_AssetLoader = std::make_unique<AssetLoader>();
 	m_PhysicsWorld = std::make_unique<PhysicsWorld>();
 	m_World = std::make_unique<World>(*m_AssetLoader);
-	m_Renderer = std::make_unique<Renderer>(m_AssetLoader->GetShaderManager());
+	//m_Renderer = std::make_unique<Renderer>(m_AssetLoader->GetShaderManager());
 	m_Camera = std::make_unique<FPSCamera>();
 	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
 	m_NavMesh = std::make_unique<NavMesh>(*m_Renderer);
 
 	std::vector<const WorldObject*> loadedAssets;
-	loadedAssets = m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
+	loadedAssets = m_AssetLoader->LoadFromPath("res/models/backroom.glb");
 	GM_INFO("WorldObjects loaded");
 
 	glm::vec3 worldBoundsMin(Numbers::MAX_FLOAT);
@@ -141,7 +141,28 @@ void GanymedeApp::GameTick(Ganymede::WindowTickEvent& event)
 	m_PhysicsWorld->Step(event.GetFrameDelta());
 	m_PlayerCharacter->Tick(event.GetFrameDelta());
 	m_World->Tick(event.GetFrameDelta());
-	m_Renderer->Draw(*m_World, *m_WorldPartitionManager, *m_Camera);
+	Render();
+	//m_Renderer->Draw(*m_World, *m_WorldPartitionManager, *m_Camera);
+}
+
+RenderContext* m_RenderContext = nullptr;
+RenderPipeline* m_RenderPipeline = nullptr;
+
+void GanymedeApp::Render()
+{
+	if (m_RenderContext == nullptr)
+	{
+		// init render pipeline
+		m_RenderContext = new RenderContext(*m_World, *m_Camera);
+		m_RenderPipeline = new RenderPipeline(*m_RenderContext);
+		m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
+		m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
+		m_RenderPipeline->AddRenderPass<LightingRenderPass>();
+		m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
+		m_RenderPipeline->Initialize();
+	}
+
+	m_RenderPipeline->Execute();
 }
 
 void GanymedeApp::GameEnd(Ganymede::WindowCloseEvent&)

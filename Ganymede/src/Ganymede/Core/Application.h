@@ -14,7 +14,6 @@ namespace Ganymede
 	class GANYMEDE_API Application
 	{
 	public:
-
 		/// <summary>
 		/// Ganymede only allows to instanciate one Application object at a time due to the singleton implementation of it.
 		/// Ganymede core functions access the static Application instance.

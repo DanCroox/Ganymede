@@ -7,7 +7,7 @@ namespace Ganymede
     IndexBuffer::IndexBuffer(const unsigned int* data, unsigned int count)
         : m_Count(count)
     {
-        ASSERT(sizeof(unsigned int) == sizeof(GLuint));
+        GM_CORE_ASSERT(sizeof(unsigned int) == sizeof(GLuint), "Unsigned int <> GLuint byte missmatch.");
 
         GLCall(glGenBuffers(1, &m_RendererID));
         GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RendererID));

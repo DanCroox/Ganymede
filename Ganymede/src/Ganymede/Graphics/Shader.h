@@ -10,6 +10,7 @@
 namespace Ganymede
 {
 	class SSBO;
+	class RenderTarget;
 
 	struct GANYMEDE_API ShaderProgramSource
 	{
@@ -33,7 +34,11 @@ namespace Ganymede
 
 		void BindUBOBlock(const SSBO& ubo, const std::string& uniformBlockName) const;
 
+		void BindTexture(RenderTarget& texture, const char* textureName);
+
 		unsigned int GetRendererID() const { return m_RendererID; }
+
+		inline bool IsValid() const { return m_RendererID != 0; }
 
 		// Set Uniforms
 		void SetUniform1f(const std::string& name, const float value) const;
@@ -50,11 +55,15 @@ namespace Ganymede
 		void SetUniform3fv(const std::string& name, const float* values, unsigned int count = 1) const;
 		void SetUniformMat4f(const std::string& name, const glm::mat4* matrix, unsigned int count = 1) const;
 		void SetUniformMat4f(const std::string& name, const glm::mat4& matrix) const;
+
 	private:
 		int GetUniformLocation(const std::string& name) const;
 		ShaderProgramSource ParseShader(const std::string& filepath);
 		void ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut);
 		unsigned int CompileShader(unsigned int type, const std::string& source);
 		unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader);
+
+		std::unordered_map<std::string, int> m_ShaderTextureSlots;
+		unsigned int m_NextAvailableTextureSlot = 0;
 	};
 }

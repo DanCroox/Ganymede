@@ -45,7 +45,7 @@ namespace Ganymede
         m_DynamicsWorld->stepSimulation(time, 10);
     }
 
-    KinematicCharacterController PhysicsWorld::CreateCapsule(float radius, float height, float mass, glm::vec3 startPosition)
+    KinematicCharacterController PhysicsWorld::CreateCapsule(float radius, float height, float /*mass*/, glm::vec3 startPosition)
     {
         btTransform groundTransform = btTransform::getIdentity();
         groundTransform.setOrigin({ startPosition.x, startPosition.y, startPosition.z });
@@ -62,36 +62,15 @@ namespace Ganymede
         btKinematicCharacterController* character = new btKinematicCharacterController(m_ghostObject, capsule, .35, { 0, 1, 0 });
         character->setMaxSlope(0.25f);
 
-        m_DynamicsWorld->addCollisionObject(m_ghostObject, btBroadphaseProxy::CharacterFilter, btBroadphaseProxy::StaticFilter | btBroadphaseProxy::DefaultFilter);
+        // We use a collider, not a rigidbody. This is not part of the physics simulation, but is still able to collide with things.
+        // Since its a kinematic object by nature, we need to set its collision flag to "Kinematic", no matter what the mass- property gives.
+        // This property is unused in this implementation.
+        m_ghostObject->setCollisionFlags(m_ghostObject->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
 
+        m_DynamicsWorld->addCollisionObject(m_ghostObject, btBroadphaseProxy::CharacterFilter, btBroadphaseProxy::StaticFilter | btBroadphaseProxy::DefaultFilter);
         m_DynamicsWorld->addAction(character);
 
         return character;
-
-        //btVector3 localInertia(0, 0, 0);
-        //shape->calculateLocalInertia(mass, localInertia);
-
-
-
-        //btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
-        //btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
-
-        /*
-        btRigidBody* body = new btRigidBody(cInfo);
-
-        //Constrain all rotation. Capsule does need it
-        body->setAngularFactor({ 0, 0, 0 });
-
-        body->setFriction(3);
-
-        body->setActivationState(DISABLE_DEACTIVATION);
-
-        body->setUserIndex(-1);
-        m_DynamicsWorld->addRigidBody(body);
-
-        return body;
-        */
-
     }
 
     RigidBody PhysicsWorld::AddRigidBodyFromMeshWorldObject(MeshWorldObjectInstance& mwoi, float mass)
@@ -99,7 +78,7 @@ namespace Ganymede
         //btTriangleMesh* trimesh = new btTriangleMesh();
         const MeshWorldObject* mwo = mwoi.GetMeshWorldObject();
         //mass = 0;
-        const bool isDynamic = (mass != 0.f);
+        const bool isDynamic = (mass > 0.f);
 
 
         btTransform groundTransform;
@@ -176,21 +155,7 @@ namespace Ganymede
         }
         shape->setLocalScaling({ scale.x, scale.y, scale.z });
 
-        //shape->setLocalScaling(btVector3(.85f, .85f, .85f));
-
-
-        //btCollisionShape* box = new btBvhTriangleMeshShape(trimesh, false);
-
-        //btBoxShape* box = new btBoxShape(btVector3(5,5,5));
-
-    //    btAssert((!shape || shape->getShapeType() != INVALID_SHAPE_PROXYTYPE));
-
-        //rigidbody is dynamic if and only if mass is non zero, otherwise static
-
-
-
         //using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-
 #define USE_MOTIONSTATE 1
 #ifdef USE_MOTIONSTATE
         btDefaultMotionState* myMotionState = new btDefaultMotionState(groundTransform);
@@ -203,7 +168,13 @@ namespace Ganymede
 #else
         btRigidBody* body = new btRigidBody(mass, 0, shape, localInertia);
         body->setWorldTransform(groundTransform);
-#endif  //
+#endif  //USE_MOTIONSTATE
+
+        if (!isDynamic)
+        {
+            //Flag is important to not degredate performance. Bulletphysics will also assert in debug builds with wrong flagging.
+            body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+        }
 
         body->setUserPointer(&mwoi);
 
