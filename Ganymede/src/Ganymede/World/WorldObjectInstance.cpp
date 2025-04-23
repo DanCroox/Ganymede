@@ -6,10 +6,14 @@
 
 namespace Ganymede
 {
+	std::uint32_t WorldObjectInstance::s_NextInstanceID = 0;
+
 	WorldObjectInstance::WorldObjectInstance(const WorldObject* worldObject) :
 		m_WorldObject(worldObject),
 		m_PhysicsWorld(nullptr)
 	{
+		m_InstanceID = s_NextInstanceID++;
+
 		glm::mat4 trans = worldObject == nullptr ? glm::mat4(1.0f) : m_WorldObject->GetTransform();
 
 		glm::vec3 scale;

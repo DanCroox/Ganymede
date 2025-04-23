@@ -11,6 +11,7 @@
 #include <Ganymede/Graphics/CompositeRenderPass.h>
 #include <Ganymede/Graphics/DataBuffer.h>
 #include <Ganymede/Graphics/FrameBuffer.h>
+#include <Ganymede/Graphics/CollectGeometryPass.h>
 #include <Ganymede/Graphics/GeometryRenderPass.h>
 #include <Ganymede/Graphics/GPUDebugHandler.h>
 #include <Ganymede/Graphics/LightingRenderPass.h>

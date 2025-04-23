@@ -120,7 +120,6 @@ namespace Ganymede
 
 	VertexObject::VertexObject(const unsigned int* indicesData, unsigned int numIndices) :
 		m_RenderID(0),
-		m_IsBound(false),
 		m_CurrentVertexAttribPointer(0)
 	{
 		glGenVertexArrays(1, &m_RenderID);

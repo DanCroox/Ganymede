@@ -30,11 +30,9 @@ uniform mat4 u_ProjectionInverse;
 
 struct PointLight
 {
-    mat4 u_ShadowMatrices[6];
     vec4 u_PointlightColor;
     vec3 u_PointlighWorldLocation;
     int u_LightID;
-    vec4 updateShadowMap;
 };
 
 layout(std140, binding = 0) buffer PointLightDataBlock

@@ -98,8 +98,8 @@ namespace Ganymede
 		2, 3, 0
 		};
 
-		m_PointLightSortedToCamDistanceUBO = new SSBO(0, 320 * (sizeof(PointLight)));
-		m_PointLightSortedToCamDistanceOcclusionCheckUBO = new SSBO(1, 320 * (sizeof(PointLight)));
+		m_PointLightSortedToCamDistanceUBO = new SSBO(0, 320 * (sizeof(PointLight)), false);
+		m_PointLightSortedToCamDistanceOcclusionCheckUBO = new SSBO(1, 320 * (sizeof(PointLight)),false);
 
 		GLCall(glGenVertexArrays(1, &m_ViewportQuadVAO));
 		GLCall(glBindVertexArray(m_ViewportQuadVAO));
@@ -647,7 +647,6 @@ namespace Ganymede
 			const glm::vec3& lightPos = pointlight->GetPosition();
 			pl.lightPos = lightPos;
 			pl.u_LightID = pointlight->GetLightID();
-			pl.updateShadowMap.x = 0;
 
 			if (numLights < LightsManager::MAX_POINTLIGHTS_DYNAMIC_SHADOWS)
 			{
@@ -656,14 +655,12 @@ namespace Ganymede
 
 				if (pointlight->DoUpdateShadowMap())
 				{
-					pl.updateShadowMap.x = 1;
-
-					pl.u_ShadowMatrices[0] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-					pl.u_ShadowMatrices[1] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-					pl.u_ShadowMatrices[2] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-					pl.u_ShadowMatrices[3] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
-					pl.u_ShadowMatrices[4] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
-					pl.u_ShadowMatrices[5] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
+					//pl.u_ShadowMatrices[0] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+					//pl.u_ShadowMatrices[1] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
+					//pl.u_ShadowMatrices[2] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+					//pl.u_ShadowMatrices[3] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
+					//pl.u_ShadowMatrices[4] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
+					//pl.u_ShadowMatrices[5] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
 
 
 					GLCall(glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_DepthCubemapTexture, 0, (pointlight->GetLightID() * 6) + 0));
@@ -791,20 +788,20 @@ namespace Ganymede
 								for (int faceIdx = 0; faceIdx < 6; ++faceIdx)
 								{
 									MeshInstancess mInstance;
-									mInstance.m_MVP = pl.u_ShadowMatrices[faceIdx];
-									const glm::mat4 mvp = pl.u_ShadowMatrices[faceIdx] * instanceTransform;
+									//mInstance.m_MVP = pl.u_ShadowMatrices[faceIdx];
+									//const glm::mat4 mvp = pl.u_ShadowMatrices[faceIdx] * instanceTransform;
 
 									int clipSides[6];
 									for (const MeshWorldObject::Mesh::BoundingBoxVertex& bbVert : mesh->m_BoundingBoxVertices)
 									{
-										glm::vec4 clipPoint = mvp * glm::vec4(bbVert.m_Position, 1);
+										//glm::vec4 clipPoint = mvp * glm::vec4(bbVert.m_Position, 1);
 
-										clipSides[0] += clipPoint.x < -clipPoint.w; //left of Left plane
-										clipSides[1] += clipPoint.x > clipPoint.w;  //right of Right plane
-										clipSides[2] += clipPoint.y < -clipPoint.w; //below Bottom plane
-										clipSides[3] += clipPoint.y > clipPoint.w;  //above Top plane
-										clipSides[4] += clipPoint.z < -clipPoint.w; //in front of Near plane
-										clipSides[5] += clipPoint.z > clipPoint.w;  //behind Far plane
+										//clipSides[0] += clipPoint.x < -clipPoint.w; //left of Left plane
+										//clipSides[1] += clipPoint.x > clipPoint.w;  //right of Right plane
+										//clipSides[2] += clipPoint.y < -clipPoint.w; //below Bottom plane
+										//clipSides[3] += clipPoint.y > clipPoint.w;  //above Top plane
+										//clipSides[4] += clipPoint.z < -clipPoint.w; //in front of Near plane
+										//clipSides[5] += clipPoint.z > clipPoint.w;  //behind Far plane
 									}
 
 									const bool isOutSideFrustum = clipSides[0] == 8 || clipSides[1] == 8 || clipSides[2] == 8 ||
@@ -1095,7 +1092,7 @@ namespace Ganymede
 		if (m_InstanceDataBuffer == 0)
 		{
 			//m_AnimationDataUBO->Write(0, sizeof(glm::mat4) * m_AnimationDataOffset, m_BatchAnimationDataBufferInter);
-			m_AnimationDataUBO = new SSBO(2, 80000 * sizeof(glm::mat4));
+			m_AnimationDataUBO = new SSBO(2, 80000 * sizeof(glm::mat4), false);
 			//Update Transform buffer for instances
 			GLCall(glGenBuffers(1, &m_InstanceDataBuffer));
 			GLCall(glBindBuffer(GL_ARRAY_BUFFER, m_InstanceDataBuffer));
@@ -1255,7 +1252,7 @@ namespace Ganymede
 				
 				IData pd;
 				pd.instance = instanceTransform;
-				pd.pid = { (float)instance.m_LightIndex, (float)instance.m_TargetLayerID };
+				//pd.pid = { (float)instance.m_LightIndex, (float)instance.m_TargetLayerID };
 				pd.mv = instance.m_MVP;
 				
 				// Uploaded animation matrices if skeletalmesh

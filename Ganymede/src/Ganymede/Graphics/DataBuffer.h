@@ -24,8 +24,28 @@ namespace Ganymede
 		static void InitializeBufferData(const void* data, unsigned int numBytes, DataBufferType bufferType);
 	};
 
+	class GANYMEDE_API DataBufferBase
+	{
+	public:
+		virtual ~DataBufferBase() { DataBufferNativeFunctions::DeleteBuffer(m_RenderID); }
+
+		void Bind()
+		{
+			DataBufferNativeFunctions::BindBuffer(m_RenderID);
+		}
+
+		void UnBind()
+		{
+			DataBufferNativeFunctions::UnBindBuffer();
+		}
+
+	protected:
+		unsigned int m_RenderID;
+		DataBufferType m_BufferType;
+	};
+
 	template <typename T>
-	class DataBuffer
+	class GANYMEDE_API DataBuffer : public DataBufferBase
 	{
 	public:
 		DataBuffer() = delete;
@@ -51,10 +71,10 @@ namespace Ganymede
 		}
 
 		DataBuffer(T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType) :
-			m_RenderID(0),
-			m_IsBound(false),
 			m_BufferType(bufferType)
 		{
+			m_BufferType = bufferType;
+			m_BufferSize = sizeof(T::VertexDataType) * numElements;
 			static_assert(std::is_base_of<VertexDataDescriptor, T>::value, "You can only create a DataBuffer with a VertexDataDescriptor derivate.");
 			m_RenderID = DataBufferNativeFunctions::GenerateBuffer();
 			Bind();
@@ -62,30 +82,20 @@ namespace Ganymede
 			UnBind();
 		}
 
-		~DataBuffer()
-		{
-			DataBufferNativeFunctions::DeleteBuffer(m_RenderID);
-		}
-
-		void Bind()
-		{
-			DataBufferNativeFunctions::BindBuffer(m_RenderID);
-			m_IsBound = true;
-		}
-
-		void UnBind()
-		{
-			DataBufferNativeFunctions::UnBindBuffer();
-			m_IsBound = false;
-		}
-
-		inline bool IsBound() const { return m_IsBound; }
-
 		void Write(T::VertexDataType* data, unsigned int numElements, unsigned int offset)
 		{
 			GM_CORE_ASSERT(m_BufferType == DataBufferType::Dynamic, "Writing data to a statically initialized data buffer is not possible.");
+			
 			Bind();
-			DataBufferNativeFunctions::Write((const void*)&data[0], sizeof(T::VertexDataType) * numElements, offset);
+
+			const size_t numBytesRequested = (sizeof(T::VertexDataType) * numElements) + (sizeof(T::VertexDataType) * offset);
+			if (numBytesRequested > m_BufferSize)
+			{
+				DataBufferNativeFunctions::InitializeBufferData(nullptr, numBytesRequested, m_BufferType);
+				m_BufferSize = numBytesRequested;
+			}
+
+			DataBufferNativeFunctions::Write((const void*)&data[0], sizeof(T::VertexDataType) * numElements, sizeof(T::VertexDataType) * offset);
 			UnBind();
 		}
 
@@ -97,8 +107,7 @@ namespace Ganymede
 		unsigned int GetElementSize() { return sizeof(T::VertexDataType); }
 
 	private:
-		unsigned int m_RenderID;
-		bool m_IsBound;
 		DataBufferType m_BufferType;
+		size_t m_BufferSize;
 	};
 }

@@ -14,6 +14,8 @@
 #include <memory>
 #include <vector>
 #include "VertexObject.h"
+#include <optional>
+
 
 
 namespace Ganymede
@@ -21,9 +23,46 @@ namespace Ganymede
 	class World;
 	class FPSCamera;
 
+	class VertexObjectInstancesInfo
+	{
+	public:
+		VertexObjectInstancesInfo(MeshWorldObject::Mesh& mesh, SSBO& instancesData) :
+			m_VO(&mesh.m_VertexIndicies[0], mesh.m_VertexIndicies.size()),
+			m_SSBODataIndexBuffer(nullptr, 1000 * sizeof(glm::u32vec1), DataBufferType::Dynamic)
+		{
+			std::unique_ptr<DataBuffer<MeshVertexData>> bufferptr = std::make_unique<DataBuffer<MeshVertexData>>(&mesh.m_Vertices[0], mesh.m_Vertices.size(), DataBufferType::Static);
+			m_VO.LinkAndOwnBuffer(std::move(bufferptr));
+			m_VO.LinkBuffer(m_SSBODataIndexBuffer, true);
+		}
+
+		VertexObject& GetVertexObject() { return m_VO; }
+		DataBuffer<UInt32VertexData>& GetIndexBuffer() { return m_SSBODataIndexBuffer; }
+
+	private:
+		VertexObject m_VO;
+		DataBuffer<UInt32VertexData> m_SSBODataIndexBuffer;
+	};
+
+	struct GANYMEDE_API RenderCommand
+	{
+		VertexObject* m_VO = nullptr;
+		Material* m_Material = nullptr;
+		std::uint32_t m_SSBOInstanceID = 0;
+	};
+
+	using RenderCommandQueue = std::vector<RenderCommand>;
+
 	class GANYMEDE_API RenderContext
 	{
 	public:
+		template <typename T>
+		struct RenderData
+		{
+			VertexObject m_VO;
+			Material* m_Material;
+			std::vector<T> m_Instances;
+		};
+
 		RenderContext(const RenderContext&) = delete;
 		RenderContext& operator=(const RenderContext&) = delete;
 		RenderContext() = delete;
@@ -41,7 +80,7 @@ namespace Ganymede
 		MultisampleRenderTarget* CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		CubeMapArrayRenderTarget* CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		VertexObject* CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices);
-		SSBO* CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes);
+		SSBO* CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize);
 		Shader* LoadShader(const std::string& name, const std::string& path);
 		
 		template <typename T>
@@ -102,6 +141,16 @@ namespace Ganymede
 		void DeleteVertexObject(const std::string& name);
 		void UnloadShader(const std::string& name);
 		void DeleteDataBuffer(const std::string& name);
+
+
+
+		std::vector<std::optional<VertexObject>> m_VertexObjectStorage;
+		RenderCommandQueue m_GBufferCommandQueue;
+		RenderCommandQueue m_CubemapShadowMappingCommandQueue;
+		std::vector<std::int32_t> m_InstanceIDToGBufferInstanceDataIndexLookup;
+		std::vector<std::int32_t> m_InstanceIDToCubemapShadowMappingInstanceDataIndexLookup;
+		std::int32_t m_NextFreeGBufferSSBOInstanceDataIndex = 0;
+		std::int32_t m_NextFreeCubemapSSBOInstanceDataIndex = 0;
 
 	private:
 		const World& m_World;

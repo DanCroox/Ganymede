@@ -6,27 +6,34 @@
 layout(location = 0) in vec3 Position;
 layout(location = 5) in ivec4 BoneIndices;
 layout(location = 6) in vec4 BoneWeights;
-layout(location = 7) in mat4 VP;
-layout(location = 11) in mat4 M;
-layout(location = 15) in vec3 instanceData;
+layout(location = 7) in uint InstanceDataIndex;
 
-layout(std140, binding = 2) buffer BonesDataBlock
+struct InstanceDataCubemapShadowMapping
 {
-	mat4 bones[];
+	mat4 m_M;
+	mat4 m_MVP;
+	uvec4 m_Attribs;
+};
+
+layout(std140, binding = 4) buffer InstanceDataBlock
+{
+	InstanceDataCubemapShadowMapping InstanceDatas[];
 };
 
 struct PointLight
 {
-	mat4 u_ShadowMatrices[6];
-	vec4 lightColor;
 	vec3 lightPos;
 	int u_LightIDs;
-	vec4 updateShadowMap;
 };
 
 layout(std140, binding = 1) buffer PointLightDataBlock
 {
 	PointLight pointLights[];
+};
+
+layout(std140, binding = 2) buffer BonesDataBlock
+{
+	mat4 bones[];
 };
 
 uniform mat4 u_Projection;
@@ -36,9 +43,13 @@ out vec3 v_PointlightWorldPos;
 
 void main()
 {
+	InstanceDataCubemapShadowMapping ssboInstanceData = InstanceDatas[InstanceDataIndex];
+	mat4 ss_MVP = ssboInstanceData.m_MVP;
+	mat4 ss_M = ssboInstanceData.m_M;
+
 	// x = LightIndex, y = FaceIndex we will render to. Data are passed as vec2 to have more vertex attributes
-	int indx = int(instanceData.x);
-	int findx = int(instanceData.y);
+	uint indx = ssboInstanceData.m_Attribs.x;
+	uint findx = ssboInstanceData.m_Attribs.y;
 
 	PointLight pl = pointLights[indx];
 
@@ -47,8 +58,7 @@ void main()
 
 	if (isAnimated)
 	{
-		int boneDataOffset = int(instanceData.z);
-
+		uint boneDataOffset = ssboInstanceData.m_Attribs.z;
 		mat4 BoneTransform = bones[BoneIndices[0] + boneDataOffset] * BoneWeights[0];
 		BoneTransform += bones[BoneIndices[1] + boneDataOffset] * BoneWeights[1];
 		BoneTransform += bones[BoneIndices[2] + boneDataOffset] * BoneWeights[2];
@@ -57,11 +67,11 @@ void main()
 		ppos = BoneTransform * ppos;
 	}
 
-	gl_Position = VP * M * ppos;
-	v_FragPos = (M * ppos).xyz;
+	gl_Position = ss_MVP * ppos;
+	v_FragPos = (ss_M * ppos).xyz;
 
 	v_PointlightWorldPos = pl.lightPos;
-	gl_Layer = (pl.u_LightIDs * 6) + findx;
+	gl_Layer = (pl.u_LightIDs * 6) + int(findx);
 };
 
 

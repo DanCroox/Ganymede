@@ -70,4 +70,8 @@ namespace Ganymede
     VertexDataDefinition(Vec2VertexData, glm::vec2,
         M(x, VertexDataPrimitiveType::Float, 2)
     );
+
+    VertexDataDefinition(UInt32VertexData, glm::u32vec1,
+        M(x, VertexDataPrimitiveType::UInt, 1)
+    );
 }

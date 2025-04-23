@@ -10,9 +10,9 @@ namespace Ganymede
 
 	struct GANYMEDE_API PerInstanceData
 	{
-		float m_LightIndex;
-		float m_LayerID; // For shadow mapping
-		float m_AnimationDataOffset = 0; // Bone transform data offset
+		glm::uint m_LightIndex;
+		glm::uint m_LayerID; // For shadow mapping
+		glm::uint m_AnimationDataOffset = 0; // Bone transform data offset
 	};
 
 	struct GANYMEDE_API IData

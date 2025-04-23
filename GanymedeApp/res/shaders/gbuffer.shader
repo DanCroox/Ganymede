@@ -6,28 +6,9 @@ layout(location = 1) in vec2 TexCoords;
 layout(location = 2) in vec3 Normal;
 layout(location = 3) in vec3 Tangent;
 layout(location = 4) in vec3 Bitangent;
-
 layout(location = 5) in ivec4 BoneIndices;
 layout(location = 6) in vec4 BoneWeights;
-
-layout(location = 7) in mat4 u_MV;
-layout(location = 11) in mat4 u_M;
-
-layout(location = 15) in vec3 instanceData;
-
-struct PointLight
-{
-	mat4 u_ShadowMatrices[6];
-	vec4 lightColor;
-	vec3 lightPos;
-	int u_LightIDs;
-	vec4 updateShadowMap;
-};
-
-layout(std140, binding = 2) buffer BonesDataBlock
-{
-	mat4 bones[];
-};
+layout(location = 7) in uint GBufferInstanceDataIndex;
 
 out vec2 v_TexCoords;
 out vec3 v_Normal;
@@ -36,28 +17,39 @@ out mat3 v_TBN;
 out vec3 v_SSAOPos;
 out vec3 v_SSAONormal;
 
-out float testa;
-
 uniform mat4 u_Projection;
 uniform mat4 u_View;
 
+struct GBufferInstanceData
+{
+	mat4 m_M;
+	mat4 m_MV;
+	uvec4 m_AnimationDataOffset;
+};
+
+layout(std140, binding = 3) buffer InstanceDataBlock
+{
+	GBufferInstanceData InstanceDatas[];
+};
+
+layout(std140, binding = 2) buffer BonesDataBlock
+{
+	mat4 bones[];
+};
+
 void main()
 {
-	int bone = 5;
-	testa = 0;
-
-	for (int cb = 0; cb < 4; ++cb)
-	{
-		if (BoneIndices[cb] == bone)
-			testa += BoneWeights[cb];
-	}
-
 	bool isAnimated = BoneWeights[0] + BoneWeights[1] + BoneWeights[2] + BoneWeights[3] > 0;
 	vec4 ppos = vec4(Position, 1);
 
+	GBufferInstanceData ssboInstanceData = InstanceDatas[GBufferInstanceDataIndex];
+
+	mat4 ss_MV = ssboInstanceData.m_MV;
+	mat4 ss_M = ssboInstanceData.m_M;
+
 	if (isAnimated)
 	{
-		int boneDataOffset = int(instanceData.z);
+		int boneDataOffset = int(ssboInstanceData.m_AnimationDataOffset);
 
 		mat4 BoneTransform = bones[BoneIndices[0] + boneDataOffset] * BoneWeights[0];
 		BoneTransform += bones[BoneIndices[1] + boneDataOffset] * BoneWeights[1];
@@ -67,15 +59,15 @@ void main()
 		ppos = BoneTransform * ppos;
 	}
 
-	v_SSAOPos = (u_MV * vec4(Position, 1)).xyz;
-	v_SSAONormal = mat3(transpose(inverse(u_MV))) * Normal;
+	v_SSAOPos = (ss_MV * vec4(Position, 1)).xyz;
+	v_SSAONormal = mat3(transpose(inverse(ss_MV))) * Normal;
 
-	gl_Position = (u_Projection * u_MV) * ppos;
-	v_Normal = mat3(transpose(inverse(u_M))) * Normal;
+	gl_Position = (u_Projection * ss_MV) * ppos;
+	v_Normal = mat3(transpose(inverse(ss_M))) * Normal;
 	v_TexCoords = TexCoords;
-	v_FragPos = (u_M * ppos).xyz;
+	v_FragPos = (ss_M * ppos).xyz;
 
-	mat3 m = mat3(u_M);
+	mat3 m = mat3(ss_M);
 	vec3 T = normalize(m * Tangent);
 	vec3 N = normalize(m * Normal);
 	vec3 B = normalize(m * Bitangent);
@@ -102,8 +94,6 @@ in vec3 v_Normal;
 in mat3 v_TBN;
 in vec3 v_SSAOPos;
 in vec3 v_SSAONormal;
-
-in float testa;
 
 uniform vec3 u_BaseColor;
 uniform vec3 u_EmissiveColor;

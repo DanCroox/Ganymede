@@ -51,6 +51,7 @@ namespace Ganymede
 			};
 
 			Mesh() :
+				m_MeshID(s_NextMeshID++),
 				m_VAO_ID(0),
 				m_EBO_ID(0),
 				m_VertexBufferID(0)
@@ -151,6 +152,10 @@ namespace Ganymede
 			mutable unsigned int m_VAO_ID;
 			mutable unsigned int m_EBO_ID;
 			unsigned int m_VertexBufferID;
+
+			std::uint32_t m_MeshID;
+		private:
+			static std::uint32_t s_NextMeshID;
 		};
 
 		MeshWorldObject(const std::string& name);

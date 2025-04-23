@@ -120,6 +120,8 @@ namespace Ganymede
 		RigidBody GetRigidBody() { return m_RigidBody; }
 		const RigidBody GetRigidBody() const { return m_RigidBody; }
 
+		std::uint32_t GetInstanceID() const { return m_InstanceID; }
+
 	protected:
 		bool m_CreateExecuted = false;
 		PhysicsWorld* m_PhysicsWorld;
@@ -127,6 +129,9 @@ namespace Ganymede
 		Mobility m_Mobility = Mobility::Static;
 
 	private:
+		static std::uint32_t s_NextInstanceID;
+		std::uint32_t m_InstanceID;
+
 		glm::vec3 m_Position = glm::vec3(0.0f);
 		glm::vec3 m_EulerAngles = glm::vec3(0.0f);
 		glm::quat m_Rotation = glm::quat();

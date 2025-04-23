@@ -44,7 +44,7 @@ namespace Ganymede
 
 		FrameBuffer::BlitFrameBufferConfig m_MultiToSingleSampleBlitFBConfig;
 
-		SSBO* m_AnimationDataSSBO;
-		DataBuffer<MeshInstanceVertexData>* m_InstanceDataBuffer;
+		SSBO* m_InstanceDataSSBO;
+		DataBuffer<UInt32VertexData>* m_InstanceDataIndexBuffer;
 	};
 }

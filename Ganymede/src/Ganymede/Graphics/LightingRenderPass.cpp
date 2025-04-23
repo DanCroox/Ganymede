@@ -19,7 +19,7 @@ namespace Ganymede
 		m_LightingRT = renderContext.CreateSingleSampleRenderTarget("Lighting", RenderTargetTypes::ComponentType::RGBA, RenderTargetTypes::ChannelDataType::Float, RenderTargetTypes::ChannelPrecision::B32, { 1920, 1080 });
 		m_FrameBuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Color0, *m_LightingRT);
 		m_LightingShader = renderContext.LoadShader("Lighting", "res/shaders/lighting.shader");
-		m_PointLightSortedToCamDistanceSSBO = renderContext.CreateSSBO("PointlightData", 0, 320 * (sizeof(PointLight)));
+		m_PointLightSortedToCamDistanceSSBO = renderContext.CreateSSBO("PointlightData", 0, 320 * (sizeof(PointLight)), true);
 
 		std::vector<glm::vec3> vertices = {
 			{ -1, 1, 0},
@@ -63,7 +63,6 @@ namespace Ganymede
 			const glm::vec3& lightPos = pointlight->GetPosition();
 			pl.lightPos = lightPos;
 			pl.u_LightID = pointlight->GetLightID();
-			pl.updateShadowMap.x = 0;
 		}
 
 		m_PointLightSortedToCamDistanceSSBO->Write(0, pointlights.size() * sizeof(PointLight), pointlights.data());

@@ -19,11 +19,9 @@ namespace Ganymede
 
     struct GANYMEDE_API PointLight
     {
-        glm::mat4 u_ShadowMatrices[6];
         glm::vec4 m_LightColor;
         glm::vec3 lightPos;
         int u_LightID = -1;
-        glm::vec4 updateShadowMap = glm::vec4(0);
     };
 
     struct GANYMEDE_API MeshInstances

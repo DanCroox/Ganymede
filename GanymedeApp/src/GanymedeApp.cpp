@@ -45,7 +45,9 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 	m_NavMesh = std::make_unique<NavMesh>(*m_Renderer);
 
 	std::vector<const WorldObject*> loadedAssets;
-	loadedAssets = m_AssetLoader->LoadFromPath("res/models/backroom.glb");
+	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/backroom.glb");
+	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/oldvilla.glb");
+	loadedAssets = m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
 	GM_INFO("WorldObjects loaded");
 
 	glm::vec3 worldBoundsMin(Numbers::MAX_FLOAT);
@@ -155,6 +157,7 @@ void GanymedeApp::Render()
 		// init render pipeline
 		m_RenderContext = new RenderContext(*m_World, *m_Camera);
 		m_RenderPipeline = new RenderPipeline(*m_RenderContext);
+		m_RenderPipeline->AddRenderPass<CollectGeometryPass>();
 		m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
 		m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
 		m_RenderPipeline->AddRenderPass<LightingRenderPass>();

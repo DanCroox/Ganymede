@@ -9,39 +9,45 @@
 #include "Shader.h"
 #include "SSBO.h"
 #include "VertexDataTypes.h"
+#include "Ganymede/Common/Helpers.h"
+
 
 namespace Ganymede
 {
 	bool ShadowMappingRenderPass::Initialize(RenderContext& renderContext)
 	{
-		m_Framebuffer = renderContext.CreateFrameBuffer("OmniDirectionalShadowMapping", { 512, 512 }, false);
-		m_ShadowMapsArray = renderContext.CreateCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray", 6 * 300, RenderTargetTypes::ComponentType::Depth, RenderTargetTypes::ChannelDataType::UInt, RenderTargetTypes::ChannelPrecision::B16, {512, 512});
+		m_Framebuffer = renderContext.CreateFrameBuffer("OmniDirectionalShadowMapping", { m_ShadowMapSize, m_ShadowMapSize }, false);
+		m_ShadowMapsArray = renderContext.CreateCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray", 6 * 300, RenderTargetTypes::ComponentType::Depth, RenderTargetTypes::ChannelDataType::UInt, RenderTargetTypes::ChannelPrecision::B16, { m_ShadowMapSize, m_ShadowMapSize });
 
 		m_Framebuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Depth, *m_ShadowMapsArray);
 		
-		m_PointLightSortedToCamDistanceOcclusionCheckUBO = renderContext.CreateSSBO("PointlightUpdateBuffer", 1, 320 * (sizeof(PointLight)));
+		m_PointlightDataSSBO = renderContext.CreateSSBO("PointlightUpdateBuffer", 1, 320 * (sizeof(OmniPointlightData)), true);
 		
-		m_ShadowMappingShader = renderContext.LoadShader("OmniDirectionalShadowMappingShader", "res/shaders/OmnidirectionalShadowMapInstances.shader");
 		m_PointLightNearClip = 0.01f;
 		m_PointLightFarClip = 1000.0f;
 		m_PointLightProjectionMatrix = glm::perspective(glm::radians(90.0f), 1.f, m_PointLightNearClip, m_PointLightFarClip);
 
+		m_ShadowMappingShader = renderContext.LoadShader("OmniDirectionalShadowMappingShader", "res/shaders/OmnidirectionalShadowMapInstances.shader");
+		m_ShadowMappingShader->SetUniform1f("far_plane", m_PointLightFarClip);
+
 		m_AnimationDataSSBO = renderContext.GetSSBO("AnimationData");
-		m_InstanceDataBuffer = renderContext.GetDataBuffer<MeshInstanceVertexData>("MeshInstancesVertexDataBuffer");
+		m_InstanceDataBuffer = renderContext.CreateDataBuffer<ShadowMappingInstanceVertexData>("ShadowMappingInstanceVertexData", nullptr, 100000, DataBufferType::Dynamic);
+
+		m_InstanceDataIndexBuffer = renderContext.GetDataBuffer<UInt32VertexData>("InstanceDataIndexBuffer");
 
 		return true;
 	}
 
 	void ShadowMappingRenderPass::Execute(RenderContext& renderContext)
 	{
+		SCOPED_TIMER("ShadowMapping Pass");
+
 		OGLBindingHelper::BindFrameBuffer(*m_Framebuffer);
 
 		const World& world = renderContext.GetWorld();
-		ConstListSlice<PointlightWorldObjectInstance*> pointlights = world.GetWorldObjectInstances<PointlightWorldObjectInstance>();
-
-		std::vector<PointLight> pointlightsTotal;
+		auto pointlights = world.GetWorldObjectInstances<PointlightWorldObjectInstance>();
+		std::vector<OmniPointlightData> pointlightsTotal;
 		pointlightsTotal.reserve(pointlights.size());
-
 		int lightId = 0;
 		for (PointlightWorldObjectInstance* pointlight : pointlights)
 		{
@@ -49,79 +55,52 @@ namespace Ganymede
 
 			pointlight->SetLightID(currentLightID);
 			pointlight->SetLightingState(LightsManager::LightingState::DynamicShadow);
-			
-			PointLight& pl = pointlightsTotal.emplace_back();
-			const glm::vec3& lightPos = pointlight->GetPosition();
-			pl.lightPos = lightPos;
-			pl.u_LightID = currentLightID;
-
-			pl.u_ShadowMatrices[0] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-			pl.u_ShadowMatrices[1] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0));
-			pl.u_ShadowMatrices[2] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
-			pl.u_ShadowMatrices[3] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0));
-			pl.u_ShadowMatrices[4] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0));
-			pl.u_ShadowMatrices[5] = m_PointLightProjectionMatrix * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0));
 
 			unsigned int m_DepthCubemapTexture = m_ShadowMapsArray->GetRenderID();
-			glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, m_DepthCubemapTexture);
 			float depthClear = 1.0f;
 			glClearTexSubImage(
-				m_DepthCubemapTexture, // texture
-				0,                     // level
-				0, 0,                  // xoffset, yoffset
-				currentLightID * 6, // zoffset (erstes Face)
-				512, 512,         // Breite, Höhe
-				6,                     // depth = 6 Faces
-				GL_DEPTH_COMPONENT,    // format
-				GL_FLOAT,              // type
-				&depthClear            // pointer auf den Wert
+				m_DepthCubemapTexture,
+				0,					
+				0, 0,				
+				currentLightID * 6,	
+				m_ShadowMapSize, m_ShadowMapSize,
+				6,					
+				GL_DEPTH_COMPONENT,	
+				GL_FLOAT,			
+				&depthClear			
 			);
 
+			OmniPointlightData& pl = pointlightsTotal.emplace_back();
+			pl.m_WorldPosition = pointlight->GetPosition();
+			pl.m_ID = currentLightID;
 		}
-
-		m_PointLightSortedToCamDistanceOcclusionCheckUBO->Write(0, pointlightsTotal.size() * sizeof(PointLight), pointlightsTotal.data());
+		m_PointlightDataSSBO->Write(0, pointlightsTotal.size() * sizeof(OmniPointlightData), pointlightsTotal.data());
 
 		Renderer2& renderer = renderContext.GetRenderer();
-		unsigned int animationDataOffset = 0;
-
-		auto instances = renderContext.GetWorld().GetWorldObjectInstances<MeshWorldObjectInstance>();
-		for (const auto& instance : instances)
+		RenderCommandQueue& commandQueue = renderContext.m_CubemapShadowMappingCommandQueue;
+		unsigned int indexOffset = 0;
+		
+		for (int i = 0; i < commandQueue.size(); ++i)
 		{
-			const MeshWorldObject* mwo = instance->GetMeshWorldObject();
-			for (MeshWorldObject::Mesh* mesh : mwo->m_Meshes)
+			// CommandQueue comes sorted by mesh and shader type.
+			// This allows to queue-up multiple instances and draw them with one submission.
+			RenderCommand& renderCommand = commandQueue[i];
+
+			VertexObject& vo = *renderCommand.m_VO;
+
+			glm::u32vec1 d(renderCommand.m_SSBOInstanceID);
+			m_InterInstanceDataIndexBuffer.push_back(d);
+
+			const unsigned int nextIndex = i + 1;
+			const bool isLastInstance = (commandQueue.size() - 1) == i;
+			const bool submitInstance = isLastInstance ||
+				commandQueue[nextIndex].m_VO != &vo;
+
+			if (submitInstance)
 			{
-				DataBuffer<MeshVertexData> buffer(&mesh->m_Vertices[0], mesh->m_Vertices.size(), DataBufferType::Static);
-				VertexObject vo(&mesh->m_VertexIndicies[0], mesh->m_VertexIndicies.size());
-				vo.LinkBuffer(buffer);
-				vo.LinkBuffer(*m_InstanceDataBuffer, true);
-
-				unsigned int instanceAnimOffset = 0;
-
-				if (SkeletalMeshWorldObjectInstance* skeletalMesh = dynamic_cast<SkeletalMeshWorldObjectInstance*>(instance))
-				{
-					const std::vector<glm::mat4>& animationFrame = skeletalMesh->GetAnimationBoneData();
-					m_AnimationDataSSBO->Write(sizeof(glm::mat4) * animationDataOffset, sizeof(glm::mat4) * animationFrame.size(), (void*)&animationFrame[0]);
-					instanceAnimOffset = animationDataOffset;
-					animationDataOffset += animationFrame.size();
-				}
-
-				std::vector<IData> pds;
-				for (int plIdx = 0; plIdx < pointlightsTotal.size(); ++plIdx)
-				{
-					for (int i = 0; i < 6; ++i)
-					{
-						IData& pd = pds.emplace_back();
-						pd.instance = instance->GetTransform();
-						pd.pid = { static_cast<float>(plIdx), static_cast<float>(i), static_cast<float>(instanceAnimOffset) };
-						pd.mv = pointlightsTotal[plIdx].u_ShadowMatrices[i];
-					}
-				}
-
-				m_InstanceDataBuffer->Write(&pds[0], pds.size(), 0);
-
-				m_ShadowMappingShader->SetUniform1f("far_plane", m_PointLightFarClip);
-
-				renderer.DrawVertexObject(vo, pds.size(), *m_Framebuffer, *m_ShadowMappingShader, true);
+				m_InstanceDataIndexBuffer->Write(&m_InterInstanceDataIndexBuffer[0], m_InterInstanceDataIndexBuffer.size(), 0);
+				renderer.DrawVertexObject(vo, m_InterInstanceDataIndexBuffer.size(), *m_Framebuffer, *m_ShadowMappingShader, true);
+				m_InterInstanceDataIndexBuffer.clear();
 			}
 		}
 	}

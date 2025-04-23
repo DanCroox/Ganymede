@@ -206,7 +206,7 @@ namespace Ganymede
 			IData& pd = gpuData[dataIndex];
 			++dataIndex;
 			pd.instance = instanceTransform;
-			pd.pid = { (float)instance.m_LightIndex, (float)instance.m_TargetLayerID };
+			//pd.pid = { (float)instance.m_LightIndex, (float)instance.m_TargetLayerID };
 			pd.mv = instance.m_MVP;
 
 			// Upload animation data for this instance if needed

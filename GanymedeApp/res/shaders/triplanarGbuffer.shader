@@ -10,26 +10,43 @@ layout(location = 1) in vec2 TexCoords;
 layout(location = 2) in vec3 Normal;
 layout(location = 3) in vec3 Tangent;
 layout(location = 4) in vec3 Bitangent;
-layout(location = 7) in mat4 u_MV;
-layout(location = 11) in mat4 u_M;
+layout(location = 7) in uint GBufferInstanceDataIndex;
+
 out vec2 v_TexCoords;
 out vec3 v_Normal;
 out vec3 v_FragPos;
 out mat3 v_TBN;
 out vec3 v_SSAOPos;
 out vec3 v_SSAONormal;
-uniform mat4 u_Projection;
-void main()
 
+uniform mat4 u_Projection;
+
+struct GBufferInstanceData
 {
-	v_SSAOPos = (u_MV * vec4(Position, 1)).xyz;
-	v_SSAONormal = mat3(transpose(inverse(u_MV))) * Normal;
-	mat4 u_MVP = u_Projection * u_MV;
+	mat4 m_M;
+	mat4 m_MV;
+	uvec4 m_AnimationDataOffset;
+};
+
+layout(std140, binding = 3) buffer InstanceDataBlock
+{
+	GBufferInstanceData InstanceDatas[];
+};
+
+void main()
+{
+	GBufferInstanceData instanceData = InstanceDatas[GBufferInstanceDataIndex];
+	mat4 instance_MV = instanceData.m_MV;
+	mat4 instance_M = instanceData.m_M;
+
+	v_SSAOPos = (instance_MV * vec4(Position, 1)).xyz;
+	v_SSAONormal = mat3(transpose(inverse(instance_MV))) * Normal;
+	mat4 u_MVP = u_Projection * instance_MV;
 	gl_Position = u_MVP * vec4(Position, 1);
-	v_Normal = mat3(transpose(inverse(u_M))) * Normal;
+	v_Normal = mat3(transpose(inverse(instance_M))) * Normal;
 	v_TexCoords = TexCoords;
-	v_FragPos = (u_M * vec4(Position, 1)).xyz;
-	mat3 m = mat3(u_M);
+	v_FragPos = (instance_M * vec4(Position, 1)).xyz;
+	mat3 m = mat3(instance_M);
 	vec3 T = m * normalize(Tangent);
 	vec3 N = m * normalize(Normal);
 	vec3 B = m * normalize(Bitangent);

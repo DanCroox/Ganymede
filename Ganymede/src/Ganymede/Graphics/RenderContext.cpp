@@ -89,9 +89,9 @@ namespace Ganymede
         return ptr;
     }
 
-    SSBO* RenderContext::CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes)
+    SSBO* RenderContext::CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize)
     {
-        auto [it, inserted] = m_SSBOs.try_emplace(name, bindingID, numBytes);
+        auto [it, inserted] = m_SSBOs.try_emplace(name, bindingID, numBytes, autoResize);
         GM_CORE_ASSERT(inserted, "Tried to create ssbo which already existed. Using from cache.");
         SSBO* ptr = &it->second;
         if (!ptr->IsValid())

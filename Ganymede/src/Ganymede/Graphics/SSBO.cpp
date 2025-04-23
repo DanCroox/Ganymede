@@ -1,27 +1,104 @@
 #include "SSBO.h"
+#include "OGLBindingHelper.h"
 
 #include <GL/glew.h>
 
 namespace Ganymede
 {
-	SSBO::SSBO(unsigned int bindingPointID, unsigned int bufferSize) :
+	SSBO::SSBO(unsigned int bindingPointID, unsigned int bufferSize, bool autoResize) :
 		m_BindingPointID(bindingPointID),
-		m_BufferSize(bufferSize)
+		m_AutoResize(autoResize)
 	{
-		glCreateBuffers(1, &m_RenderID);
-		GM_CORE_ASSERT(m_RenderID != 0, "Couldn't create buffer.");
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_BindingPointID, m_RenderID);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, m_BufferSize, nullptr, GL_DYNAMIC_DRAW);
+		CreateBuffer(bufferSize);
+		MapBuffer();
 	}
 
 	SSBO::~SSBO()
 	{
+		DeleteBuffer();
+	}
+
+	void SSBO::CreateBuffer(size_t bufferSize)
+	{
+		GLint ssboAlign = 0;
+		glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &ssboAlign);
+		m_BufferSize = ((bufferSize + ssboAlign - 1) / ssboAlign) * ssboAlign;
+
+		glCreateBuffers(1, &m_RenderID);
+		GM_CORE_ASSERT(m_RenderID != 0, "Couldn't create buffer.");
+
+		glNamedBufferStorage(
+			m_RenderID,
+			m_BufferSize,
+			nullptr,
+			GL_MAP_WRITE_BIT
+			| GL_MAP_PERSISTENT_BIT
+			| GL_MAP_COHERENT_BIT
+			| GL_DYNAMIC_STORAGE_BIT
+		);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_BindingPointID, m_RenderID);
+	}
+
+
+	void SSBO::MapBuffer()
+	{
+		GM_CORE_ASSERT(m_RenderID != 0, "Invalid handle.");
+		GM_CORE_ASSERT(m_DirectAccessBuffer == nullptr, "Buffer already mapped.");
+
+		m_DirectAccessBuffer = static_cast<char*>(glMapNamedBufferRange(
+			m_RenderID,
+			0,
+			m_BufferSize,
+			GL_MAP_WRITE_BIT
+			| GL_MAP_PERSISTENT_BIT
+			| GL_MAP_COHERENT_BIT
+		));
+	}
+
+	void SSBO::UnmapBuffer()
+	{
+		GM_CORE_ASSERT(m_RenderID != 0, "Invalid handle.");
+		GM_CORE_ASSERT(m_DirectAccessBuffer != nullptr, "Buffer not mapped.");
+
+		if (m_DirectAccessBuffer == nullptr)
+		{
+			return;
+		}
+
+		glUnmapNamedBuffer(m_RenderID);
+		m_DirectAccessBuffer = nullptr;
+	}
+
+	void SSBO::DeleteBuffer()
+	{
+		GM_CORE_ASSERT(m_RenderID != 0, "Invalid handle.");
+
+		UnmapBuffer();
 		glDeleteBuffers(1, &m_RenderID);
 	}
 
-	void SSBO::Write(unsigned int offset, unsigned int byteCount, void* data) const
+	void SSBO::ResizeBuffer(size_t newSize)
 	{
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_RenderID);
-		glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, byteCount, data);
+		const unsigned int oldBufferRenderID = m_RenderID;
+		const size_t oldBufferSize = m_BufferSize;
+		UnmapBuffer();
+		CreateBuffer(newSize);
+		glCopyNamedBufferSubData(oldBufferRenderID, m_RenderID, 0, 0, oldBufferSize);
+		glDeleteBuffers(1, &oldBufferRenderID);
+		MapBuffer();
+	}
+
+	void SSBO::Write(unsigned int offset, unsigned int byteCount, void* data)
+	{
+		const size_t numRequestedBytes = offset + byteCount;
+
+		GM_CORE_ASSERT(m_AutoResize || numRequestedBytes <= m_BufferSize, "Exceeded buffer boundry.");
+
+		if (m_AutoResize && (numRequestedBytes > m_BufferSize))
+		{
+			ResizeBuffer(numRequestedBytes);
+		}
+
+		memcpy(m_DirectAccessBuffer + offset, data, byteCount);
 	}
 }
