@@ -157,6 +157,7 @@ void GanymedeApp::Render()
 		// init render pipeline
 		m_RenderContext = new RenderContext(*m_World, *m_Camera);
 		m_RenderPipeline = new RenderPipeline(*m_RenderContext);
+		m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
 		m_RenderPipeline->AddRenderPass<CollectGeometryPass>();
 		m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
 		m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
@@ -164,7 +165,7 @@ void GanymedeApp::Render()
 		m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
 		m_RenderPipeline->Initialize();
 	}
-
+	
 	m_RenderPipeline->Execute();
 }
 

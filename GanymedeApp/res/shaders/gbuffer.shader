@@ -18,7 +18,21 @@ out vec3 v_SSAOPos;
 out vec3 v_SSAONormal;
 
 uniform mat4 u_Projection;
-uniform mat4 u_View;
+
+struct CommonShaderData
+{
+	mat4 m_View;
+	mat4 m_Projection;
+	float m_NearClip;
+	float m_FarClip;
+	float m_GameTime;
+	float m_DeltaTime;
+};
+
+layout(std140, binding = 4) buffer CommonShaderDataBlock
+{
+	CommonShaderData CommonData;
+};
 
 struct GBufferInstanceData
 {
@@ -62,7 +76,7 @@ void main()
 	v_SSAOPos = (ss_MV * vec4(Position, 1)).xyz;
 	v_SSAONormal = mat3(transpose(inverse(ss_MV))) * Normal;
 
-	gl_Position = (u_Projection * ss_MV) * ppos;
+	gl_Position = (CommonData.m_Projection * ss_MV) * ppos;
 	v_Normal = mat3(transpose(inverse(ss_M))) * Normal;
 	v_TexCoords = TexCoords;
 	v_FragPos = (ss_M * ppos).xyz;
@@ -121,7 +135,7 @@ void main()
 	gNormal = vec4(normalize(v_TBN * normal), 1);
 	
 	// and the diffuse per-fragment color
-	gAlbedo = texture(u_Texture0, v_TexCoords) * vec4(u_BaseColor, 1);
+		gAlbedo = texture(u_Texture0, v_TexCoords) * vec4(u_BaseColor, 1);
 	if (gAlbedo.a < 1.0)
 		discard;
 

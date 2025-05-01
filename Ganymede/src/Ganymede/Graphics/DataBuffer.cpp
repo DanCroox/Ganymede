@@ -1,7 +1,6 @@
 #include "DataBuffer.h"
 #include "Renderer.h"
 #include "GL/glew.h"
-#include "Ganymede/Log/Log.h"
 
 namespace Ganymede
 {
@@ -23,7 +22,7 @@ namespace Ganymede
     unsigned int DataBufferNativeFunctions::GenerateBuffer()
     {
         unsigned int renderID;
-        glGenBuffers(1, &renderID);
+        glCreateBuffers(1, &renderID);
         GM_CORE_ASSERT(renderID != 0, "Couldn't create buffer.");
         return renderID;
     }
@@ -46,13 +45,13 @@ namespace Ganymede
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
-    void DataBufferNativeFunctions::Write(const void* data, unsigned int numBytes, unsigned int byteOffset)
+    void DataBufferNativeFunctions::Write(unsigned int renderID, const void* data, unsigned int numBytes, unsigned int byteOffset)
     {
-        glBufferSubData(GL_ARRAY_BUFFER, byteOffset, numBytes, data);
+        glNamedBufferSubData(renderID, byteOffset, numBytes, data);
     }
 
-    void DataBufferNativeFunctions::InitializeBufferData(const void* data, unsigned int numBytes, DataBufferType bufferType)
+    void DataBufferNativeFunctions::InitializeBufferData(unsigned int renderID, const void* data, unsigned int numBytes, DataBufferType bufferType)
     {
-        glBufferData(GL_ARRAY_BUFFER, numBytes, data, DataBufferNativeFunctions_Private::ToNativeBufferType(bufferType));
+        glNamedBufferData(renderID, numBytes, data, DataBufferNativeFunctions_Private::ToNativeBufferType(bufferType));
     }
 }

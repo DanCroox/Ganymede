@@ -19,7 +19,7 @@ namespace Ganymede
         :m_FilePath(filepath), m_RendererID(0)
     {
         ShaderProgramSource source = ParseShader(filepath);
-        m_RendererID = CreateShader(source.VertexSource, source.FragmentSource, source.GeometrySource);
+        m_RendererID = CreateShader(source.ComputeSource, source.VertexSource, source.FragmentSource, source.GeometrySource);
     }
 
     Shader::~Shader()
@@ -35,17 +35,27 @@ namespace Ganymede
 
         enum class ShaderType : int
         {
-            NONE = -1, VERTEX = 0, FRAGMENT = 1, GEOMETRY = 2
+            NONE = -1,
+            COMPUTE,
+            VERTEX,
+            FRAGMENT,
+            GEOMETRY,
+
+            _COUNT
         };
 
         std::string line;
-        std::stringstream ss[3];
+        std::stringstream ss[static_cast<int>(ShaderType::_COUNT)];
         ShaderType type = ShaderType::NONE;
         while (getline(stream, line))
         {
             if (line.find("#shader") != std::string::npos)
             {
-                if (line.find("vertex") != std::string::npos)
+                if (line.find("compute") != std::string::npos)
+                {
+                    type = ShaderType::COMPUTE;
+                }
+                else if (line.find("vertex") != std::string::npos)
                 {
                     type = ShaderType::VERTEX;
                 }
@@ -72,7 +82,7 @@ namespace Ganymede
             }
         }
 
-        return { ss[0].str(), ss[1].str(), ss[2].str() };
+        return { ss[0].str(), ss[1].str(), ss[2].str(), ss[3].str() };
     }
 
     void Shader::ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut)
@@ -139,6 +149,10 @@ namespace Ganymede
             {
                 shaderTypeString = "geometry";
             }
+            else if (type == GL_COMPUTE_SHADER)
+            {
+                shaderTypeString = "compute";
+            }
             std::cout << "Failed to compile " << shaderTypeString << "shader!" << std::endl;
             std::cout << message << std::endl;
             GLCall(glDeleteShader(id));
@@ -149,43 +163,57 @@ namespace Ganymede
         return id;
     }
 
-    unsigned int Shader::CreateShader(const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader)
+    unsigned int Shader::CreateShader(const std::string& computeShader, const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader)
     {
+        const bool hasCS = computeShader.size() > 0;
         const bool hasVS = vertexShader.size() > 0;
         const bool hasFS = fragmentShader.size() > 0;
         const bool hasGS = geometryShader.size() > 0;
 
-        if (!hasVS)
+        if (!hasCS && !hasVS )
         {
+            // All shaders except compute require a vertex shader
             GM_CORE_ASSERT(false, "No vertex shader found!");
             return 0;
         }
 
         unsigned int program = glCreateProgram();
+        unsigned int cs = 0;
         unsigned int vs = 0;
         unsigned int fs = 0;
         unsigned int gs = 0;
 
+        if (hasCS)
+        {
+            cs = CompileShader(GL_COMPUTE_SHADER, computeShader);
+            GLCall(glAttachShader(program, cs));
+        }
+
         if (hasVS)
         {
-            unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
+            vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
             GLCall(glAttachShader(program, vs));
         }
 
         if (hasFS)
         {
-            unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+            fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
             GLCall(glAttachShader(program, fs));
         }
 
         if (hasGS)
         {
-            unsigned int gs = CompileShader(GL_GEOMETRY_SHADER, geometryShader);
+            gs = CompileShader(GL_GEOMETRY_SHADER, geometryShader);
             GLCall(glAttachShader(program, gs));
         }
 
         GLCall(glLinkProgram(program));
         GLCall(glValidateProgram(program));
+
+        if (hasCS)
+        {
+            GLCall(glDeleteShader(cs));
+        }
 
         if (hasVS)
         {

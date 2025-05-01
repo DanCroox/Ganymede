@@ -15,7 +15,7 @@ struct InstanceDataCubemapShadowMapping
 	uvec4 m_Attribs;
 };
 
-layout(std140, binding = 4) buffer InstanceDataBlock
+layout(std140, binding = 5) buffer InstanceDataBlock
 {
 	InstanceDataCubemapShadowMapping InstanceDatas[];
 };

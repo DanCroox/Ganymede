@@ -14,6 +14,7 @@ namespace Ganymede
 
 	struct GANYMEDE_API ShaderProgramSource
 	{
+		std::string ComputeSource;
 		std::string VertexSource;
 		std::string FragmentSource;
 		std::string GeometrySource;
@@ -61,7 +62,7 @@ namespace Ganymede
 		ShaderProgramSource ParseShader(const std::string& filepath);
 		void ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut);
 		unsigned int CompileShader(unsigned int type, const std::string& source);
-		unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader);
+		unsigned int CreateShader(const std::string& computeShader, const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader);
 
 		std::unordered_map<std::string, int> m_ShaderTextureSlots;
 		unsigned int m_NextAvailableTextureSlot = 0;

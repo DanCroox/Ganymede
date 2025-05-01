@@ -39,7 +39,7 @@ namespace Ganymede
 		m_InstanceDataIndexBuffer = renderContext.CreateDataBuffer<UInt32VertexData>("InstanceDataIndexBuffer", nullptr, 1, DataBufferType::Dynamic);
 
 		m_GBufferInstanceDataSSBO = renderContext.CreateSSBO("GBufferInstanceData", 3, 1 * sizeof(InstanceDataGBuffer), true);
-		m_CubemapShadowMappingInstanceDataSSBO = renderContext.CreateSSBO("CubemapShadowMappingInstanceData", 4, 1 * sizeof(InstanceDataGBuffer), true);
+		m_CubemapShadowMappingInstanceDataSSBO = renderContext.CreateSSBO("CubemapShadowMappingInstanceData", 5, 1 * sizeof(InstanceDataGBuffer), true);
 
 		m_AnimationDataSSBO = renderContext.CreateSSBO("AnimationData", 2, 1 * sizeof(glm::mat4), true);
 

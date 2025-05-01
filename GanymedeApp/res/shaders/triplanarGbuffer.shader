@@ -19,7 +19,20 @@ out mat3 v_TBN;
 out vec3 v_SSAOPos;
 out vec3 v_SSAONormal;
 
-uniform mat4 u_Projection;
+struct CommonShaderData
+{
+	mat4 m_View;
+	mat4 m_Projection;
+	float m_NearClip;
+	float m_FarClip;
+	float m_GameTime;
+	float m_DeltaTime;
+};
+
+layout(std430, binding = 4) buffer CommonShaderDataBlock
+{
+	CommonShaderData CommonData;
+};
 
 struct GBufferInstanceData
 {
@@ -41,7 +54,7 @@ void main()
 
 	v_SSAOPos = (instance_MV * vec4(Position, 1)).xyz;
 	v_SSAONormal = mat3(transpose(inverse(instance_MV))) * Normal;
-	mat4 u_MVP = u_Projection * instance_MV;
+	mat4 u_MVP = CommonData.m_Projection * instance_MV;
 	gl_Position = u_MVP * vec4(Position, 1);
 	v_Normal = mat3(transpose(inverse(instance_M))) * Normal;
 	v_TexCoords = TexCoords;
@@ -85,7 +98,6 @@ uniform sampler2D u_Texture2;
 uniform sampler2D u_Texture3;
 
 uniform sampler2D u_Texture4;
-uniform float u_GameTime;
 
 void main()
 {
@@ -163,7 +175,6 @@ void main()
 	gMetalRough.g += texture(u_Texture2, uvZ).g * triblend.z;
 	gMetalRough.g *= u_Roughness * 1;
 
-	//gMetalRough.g = mod(u_GameTime*.2, 1);
 	gMetalRough.g = 0.35;
 	gMetalRough.a = 1;
 

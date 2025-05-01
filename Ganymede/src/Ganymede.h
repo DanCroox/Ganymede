@@ -9,6 +9,7 @@
 #include <Ganymede/Data/AssetLoader.h>
 #include <Ganymede/Events/Event.h>
 #include <Ganymede/Graphics/CompositeRenderPass.h>
+#include <Ganymede/Graphics/PrepareFrameRenderPass.h>
 #include <Ganymede/Graphics/DataBuffer.h>
 #include <Ganymede/Graphics/FrameBuffer.h>
 #include <Ganymede/Graphics/CollectGeometryPass.h>
