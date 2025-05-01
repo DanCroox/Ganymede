@@ -19,3 +19,6 @@
 [submodule "Ganymede/vendor/imgui"]
 	path = Ganymede/vendor/imgui
 	url = https://github.com/DanCroox/imgui
+[submodule "Ganymede/vendor/entt"]
+	path = Ganymede/vendor/entt
+	url = https://github.com/skypjack/entt.git

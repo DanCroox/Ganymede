@@ -13,7 +13,7 @@ bindir = "_bin/"
 intermediatedir = "_intermediate/"
 
 
-group "Dependecies/CMAKE"
+group "Dependencies/CMAKE"
 
 externalproject "assimp"
    location "Ganymede/vendor/assimp/build/code"
@@ -41,7 +41,7 @@ externalproject "glew_s"
 
 group ""
 
-group "Dependecies"
+group "Dependencies"
 
 project "DetourRecast"
         location "Ganymede/vendor/recastnavigation"
@@ -189,7 +189,8 @@ project "Ganymede"
 		"Ganymede/vendor/recastnavigation/DetourTileCache/include",
 		"Ganymede/vendor/recastnavigation/Recast/include",
 		"Ganymede/vendor/stb_image",
-		"Ganymede/vendor/imgui"
+		"Ganymede/vendor/imgui",
+		"Ganymede/vendor/entt/single_include"
 	}
 
 	filter "system:windows"
