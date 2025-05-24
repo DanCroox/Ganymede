@@ -1,5 +1,4 @@
 #include "IndexBuffer.h"
-#include "Renderer.h"
 #include "GL/glew.h"
 
 namespace Ganymede

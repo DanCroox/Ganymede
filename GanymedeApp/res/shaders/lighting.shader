@@ -206,9 +206,9 @@ void main()
             
             if (pointLights[i].u_LightID > -1)
             {
-                ss = 1 - ShadowCalculation(pointLights[i].u_LightID, position, pointLights[i].u_PointlighWorldLocation, normal);
-                if (ss == 0)
-                    continue;
+                //ss = 1 - ShadowCalculation(pointLights[i].u_LightID, position, pointLights[i].u_PointlighWorldLocation, normal);
+                //if (ss == 0)
+                //    continue;
             }
 
             // calculate per-light radiance

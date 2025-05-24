@@ -11,27 +11,19 @@
 #include "DetourNavMeshQuery.h"
 #include "DetourCrowd.h"
 
+
 #include "Ganymede/World/MeshWorldObject.h"
-#include "Ganymede/World/MeshWorldObjectInstance.h"
-#include "Ganymede/Graphics/Renderer.h"
 
 namespace Ganymede
 {
-	NavMesh::NavMesh(Renderer& renderer)
+	NavMesh::NavMesh()
 	{
 		m_Agents.resize(1000);
 		m_cfgPtr = new rcConfig();
-
-		m_Renderer = &renderer;
 	}
-
-	bool NavMesh::Generate(const ConstListSlice<MeshWorldObjectInstance*>& instances)
+	
+	bool NavMesh::Generate(EntityView<Include<GCMesh, GCTransform, GCStaticMobility>, Exclude<GCIgnoreForNavMesh>> entityView)
 	{
-		if (instances.size() == 0)
-		{
-			return false;
-		}
-
 		rcConfig& m_cfg = *m_cfgPtr;
 
 		float* rc_verts;
@@ -55,20 +47,15 @@ namespace Ganymede
 		unsigned int vertexIndexOffset = 0;
 		unsigned int vertexIndexBase = 0;
 
-		for (const MeshWorldObjectInstance* instance : instances)
+		for (auto [entity, gcMesh, gcTransform] : entityView.each())
 		{
-			if (instance->GetMobility() != WorldObjectInstance::Mobility::Static || instance->GetMeshWorldObject()->GetExcludeFromNavigationMesh())
-			{
-				// Only static geometry will be used to create the navigation mesh
-				continue;
-			}
-			const MeshWorldObject::Mesh& mesh = *instance->GetMeshWorldObject()->m_Meshes[0];
+			const MeshWorldObject::Mesh& mesh = *gcMesh.m_Meshes[0];
 
 			const auto& meshVertices = mesh.m_Vertices;
 			const auto& meshIndices = mesh.m_VertexIndicies;
 			const unsigned int numFaces = mesh.m_VertexIndicies.size() / 3;
 
-			const glm::mat4 localTransform = instance->GetLocalTransform();
+			const glm::mat4 localTransform = gcTransform.GetMatrix();
 
 			for (const MeshWorldObject::Mesh::Vertex meshVertex : meshVertices)
 			{
@@ -463,48 +450,6 @@ namespace Ganymede
 				GM_CORE_ERROR("Could not init Detour navmesh query");
 				return false;
 			}
-
-			MeshWorldObject::Mesh dMesh;
-			Renderer::DebugDrawMesh* ddMesh = new Renderer::DebugDrawMesh();
-
-			const int numPolys = m_pmesh->npolys;
-			const int nvp = m_pmesh->nvp;
-			unsigned int vertidx = 0;
-
-			for (unsigned int i = 0; i < numPolys; ++i)
-			{
-				const unsigned short* poly = &m_pmesh->polys[i * 2 * nvp];
-
-				unsigned short vi[3];
-				for (int j = 2; j < nvp; ++j) // go through all verts in the polygon
-				{
-					if (poly[j] == RC_MESH_NULL_IDX) break;
-					vi[0] = poly[0];
-					vi[1] = poly[j - 1];
-					vi[2] = poly[j];
-					for (int k = 0; k < 3; ++k) // create a 3-vert triangle for each 3 verts in the polygon.
-					{
-						const unsigned short* v = &m_pmesh->verts[vi[k] * 3];
-						const float x = m_pmesh->bmin[0] + v[0] * m_pmesh->cs;
-						const float y = m_pmesh->bmin[1] + (v[1] + 1) * m_pmesh->ch;
-						const float z = m_pmesh->bmin[2] + v[2] * m_pmesh->cs;
-
-						MeshWorldObject::Mesh::Vertex vertex;
-						vertex.m_Position = { x, y, z };
-						dMesh.m_Vertices.push_back(vertex);
-
-						dMesh.m_VertexIndicies.push_back(vertidx);
-
-						ddMesh->m_VertexPositions.push_back({x, y, z});
-						ddMesh->m_VertexIndices.push_back(vertidx);
-						++vertidx;
-					}
-				}
-
-
-			}
-
-			//m_Renderer->AddDebugDrawMesh(dMesh);
 
 			m_Crowd = dtAllocCrowd();
 			m_Crowd->init(m_Agents.size(), 2.f, m_navMesh);

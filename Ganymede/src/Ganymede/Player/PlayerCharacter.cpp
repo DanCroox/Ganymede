@@ -5,13 +5,10 @@
 #include "Ganymede/Common/Helpers.h"
 #include "Ganymede/World/World.h"
 #include "Ganymede/AI/NavMesh.h"
-#include "Ganymede/World/MeshWorldObjectInstance.h"
 #include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "BulletDynamics/Character/btKinematicCharacterController.h"
 
 #include <iostream>
-#include "Ganymede/World/CreatureMeshWorldObjectInstance.h"
-#include "Ganymede/World/MeshWorldObjectInstanceDoor.h"
 #include "Ganymede/Events/Event.h"
 #include "Ganymede/Runtime/WindowEvents.h"
 #include "Ganymede/Input/KeyCodes.h"

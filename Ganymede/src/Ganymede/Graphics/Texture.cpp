@@ -1,5 +1,4 @@
 #include "Texture.h"
-#include "Renderer.h"
 #include "GL/glew.h"
 #include "stb_image.h"
 
@@ -35,7 +34,6 @@ namespace Ganymede
 		m_ChannelCount = channelCount;
 		PushTextureToGPU(data);
 	}
-
 	Texture::~Texture()
 	{
 		GLCall(glDeleteTextures(1, &m_RendererID));

@@ -1,28 +1,24 @@
 #include "AssetLoader.h"
-#include "Ganymede/World/PointlightWorldObject.h"
-#include "Ganymede/System/Types.h"
+
 #include "Ganymede/Common/Helpers.h"
 #include "Ganymede/Graphics/ShaderManager.h"
-#include "glm/gtx/matrix_decompose.hpp"
+#include "Ganymede/Graphics/Texture.h"
+#include "Ganymede/World/PointlightWorldObject.h"
+#include "Ganymede/World/WorldObject.h"
 #include "glm/glm.hpp"
+#include "glm/gtx/matrix_decompose.hpp"
+#include "stb_image.h"
+#include <assimp/Importer.hpp>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <cstdio>
+#include <fstream>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "glm/gtx/matrix_decompose.hpp"
 #include <iostream>
-#include <fstream>
-#include <string>
 #include <sstream>
-#include <cstdio>
+#include <string>
 #include <vector>
-#include "stb_image.h"
-#include "Ganymede/World/WorldObject.h"
-#include "Ganymede/World/MeshWorldObjectInstance.h"
-#include "Ganymede/Graphics/Texture.h"
-#include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include "Ganymede/Graphics/Texture.h"
 
 namespace Ganymede
 {
@@ -504,7 +500,7 @@ namespace Ganymede
         const aiColor4D* colors = mesh.mColors[0];
         const aiFace* faces = mesh.mFaces;
 
-        std::vector<MeshWorldObject::Mesh::BoundingBoxVertex>& boundingBoxVertices = meshData.m_BoundingBoxVertices;
+        MeshWorldObject::Mesh::AABB& boundingBoxVertices = meshData.m_BoundingBoxVertices;
         for (unsigned int i = 0; i < vertexCount; ++i)
         {
             MeshWorldObject::Mesh::Vertex vertex;

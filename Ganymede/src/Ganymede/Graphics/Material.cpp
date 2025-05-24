@@ -1,6 +1,6 @@
 #include "Material.h"
-#include "Renderer.h"
 #include "Shader.h"
+#include "Texture.h"
 
 namespace Ganymede
 {

@@ -3,9 +3,9 @@
 #include "Ganymede/Core/Core.h"
 #include "RigidBody.h"
 #include "glm/glm.hpp"
-#include "Ganymede/World/MeshWorldObjectInstance.h"
 #include "Ganymede/World/MeshWorldObject.h"
-
+#include "Ganymede/ECS/Components/GCMesh.h"
+#include "Ganymede/ECS/Components/GCTransform.h"
 
 class btKinematicCharacterController;
 class btRigidBody;
@@ -56,8 +56,7 @@ namespace Ganymede
 		void Step(float time);
 
 		KinematicCharacterController CreateCapsule(float radius, float height, float mass, glm::vec3 startPosition);
-		RigidBody AddRigidBodyFromMeshWorldObject(MeshWorldObjectInstance& mwoi, float mass);
-		// btCollisionObject* AddStaticBodyFromMeshWorldObject(MeshWorldObjectInstance& mwoi, float mass); 
+		RigidBody AddRigidBodyFromMeshWorldObject(const GCMesh& mesh, const GCTransform& worldTransform, float mass);
 		void RemoveRigidBody(RigidBody body);
 
 		RayResult RayCast(glm::vec3 fromWorld, glm::vec3 toWorld);

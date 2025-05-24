@@ -4,7 +4,6 @@
 #include "glm/glm.hpp"
 
 #include "Ganymede/Common/Helpers.h"
-#include "Ganymede/World/PointlightWorldObjectInstance.h"
 
 namespace Ganymede
 {
@@ -28,28 +27,28 @@ namespace Ganymede
 			PointlightWorldObjectInstance* light = pointlightsSortedByDistanceToCamera[i];
 
 			// Light has an id ... all good
-			if (light->m_LightID > -1)
-				continue;
+			//if (light->m_LightID > -1)
+			//	continue;
 
 			// Light does not have an id... lets check if there is one left in id storage
-			if (m_LightIDStorage.size() > 0)
-			{
-				light->m_LightID = m_LightIDStorage.back();
-				m_LightIDStorage.pop_back();
-				continue;
-			}
+			//if (m_LightIDStorage.size() > 0)
+			//{
+			//	light->m_LightID = m_LightIDStorage.back();
+			//	m_LightIDStorage.pop_back();
+			//	continue;
+			//}
 
 			// All ids given to other lights... lets get a light less close to cam and use its light id
 			// Start reading from a light index which is outside of range to be updated
 			for (unsigned int i = maxLights; i < pointlightsSortedByDistanceToCamera.size(); ++i)
 			{
-				PointlightWorldObjectInstance* oldLight = pointlightsSortedByDistanceToCamera[i];
-				if (oldLight->m_LightID > -1)
-				{
-					light->m_LightID = oldLight->m_LightID;
-					oldLight->m_LightID = -1;
-					break;
-				}
+				//PointlightWorldObjectInstance* oldLight = pointlightsSortedByDistanceToCamera[i];
+				//if (oldLight->m_LightID > -1)
+				//{
+				//	light->m_LightID = oldLight->m_LightID;
+				//	oldLight->m_LightID = -1;
+				//	break;
+				//}
 			}
 		}
 	}

@@ -1,43 +1,38 @@
 #include "World.h"
 
 #include "Ganymede/Common/Helpers.h"
-#include "Ganymede/Data/AssetLoader.h"
-#include "Ganymede/System/Types.h"
-#include "Ganymede/World/MeshWorldObject.h"
-#include "Ganymede/World/PointlightWorldObject.h"
-#include "Ganymede/World/SkeletalMeshWorldObjectInstance.h"
-#include "Ganymede/World/WorldObjectInstance.h"
-#include "PointlightWorldObjectInstance.h"
-
+#include "Ganymede/ECS/Components/GCTickable.h"
+#include "Ganymede/Log/Log.h"
+#include <functional>
 
 namespace Ganymede
 {
-	World::World(AssetLoader& assetLoader) : m_AssetLoader(assetLoader) {}
-
-	World::~World()
+	World::World()
 	{
-		auto instances = GetWorldObjectInstances<WorldObjectInstance>();
-		for (auto instance : instances)
-		{
-			delete instance;
-		}
+		unsigned int threadCount = std::thread::hardware_concurrency();
+		GM_CORE_ASSERT(threadCount > 0, "Couldn't read number of hardware threads. Entity-Tick functions will be computed in main thread!");
+
+		GM_CORE_INFO("Thread count set to %d", threadCount);
+		m_TickThreadPool.resize(threadCount);
 	}
 
 	void World::Tick(double deltaTime)
 	{
 		SCOPED_TIMER("World Tick");
-		auto worldObjectsInstances = GetWorldObjectInstances<WorldObjectInstance>();
+		const auto tickableEntities = GetEntities(Include<GCTickable>{});
+
 		if (m_TickThreadPool.size() == 0)
 		{
-			for (WorldObjectInstance* woi : worldObjectsInstances)
+			for (auto [entity, gcTickable] : tickableEntities.each())
 			{
-				woi->InternalTick(deltaTime);
+				gcTickable.Initialize(*this, entity, deltaTime);
+				gcTickable.Tick(*this, entity, deltaTime);
 			}
 		}
 		else
 		{
 			const unsigned int numThreads = m_TickThreadPool.size();
-			for (WorldObjectInstance* instance : worldObjectsInstances)
+			for (auto [entity, gcTickable] : tickableEntities.each())
 			{
 				Thread* thread;
 				int threadIndex = 0;
@@ -48,57 +43,23 @@ namespace Ganymede
 					{
 						break;
 					}
-					// Check if next thread is not busy
+					// Check if next thread is available
 					threadIndex = (threadIndex + 1) % numThreads;
 				}
 
-				thread->m_WorkerFunction = [instance, deltaTime]()
+				thread->m_WorkerFunction = [this, &gcTickable, entity, deltaTime]()
 					{
-						instance->InternalTick(deltaTime);
+						gcTickable.Initialize(*this, entity, deltaTime);
+						gcTickable.Tick(*this, entity, deltaTime);
 					};
 				thread->Start();
 			}
 		}
 
 		// Wait for all threads to finish
-
 		for (Thread& thread : m_TickThreadPool)
 		{
 			thread.Join();
 		}
-	}
-
-	WorldObjectInstance* World::CreateWorldObjectInstance(const std::string& worldObjectName)
-	{
-		const WorldObject* worldObject = m_AssetLoader.GetWorldObjectByName(worldObjectName);
-
-		if (worldObject == nullptr)
-		{
-			// No world object with given name existent
-			return nullptr;
-		}
-
-		const WorldObject::Type worldObjectType = worldObject->GetType();
-
-		if (worldObjectType == WorldObject::Type::Mesh || worldObjectType == WorldObject::Type::SkeletalMesh)
-		{
-			const MeshWorldObject* object = static_cast<const MeshWorldObject*>(worldObject);
-
-			MeshWorldObjectInstance* woInstance = new MeshWorldObjectInstance(object);
-			woInstance->SetVisible(true);
-
-			return woInstance;
-		}
-		else if (worldObjectType == WorldObject::Type::PointLight)
-		{
-			const PointlightWorldObject* object = static_cast<const PointlightWorldObject*>(worldObject);
-			PointlightWorldObjectInstance* woInstance = new PointlightWorldObjectInstance(object);
-			woInstance->SetVisible(true);
-
-			return woInstance;
-		}
-
-		// Type unknown or None!
-		return nullptr;
 	}
 }

@@ -8,7 +8,11 @@
 #include <mutex>
 #include "glm/glm.hpp"
 
-#include "Ganymede/World/Common/Types.h"
+#include "Ganymede/World/World.h"
+#include "Ganymede/ECS/Components/GCStaticMobility.h"
+#include "Ganymede/ECS/Components/GCTransform.h"
+#include "Ganymede/ECS/Components/GCMesh.h"
+#include "Ganymede/ECS/Components/GCIgnoreForNavMesh.h"
 
 class rcContext;
 class dtCrowd;
@@ -24,8 +28,8 @@ struct rcPolyMeshDetail;
 
 namespace Ganymede
 {
-	class MeshWorldObjectInstance;
-	
+	class World;
+
 	// These are just sample areas to use consistent values across the samples.
 	// The use should specify these base on his needs.
 
@@ -69,50 +73,10 @@ namespace Ganymede
 		int Target;
 	} PATHDATA;
 
-	/*
-	class DistancePointFilter : public dtQueryFilter
-	{
-	public:
-		DistancePointFilter(glm::vec3 center, const float distance)
-			: m_center(center), m_distance(distance)
-		{
-		}
-
-		bool passFilter(const dtPolyRef ref,
-			const dtMeshTile* tile,
-			const dtPoly* poly) const override
-		{
-			// Reject polygons outside the search area.
-			glm::vec3 average;
-			for (int i = 0; i < poly->vertCount; ++i)
-			{
-				unsigned short index = poly->verts[i * 3];
-				average += glm::vec3(tile->verts[index],
-					tile->verts[index+1],
-					tile->verts[index+2]);
-			}
-			average /= poly->vertCount;
-
-			const float distSq = glm::distance(average, m_center);
-			if (distSq > m_distance)
-				return false;
-
-			// Accept all other polygons.
-			return true;
-		}
-
-	private:
-		const glm::vec3 m_center;
-		const float m_distance;
-	};
-	*/
-	class Renderer;
 	class GANYMEDE_API NavMesh
 	{
 	public:
-		NavMesh(Renderer& renderer);
-
-		Renderer* m_Renderer;
+		NavMesh();
 
 		struct Agent
 		{
@@ -133,7 +97,7 @@ namespace Ganymede
 			};
 		};
 
-		bool Generate(const ConstListSlice<MeshWorldObjectInstance*>& instances);
+		bool Generate(EntityView<Include<GCMesh, GCTransform, GCStaticMobility>, Exclude<GCIgnoreForNavMesh>> entityView);
 		void CleanUp();
 
 		int FindPath(const glm::vec3& pStartPos, const glm::vec3& pEndPos, int nPathSlot, int nTarget, std::vector<glm::vec3>& pathOut);

@@ -1,5 +1,5 @@
 #include "GanymedeApp.h"
-#include "Ganymede/World/CreatureMeshWorldObjectInstance.h"
+#include "EntityHelpers.h"
 
 #include <iostream>
 #include <glm/glm.hpp>
@@ -31,23 +31,22 @@ void GanymedeApp::Run()
 	GM_INFO("GanymedeApp shutdown");
 }
 
-void GanymedeApp::GameInit(WindowInitializeEvent&)
+void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 {
 	GM_INFO("Initializing Game");
 	
 	Application& app = Application::Get();
 	m_AssetLoader = std::make_unique<AssetLoader>();
 	m_PhysicsWorld = std::make_unique<PhysicsWorld>();
-	m_World = std::make_unique<World>(*m_AssetLoader);
-	//m_Renderer = std::make_unique<Renderer>(m_AssetLoader->GetShaderManager());
+	m_World = std::make_unique<World>();
 	m_Camera = std::make_unique<FPSCamera>();
 	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
-	m_NavMesh = std::make_unique<NavMesh>(*m_Renderer);
+	m_NavMesh = std::make_unique<NavMesh>();
 
 	std::vector<const WorldObject*> loadedAssets;
-	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/backroom.glb");
-	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/oldvilla.glb");
 	loadedAssets = m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
+	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/physicstest.glb");
+	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/backroom2.glb");
 	GM_INFO("WorldObjects loaded");
 
 	glm::vec3 worldBoundsMin(Numbers::MAX_FLOAT);
@@ -58,81 +57,62 @@ void GanymedeApp::GameInit(WindowInitializeEvent&)
 	{
 		if (const SkeletalMeshWorldObject* smeshwo = dynamic_cast<const SkeletalMeshWorldObject*>(asset))
 		{
-			SkeletalMeshWorldObjectInstance* instance;
 			if (asset->GetName().find("Matschkopf") == 0)
 			{
-				// In the glb file there is an object with above name. We create multiple autonomous intances of this npc
-					for (int i = 0; i < 100; ++i)
+				for (int i = 0; i < 1000; ++i)
 				{
-					instance = new CreatureMeshWorldObjectInstance(smeshwo, *m_NavMesh, *m_PlayerCharacter, *m_PhysicsWorld, *m_World, *m_AssetLoader);
-					instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
-					m_World->AddWorldObjectInstance(instance);
+					entt::entity entity = EntityHelpers::CreateMeshEntity(*m_World, *smeshwo, WorldObjectInstance::Mobility::Dynamic);
+					m_World->AddComponent<GCTickable>(entity, GSCreature::Tick, GSCreature::Initialize);
+					m_World->AddComponent<GCCreature>(entity, *m_World, *m_PhysicsWorld, *m_NavMesh, *m_PlayerCharacter, *m_AssetLoader);
+					m_World->AddComponent<GCSkeletal>(entity);
 				}
+				continue;
 			}
-			else
-			{
-				// Skeletal meshes are objects that are likely to change location and/or change bounding box dimension so set to mobility to "Dynamic"
-				// TODO: Skeletal meshes dont have physics boddies yet
-				if (instance = (SkeletalMeshWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName()))
-				{
-					// REWORK: SkeletalMeshWorldObjectInstance wont be stored automatically right now! Needs proper impelmenting (the entire type loading needs some touch up to be more generic) 
-					instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
-					m_World->AddWorldObjectInstance(instance);
-				}
-			}
+			entt::entity entity = EntityHelpers::CreateMeshEntity(*m_World, *smeshwo, WorldObjectInstance::Mobility::Static);
 		}
 		else if (const MeshWorldObject* meshwo = dynamic_cast<const MeshWorldObject*>(asset))
 		{
-			MeshWorldObjectInstance* instance = (MeshWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName());
-			m_World->AddWorldObjectInstance(instance);
+			WorldObjectInstance::Mobility mobility;
+			float mass = 0;
+			if (meshwo->GetPreferredPhysicsState() == MeshWorldObject::PreferredPhysicsState::Dynamic)
+			{
+				mobility = WorldObjectInstance::Mobility::Dynamic;
+				mass = 10;
+			}
+			else
+			{
+				mobility = WorldObjectInstance::Mobility::Static;
+			}
+			entt::entity entity = EntityHelpers::CreateMeshEntityWithPhysics(*m_World, *meshwo, *m_PhysicsWorld, mass, mobility);
 
-			const glm::vec3& bbVertMin = instance->GetTransform() * glm::vec4(instance->GetMeshWorldObject()->m_Meshes[0]->m_BoundingBoxVertices[7].m_Position, 1.0f); //Left Bottom Front
-			const glm::vec3& bbVertMax = instance->GetTransform() * glm::vec4(instance->GetMeshWorldObject()->m_Meshes[0]->m_BoundingBoxVertices[1].m_Position, 1.0f); //Right Top Back
+			if (asset->GetName().find("Plane001_door_0") == 0)
+			{
+				m_World->AddComponent<GCTickable>(entity, GSDoor::Tick, GSDoor::Initialize);
+				m_World->AddComponent<GCDoor>(entity);
+				continue;
+			}
+
+			const glm::mat4 transform = meshwo->GetTransform();
+			const MeshWorldObject::Mesh& mesh = *meshwo->m_Meshes[0];
+
+			const glm::vec3& bbVertMin = transform * glm::vec4(mesh.m_BoundingBoxVertices[7].m_Position, 1.0f); //Left Bottom Front
+			const glm::vec3& bbVertMax = transform * glm::vec4(mesh.m_BoundingBoxVertices[1].m_Position, 1.0f); //Right Top Back
 
 			worldBoundsMin = glm::min(worldBoundsMin, bbVertMin);
 			worldBoundsMax = glm::max(worldBoundsMax, bbVertMax);
-				
-			instance->SetPhysicsWorld(*m_PhysicsWorld);
-
-			if (meshwo->GetPreferredPhysicsState() == MeshWorldObject::PreferredPhysicsState::Dynamic)
-			{
-				instance->MakeRigidBody(10);
-				instance->GetRigidBody().SetFriction(300.f);
-				instance->GetRigidBody().SetRestitution(.001f); // bouncyness ... less is less bouncy
-				instance->GetRigidBody().SetSleepingThresholds(5.f, 5.f);
-				instance->SetMobility(WorldObjectInstance::Mobility::Dynamic);
-			}
-			else if (meshwo->GetPreferredPhysicsState() == MeshWorldObject::PreferredPhysicsState::Static &&
-				!meshwo->GetExcludeFromNavigationMesh())
-			{
-				instance->MakeRigidBody(0);
-			}
 		}
-		else if (dynamic_cast<const PointlightWorldObject*>(asset) != nullptr)
+		else if (const PointlightWorldObject* plwo = dynamic_cast<const PointlightWorldObject*>(asset))
 		{
-			// Pointlights are also "WorldObjects" which can be used to create an instance of this pointlight data into the world. 
-			PointlightWorldObjectInstance* pointlight = (PointlightWorldObjectInstance*)m_World->CreateWorldObjectInstance(asset->GetName());
-
-			m_World->AddWorldObjectInstance(pointlight);
+			EntityHelpers::CreatePointlightEntity(*m_World, *plwo, WorldObjectInstance::Mobility::Dynamic);
 		}
 	}
 
 	GM_INFO("World loaded. Size: {}, {}, {} x {}, {}, {}", worldBoundsMin.x, worldBoundsMin.y, worldBoundsMin.z, worldBoundsMax.x, worldBoundsMax.y, worldBoundsMax.z);
 
-	// Generate world partition octree
-	m_WorldPartitionManager = std::make_unique<WorldPartitionManager>(glm::floor(worldBoundsMin), glm::ceil(worldBoundsMax), m_AssetLoader->GetShaderManager());
-	GM_INFO("World partitioning done.");
-
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
-	m_NavMesh->Generate(m_World->GetWorldObjectInstances<MeshWorldObjectInstance>());
+	m_NavMesh->Generate(m_World->GetEntities(Include<GCMesh, GCTransform, GCStaticMobility>{}, Exclude<GCIgnoreForNavMesh>{}));
 	auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()) - duration;
 	GM_INFO("Nav mesh generation done in {} ms.", dur.count());
-
-	const auto allMeshWorldObjectsInstances = m_World->GetWorldObjectInstances<MeshWorldObjectInstance>();
-	for (const auto& mwoi : allMeshWorldObjectsInstances)
-	{
-		m_WorldPartitionManager->AddWorldObjectInstance(mwoi);
-	}
 	GM_INFO("All world instances spawned.");
 }
 
@@ -144,7 +124,6 @@ void GanymedeApp::GameTick(Ganymede::WindowTickEvent& event)
 	m_PlayerCharacter->Tick(event.GetFrameDelta());
 	m_World->Tick(event.GetFrameDelta());
 	Render();
-	//m_Renderer->Draw(*m_World, *m_WorldPartitionManager, *m_Camera);
 }
 
 RenderContext* m_RenderContext = nullptr;
@@ -158,9 +137,9 @@ void GanymedeApp::Render()
 		m_RenderContext = new RenderContext(*m_World, *m_Camera);
 		m_RenderPipeline = new RenderPipeline(*m_RenderContext);
 		m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
-		m_RenderPipeline->AddRenderPass<CollectGeometryPass>();
+		//m_RenderPipeline->AddRenderPass<CollectGeometryPass>();
 		m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
-		m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
+		//m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
 		m_RenderPipeline->AddRenderPass<LightingRenderPass>();
 		m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
 		m_RenderPipeline->Initialize();

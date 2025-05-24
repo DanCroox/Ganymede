@@ -306,7 +306,8 @@ project "GanymedeApp"
 	{
 		"Ganymede/src",
 		"Ganymede/vendor/spdlog/include",
-		"Ganymede/vendor/glm"
+		"Ganymede/vendor/glm",
+		"Ganymede/vendor/entt/single_include"
 	}
 	
 	libdirs

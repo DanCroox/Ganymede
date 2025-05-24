@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <vector>
-#include "Ganymede/System/Types.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include "glm/gtx/matrix_decompose.hpp"
@@ -73,17 +72,17 @@ namespace Ganymede
         return character;
     }
 
-    RigidBody PhysicsWorld::AddRigidBodyFromMeshWorldObject(MeshWorldObjectInstance& mwoi, float mass)
+
+    RigidBody PhysicsWorld::AddRigidBodyFromMeshWorldObject(const GCMesh& mesh, const GCTransform& worldTransform, float mass)
     {
         //btTriangleMesh* trimesh = new btTriangleMesh();
-        const MeshWorldObject* mwo = mwoi.GetMeshWorldObject();
         //mass = 0;
         const bool isDynamic = (mass > 0.f);
 
 
         btTransform groundTransform;
 
-        glm::mat4 trans = mwoi.GetTransform();
+        glm::mat4 trans = worldTransform.GetMatrix();
         glm::vec3 scale;
         glm::quat rotation;
         glm::vec3 translation;
@@ -103,7 +102,7 @@ namespace Ganymede
             dArray[i] = pSource[i];
         groundTransform.setFromOpenGLMatrix((float*)dArray);
 
-        const std::vector<MeshWorldObject::Mesh*>& meshes = mwo->m_Meshes;
+        const std::vector<MeshWorldObject::Mesh*>& meshes = mesh.m_Meshes;
         //const std::vector<unsigned int>& indices = mwo->m_VertexIndicies;
         //const std::vector<Vector3f>& vertices = mwo->m_VertexPositions;
 
@@ -176,7 +175,7 @@ namespace Ganymede
             body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
         }
 
-        body->setUserPointer(&mwoi);
+        //body->setUserPointer(&mwoi);
 
         body->setUserIndex(-1);
         m_DynamicsWorld->addRigidBody(body);

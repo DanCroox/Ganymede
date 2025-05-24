@@ -9,6 +9,8 @@
 
 namespace Ganymede
 {
+#define GLCall(c) c;
+
 	struct ClassID
 	{
 		ClassID() = default;
@@ -81,8 +83,11 @@ namespace Ganymede
 				__debugbreak();															\
 			}																			\
 		}
+// Assert for client applications
+#define GM_ASSERT(condition, ...) GM_CORE_ASSERT(condition, __VA_ARGS__)
 #else
 #define GM_CORE_ASSERT(condition, message)
+#define GM_ASSERT(condition, message)
 #endif
 
 // This is a tiny reflection system to obtain class inheritance hierarchy during runtime. Use when required. Not all classes need to carry this information.

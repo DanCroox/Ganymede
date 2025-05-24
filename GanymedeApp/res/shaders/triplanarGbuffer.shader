@@ -37,7 +37,6 @@ layout(std430, binding = 4) buffer CommonShaderDataBlock
 struct GBufferInstanceData
 {
 	mat4 m_M;
-	mat4 m_MV;
 	uvec4 m_AnimationDataOffset;
 };
 
@@ -49,7 +48,7 @@ layout(std140, binding = 3) buffer InstanceDataBlock
 void main()
 {
 	GBufferInstanceData instanceData = InstanceDatas[GBufferInstanceDataIndex];
-	mat4 instance_MV = instanceData.m_MV;
+	mat4 instance_MV = CommonData.m_View * instanceData.m_M;
 	mat4 instance_M = instanceData.m_M;
 
 	v_SSAOPos = (instance_MV * vec4(Position, 1)).xyz;

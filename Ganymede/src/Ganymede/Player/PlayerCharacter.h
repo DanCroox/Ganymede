@@ -4,7 +4,6 @@
 
 #include <memory>
 #include "Ganymede/World/WorldObjectInstance.h"
-#include "Ganymede/World/MeshWorldObjectInstance.h"
 #include "Ganymede/Physics/PhysicsWorld.h"
 
 	class GLFWwindow;

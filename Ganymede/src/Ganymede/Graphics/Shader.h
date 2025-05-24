@@ -33,8 +33,6 @@ namespace Ganymede
 		void Bind() const;
 		void Unbind() const;
 
-		void BindUBOBlock(const SSBO& ubo, const std::string& uniformBlockName) const;
-
 		void BindTexture(RenderTarget& texture, const char* textureName);
 
 		unsigned int GetRendererID() const { return m_RendererID; }

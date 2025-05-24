@@ -7,7 +7,6 @@
 #include "glm/glm.hpp"
 #include "GL/glew.h"
 #include <glm/gtc/type_ptr.hpp>
-#include "Renderer.h"
 #include "SSBO.h"
 #include "RenderTarget.h"
 #include "OGLBindingHelper.h"
@@ -243,18 +242,6 @@ namespace Ganymede
     {
         GM_CORE_WARN("Deprecated call to Unbind-function. Use OGLBindingHelper for global context bindings.");
         GLCall(glUseProgram(0));
-    }
-
-    void Shader::BindUBOBlock(const SSBO& ubo, const std::string& uniformBlockName) const
-    {
-        GLCall(int result = glGetUniformBlockIndex(m_RendererID, uniformBlockName.c_str()));
-        if (result == GL_INVALID_INDEX)
-        {
-            GM_CORE_ASSERT(false, "Cant find uniform buffer block index!");
-            return;
-        }
-
-        GLCall(glUniformBlockBinding(m_RendererID, result, ubo.GetBindingPointID()));
     }
 
     void Shader::BindTexture(RenderTarget& texture, const char* textureName)

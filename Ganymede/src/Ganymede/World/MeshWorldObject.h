@@ -2,7 +2,6 @@
 
 #include "Ganymede/Core/Core.h"
 
-#include "Ganymede/System/Types.h"
 #include "WorldObject.h"
 #include <array>
 #include "Ganymede/Graphics/Material.h"
@@ -56,7 +55,6 @@ namespace Ganymede
 				m_EBO_ID(0),
 				m_VertexBufferID(0)
 			{
-				m_BoundingBoxVertices.resize(8);
 				m_BoundingBoxIndices.resize(12 * 3);
 
 				//Front face
@@ -139,12 +137,14 @@ namespace Ganymede
 					glm::abs(glm::dot(worldCenterToCamera, vecZ)) <= halfSizeScaled.z;
 			}
 
+			using AABB = std::array<BoundingBoxVertex, 8>;
+
 			Material m_Material;
 
 			std::vector<unsigned int> m_VertexIndicies;
 			std::vector<Vertex> m_Vertices;
 
-			std::vector<BoundingBoxVertex> m_BoundingBoxVertices;
+			AABB m_BoundingBoxVertices;
 			std::vector<unsigned int> m_BoundingBoxIndices;
 			glm::vec3 m_BoundingBoxCenter;
 			glm::vec3 m_BoundingBoxHalfSize;

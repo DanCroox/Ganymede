@@ -5,7 +5,6 @@
 #include <vector>
 #include <cstddef>
 #include "Ganymede/World/MeshWorldObject.h"
-#include "RenderBatch.h"
 
 namespace Ganymede
 {
@@ -56,12 +55,6 @@ namespace Ganymede
         M(m_Bitangent, VertexDataPrimitiveType::Float, 3),
         M(m_BoneIndex, VertexDataPrimitiveType::UInt, 4),
         M(m_BoneWeight, VertexDataPrimitiveType::Float, 4));
-
-    VertexDataDefinition(MeshInstanceVertexData, IData,
-        M(mv, VertexDataPrimitiveType::Float, 16),
-        M(instance, VertexDataPrimitiveType::Float, 16),
-        M(pid, VertexDataPrimitiveType::Float, 3)
-        );
 
     VertexDataDefinition(Vec3VertexData, glm::vec3,
         M(x, VertexDataPrimitiveType::Float, 3)

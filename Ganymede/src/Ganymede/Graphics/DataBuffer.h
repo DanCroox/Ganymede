@@ -53,9 +53,9 @@ namespace Ganymede
 		DataBuffer<T>& operator=(const DataBuffer<T>&) = delete;
 
 		DataBuffer(DataBuffer<T>&& other) noexcept :
-			m_RenderID(other.m_RenderID),
 			m_BufferType(other.m_BufferType)
 		{
+			m_RenderID = other.m_RenderID;
 			other.m_RenderID = 0;
 		}
 

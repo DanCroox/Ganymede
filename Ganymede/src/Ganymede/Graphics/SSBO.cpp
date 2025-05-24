@@ -96,7 +96,8 @@ namespace Ganymede
 
 		if (m_AutoResize && (numRequestedBytes > m_BufferSize))
 		{
-			ResizeBuffer(numRequestedBytes);
+			size_t newSize = std::max(m_BufferSize * 2, numRequestedBytes);
+			ResizeBuffer(newSize);
 		}
 
 		memcpy(m_DirectAccessBuffer + offset, data, byteCount);

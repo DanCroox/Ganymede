@@ -4,12 +4,13 @@
 
 namespace Ganymede
 {
-    RenderContext::RenderContext(const World& world, const FPSCamera& camera) :
+    RenderContext::RenderContext(World& world, const FPSCamera& camera) :
         m_World(world),
-        m_Camera(camera)
+        m_Camera(camera),
+        m_GpuResources(world)
     {}
 
-    const World& RenderContext::GetWorld() const
+    World& RenderContext::GetWorld()
     {
         return m_World;
     }

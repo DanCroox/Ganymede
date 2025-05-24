@@ -37,7 +37,6 @@ layout(std140, binding = 4) buffer CommonShaderDataBlock
 struct GBufferInstanceData
 {
 	mat4 m_M;
-	mat4 m_MV;
 	uvec4 m_AnimationDataOffset;
 };
 
@@ -58,7 +57,7 @@ void main()
 
 	GBufferInstanceData ssboInstanceData = InstanceDatas[GBufferInstanceDataIndex];
 
-	mat4 ss_MV = ssboInstanceData.m_MV;
+	mat4 ss_MV = CommonData.m_View * ssboInstanceData.m_M;
 	mat4 ss_M = ssboInstanceData.m_M;
 
 	if (isAnimated)

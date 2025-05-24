@@ -15,6 +15,8 @@ namespace Ganymede
 
 		inline bool IsValid() const { return m_RenderID != 0; }
 
+		size_t GetSize() const { return m_BufferSize; }
+
 	private:
 		void CreateBuffer(size_t bufferSize);
 		void MapBuffer();

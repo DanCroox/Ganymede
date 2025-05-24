@@ -1,7 +1,6 @@
 #include "FPSCamera.h"
 #include "Ganymede/Core/Application.h"
 #include "Ganymede/World/World.h"
-#include "Ganymede/World/PointlightWorldObjectInstance.h"
 #include "Ganymede/Events/Event.h"
 #include "Ganymede/Runtime/WindowEvents.h"
 
