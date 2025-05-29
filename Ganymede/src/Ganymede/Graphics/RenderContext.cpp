@@ -1,23 +1,22 @@
 #include "RenderContext.h"
+
 #include "Ganymede/World/World.h"
 #include "Ganymede/Player/FPSCamera.h"
+#include "Ganymede/Runtime/GMTime.h"
+#include <memory>
 
 namespace Ganymede
 {
-    RenderContext::RenderContext(World& world, const FPSCamera& camera) :
+    RenderContext::RenderContext(World& world) :
         m_World(world),
-        m_Camera(camera),
         m_GpuResources(world)
-    {}
+    {
+        m_VertexObjectCache.resize(1000000);
+    }
 
     World& RenderContext::GetWorld()
     {
         return m_World;
-    }
-
-    const FPSCamera& RenderContext::GetCamera() const
-    {
-        return m_Camera;
     }
 
     FrameBuffer* RenderContext::CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer)
@@ -235,5 +234,42 @@ namespace Ganymede
     {
         GM_CORE_ASSERT(m_DataBuffers.contains(name), "Tried to delete databuffer which does not exist.");
         m_DataBuffers.erase(name);
+    }
+
+    RenderView& RenderContext::CreateRenderView()
+    {
+        const unsigned int viewID = m_RenderViewFreeList.Append();
+        if (m_RenderViews.size() <= viewID)
+        {
+            m_RenderViews.resize(viewID + 1);
+        }
+        m_RenderViews[viewID] = {};
+        RenderView& renderView = m_RenderViews[viewID];
+        renderView.m_ViewID = viewID;
+        return renderView;
+    }
+
+    void RenderContext::DestroyRenderView(RenderView& renderView)
+    {
+        m_RenderViewFreeList.Free(renderView.m_ViewID);
+    }
+
+    const VertexObject& RenderContext::GetVO(MeshWorldObject::Mesh& mesh)
+    {
+        CachedVertexObject& cvo = m_VertexObjectCache[mesh.m_MeshID];
+        if (cvo.m_VertexObject.IsValid())
+        {
+            cvo.m_LastAccessTime = GMTime::s_Time;
+            return cvo.m_VertexObject;
+        }
+        else
+        {
+            VertexObject vo(&mesh.m_VertexIndicies[0], mesh.m_VertexIndicies.size());
+            std::unique_ptr<DataBuffer<MeshVertexData>> bufferptr = std::make_unique<DataBuffer<MeshVertexData>>(&mesh.m_Vertices[0], mesh.m_Vertices.size(), DataBufferType::Static);
+            vo.LinkAndOwnBuffer(std::move(bufferptr));
+            m_VertexObjectCache[mesh.m_MeshID].m_LastAccessTime = GMTime::s_Time;
+            m_VertexObjectCache[mesh.m_MeshID].m_VertexObject = std::move(vo);
+            return m_VertexObjectCache[mesh.m_MeshID].m_VertexObject;
+        }
     }
 }

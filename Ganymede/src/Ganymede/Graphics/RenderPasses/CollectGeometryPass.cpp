@@ -41,7 +41,9 @@ namespace Ganymede
 		SCOPED_TIMER("CollectGeometryPass");
 
 		std::vector<std::optional<VertexObject>>& voStorage = renderContext.m_VertexObjectStorage;
-		const FPSCamera& camera = renderContext.GetCamera();
+		//const FPSCamera& camera = renderContext.GetCamera();
+		RenderView rv;
+		const FPSCamera camera(rv);
 		RenderCommandQueue& cubemapCommandQueue = renderContext.m_CubemapShadowMappingCommandQueue;
 		cubemapCommandQueue.clear();
 

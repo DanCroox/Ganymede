@@ -45,11 +45,25 @@ layout(std140, binding = 3) buffer InstanceDataBlock
 	GBufferInstanceData InstanceDatas[];
 };
 
+struct NewInstanceData
+{
+	mat4 m_Transform;
+	uint m_ViewID;
+	uint m_MeshID;
+	uint m_Pad1;
+	uint m_Pad2;
+};
+
+layout(std140, binding = 25) buffer NewInstanceDataBlock
+{
+	NewInstanceData NewInstanceDatas[];
+};
+
 void main()
 {
-	GBufferInstanceData instanceData = InstanceDatas[GBufferInstanceDataIndex];
-	mat4 instance_MV = CommonData.m_View * instanceData.m_M;
-	mat4 instance_M = instanceData.m_M;
+	NewInstanceData instanceData = NewInstanceDatas[gl_BaseInstance + gl_InstanceID];
+	mat4 instance_MV = CommonData.m_View * instanceData.m_Transform;
+	mat4 instance_M = instanceData.m_Transform;
 
 	v_SSAOPos = (instance_MV * vec4(Position, 1)).xyz;
 	v_SSAONormal = mat3(transpose(inverse(instance_MV))) * Normal;

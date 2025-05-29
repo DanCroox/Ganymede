@@ -8,12 +8,15 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include "Ganymede/World/MeshWorldObject.h"
+
 
 namespace Ganymede
 {
 	class RenderContext;
 	class SinglesampleRenderTarget;
 	class MultisampleRenderTarget;
+	class VertexObject;
 	class SSBO;
 
 	class GANYMEDE_API GeometryRenderPass : public RenderPass2

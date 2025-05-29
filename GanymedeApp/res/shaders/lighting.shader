@@ -53,8 +53,6 @@ uniform sampler2DMS u_ComplexFragment;
 uniform sampler2DMS u_GEmission;
 //uniform sampler2D u_SSAOTexture;
 
-uniform float u_ClipNear;
-uniform float u_ClipFar;
 
 #define SIGMA 30.0
 #define BSIGMA 1.0
@@ -129,7 +127,6 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 }
 
 uniform samplerCubeArray u_ColorCube;
-
 
 vec3 getFaceDir(int face, vec2 uv) {
     vec2 p = uv * 2.0 - 1.0;

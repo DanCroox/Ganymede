@@ -86,13 +86,11 @@ namespace Ganymede
 
 		//m_LightingShader->BindTexture(*renderContext.GetCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray"), "u_DepthCubemapTexture");
 
-		const FPSCamera& camera = renderContext.GetCamera();
+		const RenderView& view = renderContext.GetRenderView(0);
 
-		m_LightingShader->SetUniform1f("u_ClipNear", camera.GetNearClip());
-		m_LightingShader->SetUniform1f("u_ClipFar", camera.GetFarClip());
 		m_LightingShader->SetUniform2i("u_RenderResolution", 1920, 1080);
 		m_LightingShader->SetUniform1i("u_PointlightCount", pointlights.size());
-		m_LightingShader->SetUniform3f("u_ViewPos", camera.GetPosition());
+		m_LightingShader->SetUniform3f("u_ViewPos", view.m_Position);
 		m_LightingShader->SetUniform2i("u_ViewportResolution", 1920, 1080);
 
 		renderContext.GetRenderer().DrawVertexObject(*m_ScreenVO, 1, *m_FrameBuffer, *m_LightingShader, false);

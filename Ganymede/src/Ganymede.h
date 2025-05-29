@@ -35,6 +35,7 @@
 #include <Ganymede/Graphics/RenderPasses/GeometryRenderPass.h>
 #include <Ganymede/Graphics/RenderPasses/LightingRenderPass.h>
 #include <Ganymede/Graphics/RenderPasses/PrepareFrameRenderPass.h>
+#include <Ganymede/Graphics/RenderPasses/ComputePass.h>
 #include <Ganymede/Graphics/RenderPasses/ShadowMappingRenderPass.h>
 #include <Ganymede/Graphics/RenderPipeline.h>
 #include <Ganymede/Graphics/RenderTarget.h>

@@ -7,6 +7,7 @@
 #include "GPUResourceSystem.h"
 #include "Renderer.h"
 #include "RenderTarget.h"
+#include "RenderView.h"
 #include "Shader.h"
 #include "SSBO.h"
 #include "VertexDataTypes.h"
@@ -20,7 +21,16 @@
 namespace Ganymede
 {
 	class World;
+	class MeshWorldObject::Mesh;
 	class FPSCamera;
+
+	struct RenderMeshInstanceCommand
+	{
+		glm::uint m_MeshID;
+		glm::uint m_Pad1;
+		glm::uint m_Pad2;
+		glm::uint m_Pad3;
+	};
 
 	struct GANYMEDE_API RenderCommand
 	{
@@ -42,15 +52,20 @@ namespace Ganymede
 			std::vector<T> m_Instances;
 		};
 
+		struct CachedVertexObject
+		{
+			float m_LastAccessTime;
+			VertexObject m_VertexObject;
+		};
+
 		RenderContext(const RenderContext&) = delete;
 		RenderContext& operator=(const RenderContext&) = delete;
 		RenderContext() = delete;
 
-		RenderContext(World& world, const FPSCamera& camera);
+		RenderContext(World& world);
 		virtual ~RenderContext() = default;
 
 		World& GetWorld();
-		const FPSCamera& GetCamera() const;
 
 		Renderer& GetRenderer() { return m_Renderer; };
 
@@ -128,9 +143,18 @@ namespace Ganymede
 		std::int32_t m_NextFreeCubemapSSBOInstanceDataIndex = 0;
 
 		GPUResourceSystem m_GpuResources;
+
+		RenderView& CreateRenderView();
+		void DestroyRenderView(RenderView& renderView);
+		RenderView& GetRenderView(unsigned int viewID) { return m_RenderViews[viewID]; }
+
+
+		const VertexObject& GetVO(MeshWorldObject::Mesh& mesh);
+		std::vector<RenderMeshInstanceCommand> m_RenderInfo;
+		std::vector<MeshWorldObject::Mesh*> m_MeshIDMapping;
+
 	private:
 		World& m_World;
-		const FPSCamera& m_Camera;
 
 		Renderer m_Renderer;
 
@@ -142,5 +166,12 @@ namespace Ganymede
 		std::unordered_map<std::string, SSBO> m_SSBOs;
 		std::unordered_map<std::string, Shader> m_Shaders;
 		std::unordered_map<std::string, std::pair<ClassID, void*>> m_DataBuffers;
+		
+		std::vector<CachedVertexObject> m_VertexObjectCache;
+
+		FreeList m_MeshIDFreeList;
+
+		std::vector<RenderView> m_RenderViews;
+		FreeList m_RenderViewFreeList;
 	};
 }

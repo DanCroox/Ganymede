@@ -13,10 +13,14 @@ namespace Ganymede
 		unsigned int GetBindingPointID() const { return m_BindingPointID; }
 		void Write(unsigned int offset, unsigned int byteCount, void* data);
 
+		void Read(unsigned int offset, unsigned int byteCount, void* dataOut);
+
 		inline bool IsValid() const { return m_RenderID != 0; }
 
 		size_t GetSize() const { return m_BufferSize; }
 
+		char* m_DirectAccessBuffer = nullptr;
+		unsigned int m_RenderID;
 	private:
 		void CreateBuffer(size_t bufferSize);
 		void MapBuffer();
@@ -24,12 +28,10 @@ namespace Ganymede
 		void DeleteBuffer();
 		void ResizeBuffer(size_t newSize);
 
-		unsigned int m_RenderID;
 
 		size_t m_BufferSize;
 		unsigned int m_BindingPointID;
 		bool m_AutoResize;
 
-		char* m_DirectAccessBuffer = nullptr;
 	};
 }

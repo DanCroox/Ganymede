@@ -54,10 +54,6 @@ namespace Ganymede
 			return;
 		}
 
-		const glm::mat4 viewProjection = m_RenderContext.GetCamera().GetProjection() * m_RenderContext.GetCamera().GetTransform();
-		CullingSystem::UpdateRenderTags(m_RenderContext.GetWorld(), viewProjection);
-		m_RenderContext.m_GpuResources.UpdateGPUResources();
-
 		for (auto& renderPass : m_RenderPasses)
 		{
 			if (renderPass->IsBypassed())

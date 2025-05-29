@@ -27,6 +27,7 @@ namespace Ganymede
 	class GANYMEDE_API VertexObject
 	{
 	public:
+		VertexObject() = default;
 		VertexObject(const unsigned int* indicesData, unsigned int numIndices);
 		~VertexObject();
 

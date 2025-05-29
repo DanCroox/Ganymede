@@ -45,6 +45,20 @@ layout(std140, binding = 3) buffer InstanceDataBlock
 	GBufferInstanceData InstanceDatas[];
 };
 
+struct NewInstanceData
+{
+	mat4 m_Transform;
+	uint m_ViewID;
+	uint m_MeshID;
+	uint m_Pad1;
+	uint m_Pad2;
+};
+
+layout(std140, binding = 25) buffer NewInstanceDataBlock
+{
+	NewInstanceData NewInstanceDatas[];
+};
+
 layout(std140, binding = 2) buffer BonesDataBlock
 {
 	mat4 bones[];
@@ -55,14 +69,16 @@ void main()
 	bool isAnimated = BoneWeights[0] + BoneWeights[1] + BoneWeights[2] + BoneWeights[3] > 0;
 	vec4 ppos = vec4(Position, 1);
 
-	GBufferInstanceData ssboInstanceData = InstanceDatas[GBufferInstanceDataIndex];
+	NewInstanceData ssboInstanceData = NewInstanceDatas[gl_BaseInstance + gl_InstanceID];
 
-	mat4 ss_MV = CommonData.m_View * ssboInstanceData.m_M;
-	mat4 ss_M = ssboInstanceData.m_M;
+	mat4 ss_MV = CommonData.m_View * ssboInstanceData.m_Transform;
+	mat4 ss_M = ssboInstanceData.m_Transform;
 
+	isAnimated = false;
 	if (isAnimated)
 	{
-		int boneDataOffset = int(ssboInstanceData.m_AnimationDataOffset);
+		//int boneDataOffset = int(ssboInstanceData.m_AnimationDataOffset);
+		int boneDataOffset = 0;
 
 		mat4 BoneTransform = bones[BoneIndices[0] + boneDataOffset] * BoneWeights[0];
 		BoneTransform += bones[BoneIndices[1] + boneDataOffset] * BoneWeights[1];

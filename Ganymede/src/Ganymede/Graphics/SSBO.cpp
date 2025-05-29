@@ -102,4 +102,9 @@ namespace Ganymede
 
 		memcpy(m_DirectAccessBuffer + offset, data, byteCount);
 	}
+
+	void SSBO::Read(unsigned int offset, unsigned int byteCount, void* dataOut)
+	{
+		glGetNamedBufferSubData(m_RenderID, offset, byteCount, dataOut);
+	}
 }

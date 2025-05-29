@@ -69,39 +69,24 @@ namespace Ganymede
 		renderer.ClearFrameBuffer(*m_FrameBufferMS, true, true);
 		renderer.ClearFrameBuffer(*m_FrameBuffer, true, true);
 
-		auto entities = renderContext.GetWorld().GetEntities(Include<GCGPUMeshData>{});
+		std::vector<RenderMeshInstanceCommand>& renderInfos = renderContext.m_RenderInfo;
+		glEnable(GL_DEPTH_TEST);
 
-		renderContext.GetWorld().SortComponents<GCGPUMeshData>([](const GCGPUMeshData& lhs, const GCGPUMeshData& rhs)
-			{
-				return lhs.m_VO.get() < rhs.m_VO.get();
-			});
+		OGLBindingHelper::BindFrameBuffer(*m_FrameBufferMS);
 
-		unsigned int indexOffset = 0;
-		GCGPUMeshData* last = nullptr;
-		for (auto [entity, gcGPUMeshData] : entities.each())
+		for (unsigned int idx = 0; idx < renderInfos.size(); ++idx)
 		{
-			if (last != nullptr && last->m_VO.get() != gcGPUMeshData.m_VO.get())
-			{
-				Material& material = *last->m_Material;
-				material.Bind();
-				renderer.DrawVertexObject(*last->m_VO.get(), indexOffset, *m_FrameBufferMS, *material.m_Shader, true);
-				indexOffset = 0;
-				NAMED_COUNTER("Num DrawCalls");
-			}
-
-			last = &gcGPUMeshData;
-			{
-				SCOPED_TIMER("Instance Index");
-				glm::u32vec1 ss = (glm::u32vec1)gcGPUMeshData.m_InstanceDataIndex;
-				renderContext.m_GpuResources.GetInstanceDataIndexBuffer().Write(&ss, 1, indexOffset++);
-			}
-		}
-
-		if (last)
-		{
-			Material& material = *last->m_Material;
+			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
+			MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
+			Material& material = mesh.m_Material;
 			material.Bind();
-			renderer.DrawVertexObject(*last->m_VO.get(), indexOffset, *m_FrameBufferMS, *material.m_Shader, true);
+			OGLBindingHelper::BindShader(material.GetShader()->GetRendererID());
+
+			const VertexObject& voPtr = renderContext.GetVO(mesh);
+			OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
+
+			glm::uint offset = idx * 20;
+			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
 		}
 
 		FrameBuffer::Blit(m_MultiToSingleSampleBlitFBConfig);

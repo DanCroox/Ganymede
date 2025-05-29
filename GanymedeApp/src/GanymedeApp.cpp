@@ -39,10 +39,22 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	m_AssetLoader = std::make_unique<AssetLoader>();
 	m_PhysicsWorld = std::make_unique<PhysicsWorld>();
 	m_World = std::make_unique<World>();
-	m_Camera = std::make_unique<FPSCamera>();
-	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
 	m_NavMesh = std::make_unique<NavMesh>();
 
+	m_RenderContext = std::make_unique<RenderContext>(*m_World);
+	m_RenderPipeline = std::make_unique<RenderPipeline>(*m_RenderContext);
+	m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
+	//m_RenderPipeline->AddRenderPass<CollectGeometryPass>();
+	m_RenderPipeline->AddRenderPass<ComputePass>();
+	m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
+	//m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
+	m_RenderPipeline->AddRenderPass<LightingRenderPass>();
+	m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
+	m_RenderPipeline->Initialize();
+
+	m_Camera = std::make_unique<FPSCamera>(m_RenderContext->CreateRenderView());
+	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
+	
 	std::vector<const WorldObject*> loadedAssets;
 	loadedAssets = m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
 	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/physicstest.glb");
@@ -126,23 +138,13 @@ void GanymedeApp::GameTick(Ganymede::WindowTickEvent& event)
 	Render();
 }
 
-RenderContext* m_RenderContext = nullptr;
-RenderPipeline* m_RenderPipeline = nullptr;
-
 void GanymedeApp::Render()
 {
 	if (m_RenderContext == nullptr)
 	{
 		// init render pipeline
-		m_RenderContext = new RenderContext(*m_World, *m_Camera);
-		m_RenderPipeline = new RenderPipeline(*m_RenderContext);
-		m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
-		//m_RenderPipeline->AddRenderPass<CollectGeometryPass>();
-		m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
-		//m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
-		m_RenderPipeline->AddRenderPass<LightingRenderPass>();
-		m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
-		m_RenderPipeline->Initialize();
+
+
 	}
 	
 	m_RenderPipeline->Execute();

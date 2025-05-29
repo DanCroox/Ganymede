@@ -3,46 +3,29 @@
 
 namespace Ganymede
 {
-	/*
-	template <typename T>
-	class IFreeListContainer
+	class GANYMEDE_API FreeList
 	{
 	public:
-		virtual ~IFreeListContainer() = default;
-		virtual void Add(T* element, size_t elementOffset) = 0;
-		virtual void DeleteElement(size_t elementIndex) = 0;
-		virtual const T& GetElement(size_t elementIndex) = 0;
-		virtual size_t GetSize() = 0;
-	};
-
-	template <template<typename> class ContainerType, typename DataType>
-	class FreeList
-	{
-	public:
-		template <typename... Args>
-		explicit FreeList(Args&&... args)
-			: m_Container(std::forward<Args>(args)...)
-			, m_NumElements(m_Container.GetSize())
+		size_t Append()
 		{
+			if (!m_NextFreeIndices.empty())
+			{
+				const size_t index = m_NextFreeIndices.back();
+				m_NextFreeIndices.pop_back();
+				return index;
+			}
+
+			return m_HighestIndex++;
 		}
 
-		void Add(DataType& element)
+		void Free(size_t index)
 		{
-			m_Container.Add(&element, m_NumElements);
-			++m_NumElements;
-		}
-
-		void Remove(unsigned int elementIndex)
-		{
-			const size_t lastElementIndex = m_NumElements - 1;
-			m_Container.Add(m_Container.GetElement(lastElementIndex), elementIndex);
-			m_Container.DeleteElement(lastElementIndex);
-			--m_NumElements;
+			GM_CORE_ASSERT(index <= m_HighestIndex, "FreeList does not contain given index.");
+			m_NextFreeIndices.push_back(index);
 		}
 
 	private:
-		ContainerType m_Container;
-		size_t m_NumElements = 0;
+		std::vector<size_t> m_NextFreeIndices;
+		size_t m_HighestIndex = 0;
 	};
-	*/
 }
