@@ -12,6 +12,8 @@
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/World/World.h"
 
+#include <GL/glew.h>
+
 namespace Ganymede
 {
 	bool LightingRenderPass::Initialize(RenderContext& renderContext)
@@ -21,7 +23,7 @@ namespace Ganymede
 		m_FrameBuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Color0, *m_LightingRT);
 		m_LightingShader = renderContext.LoadShader("Lighting", "res/shaders/lighting.shader");
 		m_PointLightSortedToCamDistanceSSBO = renderContext.CreateSSBO("PointlightData", 0, 320 * (sizeof(PointLight)), true);
-
+		
 		std::vector<glm::vec3> vertices = {
 			{ -1, 1, 0},
 			{ 1, 1, 0 },
@@ -64,14 +66,13 @@ namespace Ganymede
 
 		std::vector<PointLight> pointlights;
 		pointlights.reserve(numPointlights);
-		unsigned int lightID = 0;
+
 		for (auto [entity, pl, plTransform] : pointlightsView.each())
 		{
 			PointLight& pointlight = pointlights.emplace_back();
 			pointlight.m_LightColor = glm::vec4(pl.m_Color * pl.m_Brightness, 1);
-			const glm::vec3& lightPos = plTransform.GetPosition();
-			pointlight.lightPos = lightPos;
-			pointlight.u_LightID = lightID++;
+			pointlight.lightPos = plTransform.GetPosition();
+			pointlight.u_LightID = pl.m_CubemapViews[0]->m_FaceIndex / 6;
 		}
 
 		m_PointLightSortedToCamDistanceSSBO->Write(0, pointlights.size() * sizeof(PointLight), pointlights.data());
@@ -84,10 +85,10 @@ namespace Ganymede
 		m_LightingShader->BindTexture(*renderContext.GetMultiSampleRenderTarget("EmissionMS"), "u_GEmission");
 		m_LightingShader->BindTexture(*renderContext.GetMultiSampleRenderTarget("ComplexFragmentMS"), "u_ComplexFragment");
 
-		//m_LightingShader->BindTexture(*renderContext.GetCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray"), "u_DepthCubemapTexture");
+		m_LightingShader->BindTexture(*renderContext.GetCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray"), "u_DepthCubemapTexture");
 
 		const RenderView& view = renderContext.GetRenderView(0);
-
+		
 		m_LightingShader->SetUniform2i("u_RenderResolution", 1920, 1080);
 		m_LightingShader->SetUniform1i("u_PointlightCount", pointlights.size());
 		m_LightingShader->SetUniform3f("u_ViewPos", view.m_Position);

@@ -31,6 +31,7 @@ void GanymedeApp::Run()
 	GM_INFO("GanymedeApp shutdown");
 }
 
+int numlights = 0;
 void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 {
 	GM_INFO("Initializing Game");
@@ -44,10 +45,9 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	m_RenderContext = std::make_unique<RenderContext>(*m_World);
 	m_RenderPipeline = std::make_unique<RenderPipeline>(*m_RenderContext);
 	m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
-	//m_RenderPipeline->AddRenderPass<CollectGeometryPass>();
 	m_RenderPipeline->AddRenderPass<ComputePass>();
 	m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
-	//m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
+	m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
 	m_RenderPipeline->AddRenderPass<LightingRenderPass>();
 	m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
 	m_RenderPipeline->Initialize();
@@ -56,6 +56,7 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
 	
 	std::vector<const WorldObject*> loadedAssets;
+	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/ShadowMappingTest.glb");
 	loadedAssets = m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
 	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/physicstest.glb");
 	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/backroom2.glb");
@@ -71,7 +72,7 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 		{
 			if (asset->GetName().find("Matschkopf") == 0)
 			{
-				for (int i = 0; i < 1000; ++i)
+				for (int i = 0; i < 100; ++i)
 				{
 					entt::entity entity = EntityHelpers::CreateMeshEntity(*m_World, *smeshwo, WorldObjectInstance::Mobility::Dynamic);
 					m_World->AddComponent<GCTickable>(entity, GSCreature::Tick, GSCreature::Initialize);
@@ -115,7 +116,64 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 		}
 		else if (const PointlightWorldObject* plwo = dynamic_cast<const PointlightWorldObject*>(asset))
 		{
-			EntityHelpers::CreatePointlightEntity(*m_World, *plwo, WorldObjectInstance::Mobility::Dynamic);
+			if (numlights >= 5) continue;
+ 			entt::entity entity = EntityHelpers::CreateWorldEntity(*m_World, *plwo, WorldObjectInstance::Mobility::Dynamic);
+			GCPointlight& gcPointlight = m_World->AddComponent<GCPointlight>(entity);
+			gcPointlight.m_Brightness = plwo->GetBrightness();
+			gcPointlight.m_Color = plwo->GetColor();
+			for(int i = 0 ; i < 6; ++i)
+			{
+				RenderView& rv = m_RenderContext->CreateRenderView();
+				rv.m_FarClip = 1000.0f;
+				rv.m_NearClip = 0.01f;
+				rv.m_FaceIndex = (numlights * 6) + i;
+
+				rv.m_Position = glm::vec3(plwo->GetTransform()[3]);
+				rv.m_Perspective = glm::perspective(glm::radians(90.0f), 1.f, rv.m_NearClip, rv.m_FarClip);
+
+				switch (i)
+				{
+					// +X
+				case 0:
+					rv.m_FrontVector = glm::vec3(1, 0, 0);
+					rv.m_UpVector = glm::vec3(0, -1, 0);
+					rv.m_RightVector = glm::vec3(0, 0, -1);
+					break;
+					// -X
+				case 1:
+					rv.m_FrontVector = glm::vec3(-1, 0, 0);
+					rv.m_UpVector = glm::vec3(0, -1, 0);
+					rv.m_RightVector = glm::vec3(0, 0, 1);
+					break;
+					// +Y
+				case 2:
+					rv.m_FrontVector = glm::vec3(0, 1, 0);
+					rv.m_UpVector = glm::vec3(0, 0, 1);
+					rv.m_RightVector = glm::vec3(1, 0, 0);
+					break;
+					// -Y
+				case 3:
+					rv.m_FrontVector = glm::vec3(0, -1, 0);
+					rv.m_UpVector = glm::vec3(0, 0, -1);
+					rv.m_RightVector = glm::vec3(1, 0, 0);
+					break;
+					// +Z
+				case 4:
+					rv.m_FrontVector = glm::vec3(0, 0, 1);
+					rv.m_UpVector = glm::vec3(0, -1, 0);
+					rv.m_RightVector = glm::vec3(1, 0, 0);
+					break;
+					// -Z
+				case 5:
+					rv.m_FrontVector = glm::vec3(0, 0, -1);
+					rv.m_UpVector = glm::vec3(0, -1, 0);
+					rv.m_RightVector = glm::vec3(-1, 0, 0);
+					break;
+				}
+
+				gcPointlight.m_CubemapViews[i] = &rv;
+			}
+			++numlights;
 		}
 	}
 
@@ -131,22 +189,11 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 void GanymedeApp::GameTick(Ganymede::WindowTickEvent& event)
 {
 	GMTime::s_DeltaTime = event.GetFrameDelta();
-	GMTime::s_Time = event.GetGameTime();
+	GMTime::s_Time = event.GetGameTime(); 
+	GMTime::s_FrameNumber = event.GetFrameIndex();
 	m_PhysicsWorld->Step(event.GetFrameDelta());
 	m_PlayerCharacter->Tick(event.GetFrameDelta());
 	m_World->Tick(event.GetFrameDelta());
-	Render();
-}
-
-void GanymedeApp::Render()
-{
-	if (m_RenderContext == nullptr)
-	{
-		// init render pipeline
-
-
-	}
-	
 	m_RenderPipeline->Execute();
 }
 

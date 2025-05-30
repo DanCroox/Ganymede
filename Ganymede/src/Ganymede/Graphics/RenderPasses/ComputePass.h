@@ -14,13 +14,15 @@ namespace Ganymede
 	class SSBO;
 	class Shader;
 
-	struct GPURenderView
+	struct alignas(16) GPURenderView
 	{
 		glm::mat4 m_Transform;
 		glm::mat4 m_Perspective;
+		glm::vec4 m_WorldPosition;
 		float m_NearClip;
 		float m_FarClip;
 		glm::uint m_ViewID;
+		glm::uint m_FaceIndex;
 	};
 
 	struct DrawElementsIndirectCommand
@@ -46,17 +48,15 @@ namespace Ganymede
 	{
 		glm::uint m_EntityDataIndex;
 		glm::uint m_VisibilityMask;
-		glm::uint m_Pad1;
-		glm::uint m_Pad2;
 	};
 
-	struct InstanceData
+	struct alignas(16) InstanceData
 	{
 		glm::mat4 m_Transform;
 		glm::uint m_ViewID;
 		glm::uint m_MeshID;
-		glm::uint m_Pad1;
-		glm::uint m_Pad2;
+		glm::uint m_NumMeshIndices;
+		glm::uint m_FaceIndex;
 	};
 
 	struct GCUploaded
@@ -77,13 +77,14 @@ namespace Ganymede
 		SSBO* ssbo_EntityVisiblityMasksCounter; //u32
 		SSBO* ssbo_AppendCounter; //u32
 		SSBO* ssbo_CommandCounter; //u32
+		SSBO* ssbo_NumRenderViews; //u32
 
 		SSBO* ssbo_EntityData; //EntityData
 		SSBO* ssbo_RenderViews; //RenderView
 		SSBO* ssbo_EntityVisiblityMasks; //VisibilityMask
 		SSBO* ssbo_AppendBuffer; //InstanceData
 		SSBO* ssbo_IndirectDrawCmds; //DrawElementsIndirectCommand
-		SSBO* ssbo_RenderInfos; //RenderInfo
+		SSBO* ssbo_RenderInfos; //RenderMeshInstanceCommand
 
 		unsigned int m_NumEntities = 0;
 

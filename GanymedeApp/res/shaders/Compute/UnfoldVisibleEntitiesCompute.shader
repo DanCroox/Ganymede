@@ -14,7 +14,6 @@ void main()
     uint viewMask = visibilityMask.m_VisibilityMask;
 
     EntityData entityData = entityDatas[visibilityMask.m_EntityDataIndex];
-
 	while (viewMask != 0u)
     {
         uint viewID = findLSB(viewMask);          // Index des niedrigsten gesetzten Bits
@@ -24,5 +23,6 @@ void main()
         instanceDatas[idx].m_ViewID = viewID;
         instanceDatas[idx].m_MeshID = entityData.m_MeshID;
         instanceDatas[idx].m_NumMeshIndices = entityData.m_NumMeshIndices;
+        instanceDatas[idx].m_FaceIndex = renderViews[viewID].m_FaceIndex;
     }
 }

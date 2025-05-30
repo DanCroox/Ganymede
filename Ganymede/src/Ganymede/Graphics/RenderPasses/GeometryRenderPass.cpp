@@ -74,7 +74,8 @@ namespace Ganymede
 
 		OGLBindingHelper::BindFrameBuffer(*m_FrameBufferMS);
 
-		for (unsigned int idx = 0; idx < renderInfos.size(); ++idx)
+		const RenderMeshInstanceCommandOffsetsByView offset = renderContext.m_RenderInfoOffsets[0];
+		for (unsigned int idx = offset.m_StartIndex; idx < offset.m_StartIndex + offset.m_LastIndex; ++idx)
 		{
 			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
 			MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
@@ -85,7 +86,7 @@ namespace Ganymede
 			const VertexObject& voPtr = renderContext.GetVO(mesh);
 			OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
 
-			glm::uint offset = idx * 20;
+			glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
 			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
 		}
 

@@ -12,6 +12,7 @@ namespace Ganymede
         m_GpuResources(world)
     {
         m_VertexObjectCache.resize(1000000);
+        m_RenderViews.resize(100);
     }
 
     World& RenderContext::GetWorld()
@@ -239,13 +240,11 @@ namespace Ganymede
     RenderView& RenderContext::CreateRenderView()
     {
         const unsigned int viewID = m_RenderViewFreeList.Append();
-        if (m_RenderViews.size() <= viewID)
-        {
-            m_RenderViews.resize(viewID + 1);
-        }
+        // NEXTTODO: Proper reference handling!!! References will be invalidated if the m_RenderViews array gets resized.
         m_RenderViews[viewID] = {};
         RenderView& renderView = m_RenderViews[viewID];
         renderView.m_ViewID = viewID;
+        ++numRenderView;
         return renderView;
     }
 

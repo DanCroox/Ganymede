@@ -51,6 +51,7 @@ uniform sampler2DMS u_GAlbedo;
 uniform sampler2DMS u_GMetalRough;
 uniform sampler2DMS u_ComplexFragment;
 uniform sampler2DMS u_GEmission;
+
 //uniform sampler2D u_SSAOTexture;
 
 
@@ -203,9 +204,11 @@ void main()
             
             if (pointLights[i].u_LightID > -1)
             {
-                //ss = 1 - ShadowCalculation(pointLights[i].u_LightID, position, pointLights[i].u_PointlighWorldLocation, normal);
-                //if (ss == 0)
-                //    continue;
+                ss = 1 - ShadowCalculation(pointLights[i].u_LightID, position, pointLights[i].u_PointlighWorldLocation, normal);
+                if (ss == 0)
+                {
+                    continue;
+                }
             }
 
             // calculate per-light radiance

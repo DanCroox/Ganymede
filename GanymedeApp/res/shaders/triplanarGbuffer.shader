@@ -54,7 +54,7 @@ struct NewInstanceData
 	uint m_Pad2;
 };
 
-layout(std140, binding = 25) buffer NewInstanceDataBlock
+layout(std140, binding = 26) buffer NewInstanceDataBlock
 {
 	NewInstanceData NewInstanceDatas[];
 };

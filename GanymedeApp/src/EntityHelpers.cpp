@@ -85,18 +85,3 @@ entt::entity EntityHelpers::CreateMeshEntityWithPhysics(
 
 	return entity;
 }
-
-entt::entity EntityHelpers::CreatePointlightEntity(
-	Ganymede::World& world,
-	const Ganymede::PointlightWorldObject& plwo,
-	Ganymede::WorldObjectInstance::Mobility mobility)
-{
-	using namespace Ganymede;
-
-	entt::entity entity = CreateWorldEntity(world, plwo, mobility);
-	GCPointlight& gcPointlight = world.AddComponent<GCPointlight>(entity);
-	gcPointlight.m_Brightness = plwo.GetBrightness();
-	gcPointlight.m_Color = plwo.GetColor();
-
-	return entity;
-}

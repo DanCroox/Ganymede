@@ -33,18 +33,22 @@ void main()
 	EntityData entity = entityDatas[entityDataIndex];
 
 	uint visibilityMaskIndex = 0;
-	uint numViews = 1;
+	uint numViews = numRenderViews;
 	
+	bool maskCreated = false;
+
 	for (uint viewIdx = 0; viewIdx < numViews; ++viewIdx)
 	{
-		RenderView view = renderViews[0];
+		RenderView view = renderViews[viewIdx];
 		mat4 mvp = view.m_Perspective * view.m_Transform * entity.m_Transform;
 		if (IsInFrustum(mvp, entity.m_AABB))
 		{
-			if (viewIdx == 0)
+			if (maskCreated == false)
 			{
 				visibilityMaskIndex = atomicAdd(numVisibilityMasks, 1);
 				entityVisibilityMasks[visibilityMaskIndex].m_EntityDataIndex = entityDataIndex;
+				entityVisibilityMasks[visibilityMaskIndex].m_VisibilityMask = 0;
+				maskCreated = true;
 			}
 			entityVisibilityMasks[visibilityMaskIndex].m_VisibilityMask |= (1u << viewIdx);
 		}

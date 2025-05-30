@@ -19,30 +19,21 @@ out vec3 v_SSAONormal;
 
 uniform mat4 u_Projection;
 
-struct CommonShaderData
+struct RenderView
 {
-	mat4 m_View;
-	mat4 m_Projection;
+	mat4 m_Transform;
+	mat4 m_Perspective;
 	float m_NearClip;
 	float m_FarClip;
-	float m_GameTime;
-	float m_DeltaTime;
+	uint m_ViewID;
+	uint m_FaceIndex;
 };
-
-layout(std140, binding = 4) buffer CommonShaderDataBlock
-{
-	CommonShaderData CommonData;
-};
+layout(std430, binding = 24) buffer RenderViewBuffer { RenderView renderViews[]; };
 
 struct GBufferInstanceData
 {
 	mat4 m_M;
 	uvec4 m_AnimationDataOffset;
-};
-
-layout(std140, binding = 3) buffer InstanceDataBlock
-{
-	GBufferInstanceData InstanceDatas[];
 };
 
 struct NewInstanceData
@@ -54,7 +45,7 @@ struct NewInstanceData
 	uint m_Pad2;
 };
 
-layout(std140, binding = 25) buffer NewInstanceDataBlock
+layout(std140, binding = 26) buffer NewInstanceDataBlock
 {
 	NewInstanceData NewInstanceDatas[];
 };
@@ -70,8 +61,8 @@ void main()
 	vec4 ppos = vec4(Position, 1);
 
 	NewInstanceData ssboInstanceData = NewInstanceDatas[gl_BaseInstance + gl_InstanceID];
-
-	mat4 ss_MV = CommonData.m_View * ssboInstanceData.m_Transform;
+	
+	mat4 ss_MV = renderViews[ssboInstanceData.m_ViewID].m_Transform * ssboInstanceData.m_Transform;
 	mat4 ss_M = ssboInstanceData.m_Transform;
 
 	isAnimated = false;
@@ -91,7 +82,7 @@ void main()
 	v_SSAOPos = (ss_MV * vec4(Position, 1)).xyz;
 	v_SSAONormal = mat3(transpose(inverse(ss_MV))) * Normal;
 
-	gl_Position = (CommonData.m_Projection * ss_MV) * ppos;
+	gl_Position = (renderViews[ssboInstanceData.m_ViewID].m_Perspective * ss_MV) * ppos;
 	v_Normal = mat3(transpose(inverse(ss_M))) * Normal;
 	v_TexCoords = TexCoords;
 	v_FragPos = (ss_M * ppos).xyz;

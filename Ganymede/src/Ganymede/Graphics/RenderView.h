@@ -7,7 +7,7 @@ namespace Ganymede
 {
 	struct RenderView
 	{
-		float m_RollInDegree;
+		float m_RollInDegree = 0;
 		glm::vec3 m_FrontVector = glm::vec3(0.0f, 0.0f, -1.0f);
 		glm::vec3 m_UpVector = glm::vec3(0.0f, 1.0f, 0.0f);
 		glm::vec3 m_RightVector = glm::vec3(1.0f, 0.0f, 0.0f);
@@ -17,6 +17,7 @@ namespace Ganymede
 		float m_NearClip;
 		float m_FarClip;
 		glm::uint m_ViewID;
+		glm::uint m_FaceIndex;
 
 		glm::mat4 ToTransform() const
 		{

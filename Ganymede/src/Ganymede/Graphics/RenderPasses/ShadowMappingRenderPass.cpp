@@ -16,22 +16,14 @@ namespace Ganymede
 {
 	bool ShadowMappingRenderPass::Initialize(RenderContext& renderContext)
 	{
+		m_ShadowMapsArray = renderContext.CreateCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray", 6 * 100, RenderTargetTypes::ComponentType::Depth, RenderTargetTypes::ChannelDataType::Float, RenderTargetTypes::ChannelPrecision::B32, { m_ShadowMapSize, m_ShadowMapSize });
+		
 		m_Framebuffer = renderContext.CreateFrameBuffer("OmniDirectionalShadowMapping", { m_ShadowMapSize, m_ShadowMapSize }, false);
-		m_ShadowMapsArray = renderContext.CreateCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray", 6 * 300, RenderTargetTypes::ComponentType::Depth, RenderTargetTypes::ChannelDataType::UInt, RenderTargetTypes::ChannelPrecision::B16, { m_ShadowMapSize, m_ShadowMapSize });
-
 		m_Framebuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Depth, *m_ShadowMapsArray);
-		
-		m_PointlightDataSSBO = renderContext.CreateSSBO("PointlightUpdateBuffer", 1, 320 * (sizeof(OmniPointlightData)), true);
-		
-		m_PointLightNearClip = 0.01f;
-		m_PointLightFarClip = 1000.0f;
-		m_PointLightProjectionMatrix = glm::perspective(glm::radians(90.0f), 1.f, m_PointLightNearClip, m_PointLightFarClip);
 
 		m_ShadowMappingShader = renderContext.LoadShader("OmniDirectionalShadowMappingShader", "res/shaders/OmnidirectionalShadowMapInstances.shader");
-		m_ShadowMappingShader->SetUniform1f("far_plane", m_PointLightFarClip);
-
-		m_AnimationDataSSBO = renderContext.GetSSBO("AnimationData");
-		m_InstanceDataBuffer = renderContext.CreateDataBuffer<ShadowMappingInstanceVertexData>("ShadowMappingInstanceVertexData", nullptr, 100000, DataBufferType::Dynamic);
+		
+		//m_AnimationDataSSBO = renderContext.GetSSBO("AnimationData");
 
 		return true;
 	}
@@ -40,16 +32,10 @@ namespace Ganymede
 	{
 		SCOPED_TIMER("ShadowMapping Pass");
 
-		OGLBindingHelper::BindFrameBuffer(*m_Framebuffer);
-
-		const auto pointlightsView = renderContext.GetWorld().GetEntities(Include<GCPointlight, GCTransform>{});
-		const unsigned int numPointlights = std::distance(pointlightsView.begin(), pointlightsView.end());
-
-		std::vector<OmniPointlightData> pointlightsTotal;
-		pointlightsTotal.reserve(numPointlights);
+		const auto pointlightsView = renderContext.GetWorld().GetEntities(Include<GCPointlight>{});
 
 		unsigned int lightID = 0;
-		for (auto [entity, pl, plTransform] : pointlightsView.each())
+		for (auto [entity, pl] : pointlightsView.each())
 		{
 			const int currentLightID = lightID++;
 
@@ -66,39 +52,42 @@ namespace Ganymede
 				GL_FLOAT,
 				&depthClear
 			);
-
-			OmniPointlightData& pl = pointlightsTotal.emplace_back();
-			pl.m_WorldPosition = plTransform.GetPosition();
-			pl.m_ID = currentLightID;
 		}
-		m_PointlightDataSSBO->Write(0, pointlightsTotal.size() * sizeof(OmniPointlightData), pointlightsTotal.data());
 
-		Renderer& renderer = renderContext.GetRenderer();
-		RenderCommandQueue& commandQueue = renderContext.m_CubemapShadowMappingCommandQueue;
-		unsigned int indexOffset = 0;
-		
-		for (int i = 0; i < commandQueue.size(); ++i)
+		OGLBindingHelper::BindFrameBuffer(*m_Framebuffer);
+		OGLBindingHelper::BindShader(m_ShadowMappingShader->GetRendererID());
+
+		glEnable(GL_DEPTH_TEST);
+
+		std::vector<RenderMeshInstanceCommand>& renderInfos = renderContext.m_RenderInfo;
+		for (unsigned int idx = 0; idx < renderInfos.size(); ++idx)
 		{
-			// CommandQueue comes sorted by mesh and shader type.
-			// This allows to queue-up multiple instances and draw them with one submission.
-			RenderCommand& renderCommand = commandQueue[i];
+			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
+			if (renderInfo.m_ViewID == 0) continue;
+			MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
 
-			VertexObject& vo = *renderCommand.m_VO;
+			const VertexObject& voPtr = renderContext.GetVO(mesh);
+			OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
 
-			glm::u32vec1 d(renderCommand.m_SSBOInstanceID);
-			m_InterInstanceDataIndexBuffer.push_back(d);
-
-			const unsigned int nextIndex = i + 1;
-			const bool isLastInstance = (commandQueue.size() - 1) == i;
-			const bool submitInstance = isLastInstance ||
-				commandQueue[nextIndex].m_VO != &vo;
-
-			if (submitInstance)
-			{
-				renderContext.m_GpuResources.GetInstanceDataIndexBuffer().Write(&m_InterInstanceDataIndexBuffer[0], m_InterInstanceDataIndexBuffer.size(), 0);
-				renderer.DrawVertexObject(vo, m_InterInstanceDataIndexBuffer.size(), *m_Framebuffer, *m_ShadowMappingShader, true);
-				m_InterInstanceDataIndexBuffer.clear();
-			}
+			glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
+			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
 		}
+
+		//std::vector<RenderMeshInstanceCommand>& renderInfos = renderContext.m_RenderInfo;
+		//for (int i = 1; i < 7; ++i)
+		//{
+		//	const RenderMeshInstanceCommandOffsetsByView offset = renderContext.m_RenderInfoOffsets[i];
+		//	for (unsigned int idx = offset.m_StartIndex; idx < offset.m_StartIndex + offset.m_LastIndex; ++idx)
+		//	{
+		//		RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
+		//		MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
+		//
+		//		const VertexObject& voPtr = renderContext.GetVO(mesh);
+		//		OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
+		//
+		//		glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
+		//		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
+		//	}
+		//}
 	}
 }

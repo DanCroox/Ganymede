@@ -34,6 +34,10 @@ void main()
 		drawCommands[cmdIdx].baseVertex = 0;
 		drawCommands[cmdIdx].baseInstance = appendDataIndex;
 
+		// We store the cmdIdx cause we need to sort renderInfos in a final pass based on ViewID and MeshID
 		renderInfos[cmdIdx].m_MeshID = thisMesh;
+		renderInfos[cmdIdx].m_ViewID = thisView;
+		renderInfos[cmdIdx].m_IndirectCommandIndex = cmdIdx;
+		renderInfos[cmdIdx].m_FaceIndex = instanceDatas[appendDataIndex].m_FaceIndex;
 	}
 }

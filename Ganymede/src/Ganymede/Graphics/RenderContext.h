@@ -27,9 +27,15 @@ namespace Ganymede
 	struct RenderMeshInstanceCommand
 	{
 		glm::uint m_MeshID;
-		glm::uint m_Pad1;
-		glm::uint m_Pad2;
-		glm::uint m_Pad3;
+		glm::uint m_ViewID;
+		glm::uint m_IndirectCommandIndex;
+		glm::uint m_FaceIndex;
+	};
+
+	struct RenderMeshInstanceCommandOffsetsByView
+	{
+		glm::uint m_StartIndex;
+		glm::uint m_LastIndex;
 	};
 
 	struct GANYMEDE_API RenderCommand
@@ -147,10 +153,12 @@ namespace Ganymede
 		RenderView& CreateRenderView();
 		void DestroyRenderView(RenderView& renderView);
 		RenderView& GetRenderView(unsigned int viewID) { return m_RenderViews[viewID]; }
-
+		unsigned int GetNumRenderViews() const { return numRenderView; }
+		unsigned int numRenderView = 0;
 
 		const VertexObject& GetVO(MeshWorldObject::Mesh& mesh);
 		std::vector<RenderMeshInstanceCommand> m_RenderInfo;
+		std::vector<RenderMeshInstanceCommandOffsetsByView> m_RenderInfoOffsets;
 		std::vector<MeshWorldObject::Mesh*> m_MeshIDMapping;
 
 	private:

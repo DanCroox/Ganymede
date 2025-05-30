@@ -31,13 +31,14 @@ namespace Ganymede
 		ssbo_EntityVisiblityMasksCounter = renderContext.CreateSSBO("EntityVisiblityMasksCounter", 19, sizeof(glm::uint32), false);
 		ssbo_AppendCounter = renderContext.CreateSSBO("AppendCounter", 20, sizeof(glm::uint32), false);
 		ssbo_CommandCounter = renderContext.CreateSSBO("CommandCounter", 21, sizeof(glm::uint32), false);
+		ssbo_NumRenderViews = renderContext.CreateSSBO("NumRenderViews", 22, sizeof(glm::uint32), false);
 
-		ssbo_EntityData = renderContext.CreateSSBO("EntityData", 22, sizeof(EntityData) * 1000000, false);
-		ssbo_RenderViews = renderContext.CreateSSBO("RenderViews", 23, sizeof(GPURenderView) * 1000000, false);
-		ssbo_EntityVisiblityMasks = renderContext.CreateSSBO("VisibilityMasks", 24, sizeof(VisibilityMask) * 1000000, false);
-		ssbo_AppendBuffer = renderContext.CreateSSBO("InstanceData", 25, sizeof(InstanceData) * 1000000, false);
-		ssbo_IndirectDrawCmds = renderContext.CreateSSBO("IndirectDrawCommands", 26, sizeof(DrawElementsIndirectCommand) * 1000000, false);
-		ssbo_RenderInfos = renderContext.CreateSSBO("RenderInfos", 27, sizeof(ssbo_RenderInfos) * 1000000, false);
+		ssbo_EntityData = renderContext.CreateSSBO("EntityData", 23, sizeof(EntityData) * 1000000, false);
+		ssbo_RenderViews = renderContext.CreateSSBO("GPURenderViews", 24, sizeof(GPURenderView) * 1000000, false);
+		ssbo_EntityVisiblityMasks = renderContext.CreateSSBO("VisibilityMasks", 25, sizeof(VisibilityMask) * 1000000, false);
+		ssbo_AppendBuffer = renderContext.CreateSSBO("InstanceData", 26, sizeof(InstanceData) * 1000000, false);
+		ssbo_IndirectDrawCmds = renderContext.CreateSSBO("IndirectDrawCommands", 27, sizeof(DrawElementsIndirectCommand) * 1000000, false);
+		ssbo_RenderInfos = renderContext.CreateSSBO("RenderInfos", 28, sizeof(RenderMeshInstanceCommand) * 1000000, false);
 
 		m_FindVisibleEntitiesCompute = renderContext.LoadShader("FindVisibleEntitiesComputeShader", "res/shaders/Compute/FindVisibleEntitiesComputeShader.shader");
 		m_UnfoldVisibleEntitiesCompute = renderContext.LoadShader("UnfoldVisibleEntitiesCompute", "res/shaders/Compute/UnfoldVisibleEntitiesCompute.shader");
@@ -50,16 +51,24 @@ namespace Ganymede
 
 	void ComputePass::Execute(RenderContext& renderContext)
 	{
-		const RenderView& view = renderContext.GetRenderView(0);
+		SCOPED_TIMER("Compute Pass");
+		for (unsigned int i = 0; i < renderContext.GetNumRenderViews(); ++i)
+		{
+			const RenderView& view = renderContext.GetRenderView(i);
 
-		GPURenderView camView;
-		camView.m_ViewID = 0;
-		camView.m_FarClip = view.m_FarClip;
-		camView.m_NearClip = view.m_NearClip;
-		camView.m_Perspective = view.m_Perspective;
-		camView.m_Transform = view.ToTransform();
+			GPURenderView camView;
+			camView.m_ViewID = view.m_ViewID;
+			camView.m_FarClip = view.m_FarClip;
+			camView.m_NearClip = view.m_NearClip;
+			camView.m_Perspective = view.m_Perspective;
+			camView.m_Transform = view.ToTransform();
+			camView.m_FaceIndex = view.m_FaceIndex;
+			camView.m_WorldPosition = glm::vec4(view.m_Position, 1);
 
-		ssbo_RenderViews->Write(0, sizeof(RenderView), &camView);
+			ssbo_RenderViews->Write(i * sizeof(GPURenderView), sizeof(GPURenderView), &camView);
+			glm::uint32 ii = i + 1;
+			ssbo_NumRenderViews->Write(0, sizeof(glm::uint32), &ii);
+		}
 
 		World& world = renderContext.GetWorld();
 
@@ -129,6 +138,7 @@ namespace Ganymede
 		// Sort visible entities by RenderView and mesh. For simplicity we readback the instancedata buffer to sort. Later we do it directly in a compute pass
 		glm::uint numAppends;
 		ssbo_AppendCounter->Read(0, sizeof(glm::uint), (void*)&numAppends);
+
 		std::vector<InstanceData> appends;
 		appends.resize(numAppends);
 		ssbo_AppendBuffer->Read(0, appends.size() * sizeof(InstanceData), appends.data());
@@ -141,7 +151,6 @@ namespace Ganymede
 				return a.m_MeshID < b.m_MeshID;
 			}
 		);
-		NUMBERED_NAMED_COUNTER("Num Instances", numAppends);
 		ssbo_AppendBuffer->Write(0, numAppends * sizeof(InstanceData), appends.data());
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -157,6 +166,49 @@ namespace Ganymede
 		ssbo_CommandCounter->Read(0, sizeof(glm::uint), (void*)&numCommands);
 		renderContext.m_RenderInfo.resize(numCommands);
 		ssbo_RenderInfos->Read(0, numCommands * sizeof(RenderMeshInstanceCommand), renderContext.m_RenderInfo.data());
+
+		NUMBERED_NAMED_COUNTER("Commands", numCommands);
+
+		renderContext.m_RenderInfoOffsets.resize(numCommands);
+
+		std::sort(renderContext.m_RenderInfo.begin(), renderContext.m_RenderInfo.end(), [](const RenderMeshInstanceCommand& a, const RenderMeshInstanceCommand& b)
+			{
+				if (a.m_ViewID < b.m_ViewID)
+					return true;
+				if (a.m_ViewID > b.m_ViewID)
+					return false;
+				return a.m_MeshID < b.m_MeshID;
+			}
+		);
+
+		unsigned int count = 0;
+		for (unsigned int i = 0; i < renderContext.m_RenderInfo.size(); ++i)
+		{
+			const RenderMeshInstanceCommand& cmd = renderContext.m_RenderInfo[i];
+			const unsigned int viewID = cmd.m_ViewID;
+
+			const bool isNew = (i == 0) || renderContext.m_RenderInfo[i - 1].m_ViewID != viewID;
+			const bool isLast = (i == renderContext.m_RenderInfo.size() - 1) || renderContext.m_RenderInfo[i + 1].m_ViewID != viewID;
+
+			if (isNew)
+			{
+				renderContext.m_RenderInfoOffsets[viewID].m_StartIndex = i;
+			}
+
+			if (isLast)
+			{
+				++count;
+				renderContext.m_RenderInfoOffsets[viewID].m_LastIndex = count;
+				count = 0;
+				continue;
+			}
+
+			++count;
+		}
+
+		std::vector< DrawElementsIndirectCommand> cmds;
+		cmds.resize(numCommands);
+		ssbo_IndirectDrawCmds->Read(0, numCommands * sizeof(DrawElementsIndirectCommand), cmds.data());
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}

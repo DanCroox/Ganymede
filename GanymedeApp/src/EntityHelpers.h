@@ -30,9 +30,4 @@ public:
 		Ganymede::PhysicsWorld& physicsWorld,
 		float weight,
 		Ganymede::WorldObjectInstance::Mobility mobility);
-
-	static entt::entity CreatePointlightEntity(
-		Ganymede::World& world,
-		const Ganymede::PointlightWorldObject& plwo,
-		Ganymede::WorldObjectInstance::Mobility mobility);
 };
