@@ -14,6 +14,14 @@ namespace Ganymede
 	class SSBO;
 	class Shader;
 
+	struct ComputePassCounters
+	{
+		glm::uint32 m_NumEntities;
+		glm::uint32 m_NumAppends;
+		glm::uint32 m_NumIndirectCommands;
+		glm::uint32 m_NumRenderViews;
+	};
+
 	struct alignas(16) GPURenderView
 	{
 		glm::mat4 m_Transform;
@@ -23,6 +31,10 @@ namespace Ganymede
 		float m_FarClip;
 		glm::uint m_ViewID;
 		glm::uint m_FaceIndex;
+		glm::uint m_RenderViewGroup;
+		glm::uint m_Pad1;
+		glm::uint m_Pad2;
+		glm::uint m_Pad3;
 	};
 
 	struct DrawElementsIndirectCommand
@@ -44,12 +56,6 @@ namespace Ganymede
 		glm::uint m_Pad3;
 	};
 
-	struct VisibilityMask
-	{
-		glm::uint m_EntityDataIndex;
-		glm::uint m_VisibilityMask;
-	};
-
 	struct alignas(16) InstanceData
 	{
 		glm::mat4 m_Transform;
@@ -57,6 +63,10 @@ namespace Ganymede
 		glm::uint m_MeshID;
 		glm::uint m_NumMeshIndices;
 		glm::uint m_FaceIndex;
+		glm::uint m_RenderViewGroup;
+		glm::uint m_Pad1;
+		glm::uint m_Pad2;
+		glm::uint m_Pad3;
 	};
 
 	struct GCUploaded
@@ -73,15 +83,10 @@ namespace Ganymede
 		void Execute(RenderContext& renderContext) override;
 
 	private:
-		SSBO* ssbo_EntityDataCounter; //u32
-		SSBO* ssbo_EntityVisiblityMasksCounter; //u32
-		SSBO* ssbo_AppendCounter; //u32
-		SSBO* ssbo_CommandCounter; //u32
-		SSBO* ssbo_NumRenderViews; //u32
+		SSBO* ssbo_ComputePassCounters; //ComputePassCounters
 
 		SSBO* ssbo_EntityData; //EntityData
 		SSBO* ssbo_RenderViews; //RenderView
-		SSBO* ssbo_EntityVisiblityMasks; //VisibilityMask
 		SSBO* ssbo_AppendBuffer; //InstanceData
 		SSBO* ssbo_IndirectDrawCmds; //DrawElementsIndirectCommand
 		SSBO* ssbo_RenderInfos; //RenderMeshInstanceCommand
@@ -89,7 +94,6 @@ namespace Ganymede
 		unsigned int m_NumEntities = 0;
 
 		Shader* m_FindVisibleEntitiesCompute;
-		Shader* m_UnfoldVisibleEntitiesCompute;
 		Shader* m_GenerateIndirectDrawCommands;
 	};
 }

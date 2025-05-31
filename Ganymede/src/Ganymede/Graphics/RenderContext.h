@@ -29,7 +29,7 @@ namespace Ganymede
 		glm::uint m_MeshID;
 		glm::uint m_ViewID;
 		glm::uint m_IndirectCommandIndex;
-		glm::uint m_FaceIndex;
+		glm::uint m_RenderViewGroup;
 	};
 
 	struct RenderMeshInstanceCommandOffsetsByView

@@ -116,7 +116,6 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 		}
 		else if (const PointlightWorldObject* plwo = dynamic_cast<const PointlightWorldObject*>(asset))
 		{
-			if (numlights >= 5) continue;
  			entt::entity entity = EntityHelpers::CreateWorldEntity(*m_World, *plwo, WorldObjectInstance::Mobility::Dynamic);
 			GCPointlight& gcPointlight = m_World->AddComponent<GCPointlight>(entity);
 			gcPointlight.m_Brightness = plwo->GetBrightness();
@@ -127,6 +126,7 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 				rv.m_FarClip = 1000.0f;
 				rv.m_NearClip = 0.01f;
 				rv.m_FaceIndex = (numlights * 6) + i;
+				rv.m_RenderViewGroup = 1;
 
 				rv.m_Position = glm::vec3(plwo->GetTransform()[3]);
 				rv.m_Perspective = glm::perspective(glm::radians(90.0f), 1.f, rv.m_NearClip, rv.m_FarClip);

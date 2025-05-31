@@ -18,6 +18,7 @@ namespace Ganymede
 		float m_FarClip;
 		glm::uint m_ViewID;
 		glm::uint m_FaceIndex;
+		glm::uint m_RenderViewGroup;
 
 		glm::mat4 ToTransform() const
 		{

@@ -12,7 +12,7 @@ namespace Ganymede
         m_GpuResources(world)
     {
         m_VertexObjectCache.resize(1000000);
-        m_RenderViews.resize(100);
+        m_RenderViews.resize(10000);
     }
 
     World& RenderContext::GetWorld()

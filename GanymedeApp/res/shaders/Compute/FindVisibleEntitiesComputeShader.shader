@@ -28,14 +28,11 @@ bool IsInFrustum(mat4 mvp, AABB aabb)
 void main() 
 {
 	uint entityDataIndex = gl_GlobalInvocationID.x;
-	if (entityDataIndex >= numEntities) return;
+	if (entityDataIndex >= m_Counters.m_NumEntities) return;
 
 	EntityData entity = entityDatas[entityDataIndex];
 
-	uint visibilityMaskIndex = 0;
-	uint numViews = numRenderViews;
-	
-	bool maskCreated = false;
+	uint numViews = m_Counters.m_NumRenderViews;
 
 	for (uint viewIdx = 0; viewIdx < numViews; ++viewIdx)
 	{
@@ -43,14 +40,13 @@ void main()
 		mat4 mvp = view.m_Perspective * view.m_Transform * entity.m_Transform;
 		if (IsInFrustum(mvp, entity.m_AABB))
 		{
-			if (maskCreated == false)
-			{
-				visibilityMaskIndex = atomicAdd(numVisibilityMasks, 1);
-				entityVisibilityMasks[visibilityMaskIndex].m_EntityDataIndex = entityDataIndex;
-				entityVisibilityMasks[visibilityMaskIndex].m_VisibilityMask = 0;
-				maskCreated = true;
-			}
-			entityVisibilityMasks[visibilityMaskIndex].m_VisibilityMask |= (1u << viewIdx);
+			uint idx = atomicAdd(m_Counters.m_NumAppends, 1);
+			instanceDatas[idx].m_Transform = entity.m_Transform;
+			instanceDatas[idx].m_ViewID = view.m_ViewID;
+			instanceDatas[idx].m_MeshID = entity.m_MeshID;
+			instanceDatas[idx].m_NumMeshIndices = entity.m_NumMeshIndices;
+			instanceDatas[idx].m_FaceIndex = view.m_FaceIndex;
+			instanceDatas[idx].m_RenderViewGroup = view.m_RenderViewGroup;
 		}
 	}
 }

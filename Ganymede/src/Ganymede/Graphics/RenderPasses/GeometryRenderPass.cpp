@@ -75,6 +75,8 @@ namespace Ganymede
 		OGLBindingHelper::BindFrameBuffer(*m_FrameBufferMS);
 
 		const RenderMeshInstanceCommandOffsetsByView offset = renderContext.m_RenderInfoOffsets[0];
+		NUMBERED_NAMED_COUNTER("Num Drawcalls (FPS Camera)", offset.m_LastIndex);
+
 		for (unsigned int idx = offset.m_StartIndex; idx < offset.m_StartIndex + offset.m_LastIndex; ++idx)
 		{
 			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];

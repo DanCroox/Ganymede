@@ -27,8 +27,12 @@ struct RenderView
 	float m_FarClip;
 	uint m_ViewID;
 	uint m_FaceIndex;
+	uint m_RenderViewGroup;
+	uint m_Pad1;
+	uint m_Pad2;
+	uint m_Pad3;
 };
-layout(std430, binding = 24) buffer RenderViewBuffer { RenderView renderViews[]; };
+layout(std430, binding = 22) buffer RenderViewBuffer { RenderView renderViews[]; };
 
 struct GBufferInstanceData
 {
@@ -41,11 +45,13 @@ struct NewInstanceData
 	mat4 m_Transform;
 	uint m_ViewID;
 	uint m_MeshID;
+	uint m_RenderViewGroup;
 	uint m_Pad1;
 	uint m_Pad2;
+	uint m_Pad3;
 };
 
-layout(std140, binding = 26) buffer NewInstanceDataBlock
+layout(std140, binding = 23) buffer NewInstanceDataBlock
 {
 	NewInstanceData NewInstanceDatas[];
 };

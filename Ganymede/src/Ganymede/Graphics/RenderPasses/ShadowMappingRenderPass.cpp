@@ -60,34 +60,22 @@ namespace Ganymede
 		glEnable(GL_DEPTH_TEST);
 
 		std::vector<RenderMeshInstanceCommand>& renderInfos = renderContext.m_RenderInfo;
-		for (unsigned int idx = 0; idx < renderInfos.size(); ++idx)
+		for (int i = 1; i < renderContext.m_RenderInfoOffsets.size(); ++i)
 		{
-			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
-			if (renderInfo.m_ViewID == 0) continue;
-			MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
-
-			const VertexObject& voPtr = renderContext.GetVO(mesh);
-			OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
-
-			glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
-			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
+			const RenderMeshInstanceCommandOffsetsByView offset = renderContext.m_RenderInfoOffsets[i];
+			
+			for (unsigned int idx = offset.m_StartIndex; idx < offset.m_StartIndex + offset.m_LastIndex; ++idx)
+			{
+				RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
+				MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
+		
+				const VertexObject& voPtr = renderContext.GetVO(mesh);
+				OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
+		
+				glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
+				glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
+				NAMED_COUNTER("Num Drawcalls (Shadow Mapping)", 1);
+			}
 		}
-
-		//std::vector<RenderMeshInstanceCommand>& renderInfos = renderContext.m_RenderInfo;
-		//for (int i = 1; i < 7; ++i)
-		//{
-		//	const RenderMeshInstanceCommandOffsetsByView offset = renderContext.m_RenderInfoOffsets[i];
-		//	for (unsigned int idx = offset.m_StartIndex; idx < offset.m_StartIndex + offset.m_LastIndex; ++idx)
-		//	{
-		//		RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
-		//		MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
-		//
-		//		const VertexObject& voPtr = renderContext.GetVO(mesh);
-		//		OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
-		//
-		//		glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
-		//		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
-		//	}
-		//}
 	}
 }
