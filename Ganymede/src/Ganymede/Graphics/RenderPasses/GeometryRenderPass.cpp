@@ -1,6 +1,5 @@
 #include "GeometryRenderPass.h"
 
-#include "CollectGeometryPass.h"
 #include "Ganymede/Common/Helpers.h"
 #include "Ganymede/ECS/Components/GCRenderObject.h"
 #include "Ganymede/ECS/Components/GCGPUMeshData.h"

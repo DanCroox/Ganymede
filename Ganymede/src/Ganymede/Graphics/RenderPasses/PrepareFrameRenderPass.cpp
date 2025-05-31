@@ -15,14 +15,9 @@ namespace Ganymede
 
 	void PrepareFrameRenderPass::Execute(RenderContext& renderContext)
 	{
-		// TODO: Only update dirty data
-		const RenderView& view = renderContext.GetRenderView(0);
-		m_CommonRenderData.m_View = view.ToTransform();
-		m_CommonRenderData.m_Projection = view.m_Perspective;
-		m_CommonRenderData.m_NearClip = view.m_NearClip;
-		m_CommonRenderData.m_FarClip = view.m_FarClip;
 		m_CommonRenderData.m_GameTime = GMTime::s_Time;
 		m_CommonRenderData.m_DeltaTime = GMTime::s_DeltaTime;
+		m_CommonRenderData.m_FrameNumber = GMTime::s_FrameNumber;
 		m_CommonRenderDataSSBO->Write(0, sizeof(CommonRenderData), &m_CommonRenderData);
 	}
 }

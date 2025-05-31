@@ -237,12 +237,12 @@ namespace Ganymede
         m_DataBuffers.erase(name);
     }
 
-    RenderView& RenderContext::CreateRenderView()
+    RenderView& RenderContext::CreateRenderView(glm::u32vec2 renderResolution, float fov, float nearClip, float farClip, unsigned int viewGroupID)
     {
         const unsigned int viewID = m_RenderViewFreeList.Append();
         // NEXTTODO: Proper reference handling!!! References will be invalidated if the m_RenderViews array gets resized.
-        m_RenderViews[viewID] = {};
-        RenderView& renderView = m_RenderViews[viewID];
+        m_RenderViews[viewID] = { renderResolution , fov, nearClip, farClip, viewGroupID, viewID };
+        RenderView& renderView = m_RenderViews[viewID].value();
         renderView.m_ViewID = viewID;
         ++numRenderView;
         return renderView;

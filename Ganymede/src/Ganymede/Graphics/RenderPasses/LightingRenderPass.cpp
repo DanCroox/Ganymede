@@ -91,7 +91,7 @@ namespace Ganymede
 		
 		m_LightingShader->SetUniform2i("u_RenderResolution", 1920, 1080);
 		m_LightingShader->SetUniform1i("u_PointlightCount", pointlights.size());
-		m_LightingShader->SetUniform3f("u_ViewPos", view.m_Position);
+		m_LightingShader->SetUniform3f("u_ViewPos", view.GetPosition());
 		m_LightingShader->SetUniform2i("u_ViewportResolution", 1920, 1080);
 
 		renderContext.GetRenderer().DrawVertexObject(*m_ScreenVO, 1, *m_FrameBuffer, *m_LightingShader, false);

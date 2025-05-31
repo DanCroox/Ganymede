@@ -46,18 +46,19 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	m_RenderPipeline = std::make_unique<RenderPipeline>(*m_RenderContext);
 	m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
 	m_RenderPipeline->AddRenderPass<ComputePass>();
+	m_RenderPipeline->AddRenderPass<UpdateDrawDataPass>();
 	m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
 	m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
 	m_RenderPipeline->AddRenderPass<LightingRenderPass>();
 	m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
 	m_RenderPipeline->Initialize();
 
-	m_Camera = std::make_unique<FPSCamera>(m_RenderContext->CreateRenderView());
+	m_Camera = std::make_unique<FPSCamera>(m_RenderContext->CreateRenderView({1920, 1080}, 55.0f, 0.01f, 1000.0f, 0));
 	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
 	
 	std::vector<const WorldObject*> loadedAssets;
-	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/ShadowMappingTest.glb");
-	loadedAssets = m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
+	loadedAssets = m_AssetLoader->LoadFromPath("res/models/ShadowMappingTest.glb");
+	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
 	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/physicstest.glb");
 	//loadedAssets = m_AssetLoader->LoadFromPath("res/models/backroom2.glb");
 	GM_INFO("WorldObjects loaded");
@@ -122,52 +123,41 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 			gcPointlight.m_Color = plwo->GetColor();
 			for(int i = 0 ; i < 6; ++i)
 			{
-				RenderView& rv = m_RenderContext->CreateRenderView();
-				rv.m_FarClip = 1000.0f;
-				rv.m_NearClip = 0.01f;
+				RenderView& rv = m_RenderContext->CreateRenderView({1024, 1024}, 90.0f, 0.01, 1000.0, 1);
+				rv.SetPosition(glm::vec3(plwo->GetTransform()[3]));
 				rv.m_FaceIndex = (numlights * 6) + i;
-				rv.m_RenderViewGroup = 1;
-
-				rv.m_Position = glm::vec3(plwo->GetTransform()[3]);
-				rv.m_Perspective = glm::perspective(glm::radians(90.0f), 1.f, rv.m_NearClip, rv.m_FarClip);
 
 				switch (i)
 				{
 					// +X
 				case 0:
-					rv.m_FrontVector = glm::vec3(1, 0, 0);
-					rv.m_UpVector = glm::vec3(0, -1, 0);
-					rv.m_RightVector = glm::vec3(0, 0, -1);
+					rv.SetFrontVector({ 1, 0, 0 });
+					rv.SetUpVector({ 0, -1, 0 });
 					break;
 					// -X
 				case 1:
-					rv.m_FrontVector = glm::vec3(-1, 0, 0);
-					rv.m_UpVector = glm::vec3(0, -1, 0);
-					rv.m_RightVector = glm::vec3(0, 0, 1);
+					rv.SetFrontVector({ -1, 0, 0 });
+					rv.SetUpVector({ 0, -1, 0 });
 					break;
 					// +Y
 				case 2:
-					rv.m_FrontVector = glm::vec3(0, 1, 0);
-					rv.m_UpVector = glm::vec3(0, 0, 1);
-					rv.m_RightVector = glm::vec3(1, 0, 0);
+					rv.SetFrontVector({ 0, 1, 0 });
+					rv.SetUpVector({ 0, 0, 1 });
 					break;
 					// -Y
 				case 3:
-					rv.m_FrontVector = glm::vec3(0, -1, 0);
-					rv.m_UpVector = glm::vec3(0, 0, -1);
-					rv.m_RightVector = glm::vec3(1, 0, 0);
+					rv.SetFrontVector({ 0, -1, 0 });
+					rv.SetUpVector({ 0, 0, -1 });
 					break;
 					// +Z
 				case 4:
-					rv.m_FrontVector = glm::vec3(0, 0, 1);
-					rv.m_UpVector = glm::vec3(0, -1, 0);
-					rv.m_RightVector = glm::vec3(1, 0, 0);
+					rv.SetFrontVector({ 0, 0, 1 });
+					rv.SetUpVector({ 0, -1, 0 });
 					break;
 					// -Z
 				case 5:
-					rv.m_FrontVector = glm::vec3(0, 0, -1);
-					rv.m_UpVector = glm::vec3(0, -1, 0);
-					rv.m_RightVector = glm::vec3(-1, 0, 0);
+					rv.SetFrontVector({ 0, 0, -1 });
+					rv.SetUpVector({ 0, -1, 0 });
 					break;
 				}
 

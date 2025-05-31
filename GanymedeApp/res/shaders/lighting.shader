@@ -25,20 +25,13 @@ uniform vec3 u_ViewPos;
 uniform ivec2 u_ViewportResolution;
 uniform ivec2 u_RenderResolution;
 
-uniform mat4 u_Projection;
-uniform mat4 u_ProjectionInverse;
-
 struct PointLight
 {
     vec4 u_PointlightColor;
     vec3 u_PointlighWorldLocation;
     int u_LightID;
 };
-
-layout(std140, binding = 0) buffer PointLightDataBlock
-{
-    PointLight pointLights[];
-};
+layout(std140, binding = 0) buffer PointLightDataBlock { PointLight pointLights[]; };
 
 uniform int u_PointlightCount;
 
@@ -52,24 +45,11 @@ uniform sampler2DMS u_GMetalRough;
 uniform sampler2DMS u_ComplexFragment;
 uniform sampler2DMS u_GEmission;
 
-//uniform sampler2D u_SSAOTexture;
-
-
 #define SIGMA 30.0
 #define BSIGMA 1.0
 #define MSIZE 30
 
-float normpdf(in float x, in float sigma)
-{
-    return 0.39894 * exp(-0.5 * x * x / (sigma * sigma)) / sigma;
-}
-
-float normpdf3(in vec3 v, in float sigma)
-{
-    return 0.39894 * exp(-0.5 * dot(v, v) / (sigma * sigma)) / sigma;
-}
-
-float ShadowCalculation(int lightID, vec3 fragPos, vec3 pointlightPos, vec3 fragNormal)
+bool IsInShadow(int lightID, vec3 fragPos, vec3 pointlightPos, vec3 fragNormal)
 {
     float bias = 0.2;
 
@@ -78,13 +58,7 @@ float ShadowCalculation(int lightID, vec3 fragPos, vec3 pointlightPos, vec3 frag
 
     float closestDepth = texture(u_DepthCubemapTexture, vec4(normalize(fragToLight), lightID)).r;
     closestDepth *= 1000.0;   // undo mapping [0;1]
-    bool inShadow = (currentDepth - bias) > closestDepth;
-    if (inShadow)
-    {
-        return 1;
-    }
-
-    return 0;
+    return (currentDepth - bias) > closestDepth;
 }
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
@@ -127,34 +101,8 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-uniform samplerCubeArray u_ColorCube;
-
-vec3 getFaceDir(int face, vec2 uv) {
-    vec2 p = uv * 2.0 - 1.0;
-
-    if(face == 0) return normalize(vec3( 1.0,  p.y, -p.x)); // +X
-    if(face == 1) return normalize(vec3(-1.0,  p.y,  p.x)); // -X
-    if(face == 2) return normalize(vec3( p.x,  1.0, -p.y)); // +Y
-    if(face == 3) return normalize(vec3( p.x, -1.0,  p.y)); // -Y
-    if(face == 4) return normalize(vec3( p.x,  p.y,  1.0)); // +Z
-    if(face == 5) return normalize(vec3(-p.x,  p.y, -1.0)); // -Z
-
-    return vec3(0.0);
-}
-
-
 void main()
 {
-    vec3 dir = getFaceDir(3, v_TexCoords);
-    vec3 distance = texture(u_DepthCubemapTexture, vec4(vec3(0.0, -1.0, 0.0), 0)).rgb;
-    distance = distance * vec3(1000.0);
-    if (distance.r == 0.0)
-    {
-        distance = vec3(1,0,0);
-    }
-    FragColor = vec4(distance, 1);
-
-
     ivec2 texel = ivec2(v_TexCoords * u_RenderResolution);
 
     float isc = texelFetch(u_ComplexFragment, texel, 0).r;
@@ -165,7 +113,7 @@ void main()
     bool isComplex = isc == 1;
 
     int sampleIdx = 0;
-    vec4 colorout = vec4(0);
+    vec3 colorout = vec3(0);
     while (sampleIdx < 4)
     {
         vec3 albedo = texelFetch(u_GAlbedo, texel, sampleIdx).xyz;
@@ -174,8 +122,7 @@ void main()
         vec3 normal = texelFetch(u_GNormals, texel, sampleIdx).xyz;
 
         vec2 metalRough = texelFetch(u_GMetalRough, texel, sampleIdx).xy;
-        //float metallic = metalRough.x;
-        float metallic = 0;
+        float metallic = metalRough.x;
         float roughness = metalRough.y;
         float spec = 0.5;
 
@@ -185,7 +132,6 @@ void main()
         vec3 F0 = vec3(0.04);
         F0 = mix(F0, albedo, metallic);
 
-        // reflectance equation
         vec3 Lo = vec3(0.0);
         for (int i = 0; i < u_PointlightCount; ++i)
         {
@@ -199,13 +145,10 @@ void main()
 
             vec3 radiance = (pointLights[i].u_PointlightColor.rgb) * attenuation;
             float energy = radiance.r + radiance.g + radiance.b;
-
-            float ss = 1;
             
             if (pointLights[i].u_LightID > -1)
             {
-                ss = 1 - ShadowCalculation(pointLights[i].u_LightID, position, pointLights[i].u_PointlighWorldLocation, normal);
-                if (ss == 0)
+                if (IsInShadow(pointLights[i].u_LightID, position, pointLights[i].u_PointlighWorldLocation, normal))
                 {
                     continue;
                 }
@@ -228,34 +171,36 @@ void main()
             float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
             vec3 specular = numerator / denominator;
 
-            specular *= ss;
-
             // add to outgoing radiance Lo
             float NdotL = max(dot(N, L), 0.0);
-            Lo += (((kD * albedo / Pi + specular) * radiance * NdotL) * ss);
+            Lo += (((kD * albedo / Pi + specular) * radiance * NdotL));
         }
 
-        vec3 ambient = vec3(0.0) * albedo;
-        vec3 finalColor = ambient + Lo;
-   
         vec3 emission = texelFetch(u_GEmission, texel, sampleIdx).rgb * 100;
-        finalColor += emission;
 
-        //finalColor *= pow(ssa,3);
+        colorout += Lo + emission;
 
-        // Get rid of banding in color and volumetric
-        
-
-        colorout += vec4(finalColor.rgb, 1);
         ++sampleIdx;
         if (!isComplex)
             break;
     }
 
-    //finalColor = finalColor / (finalColor + vec3(1.0));
-    //finalColor = pow(finalColor, vec3(1.0 / 1.0));
+    vec3 finalLinearColor = colorout / sampleIdx;
 
-    FragColor = colorout / sampleIdx;
+    // Simple filmic tonemapping
+    const float A = 0.15;
+    const float B = 0.50;
+    const float C = 0.10;
+    const float D = 0.20;
+    const float E = 0.02;
+    const float F = 0.30;
+    vec3 x = max(vec3(0.0), finalLinearColor - E);
+    vec3 filmic = (x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F) - E / F;
+    vec3 tonemapped = clamp(filmic, 0.0, 1.0);
+
+    vec3 finalsRGBColor = pow(tonemapped, vec3(1.0 / 2.2));
+
+    // Eliminate banding by using sublte noise
     highp vec2 coordinates = gl_FragCoord.xy / u_ViewportResolution;
-    FragColor += mix(-NOISE_GRANULARITY, NOISE_GRANULARITY, randomFloat(coordinates));
+    FragColor = vec4(finalsRGBColor + mix(-NOISE_GRANULARITY, NOISE_GRANULARITY, randomFloat(coordinates)), 1);
 }

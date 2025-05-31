@@ -12,9 +12,8 @@ using namespace Ganymede;
 	FPSCamera::FPSCamera(RenderView& renderView) :
 		m_RenderView(renderView)
 	{
-		m_RenderView.m_FarClip = 1000.0f;
-		m_RenderView.m_NearClip = 0.1f;
-		RecreateProjectionMatrix();
+		m_RenderView.SetNearClip(1000.0f);
+		m_RenderView.SetNearClip(0.01f);
 
 		m_MouseMoveEventCBHandle = std::make_unique<EventCallbackHandle>();
 
@@ -24,7 +23,7 @@ using namespace Ganymede;
 
 	FPSCamera::~FPSCamera()
 	{
-		//EventSystem::GetInstance().UnsubscribeEvent<MouseMoveEvent>(m_MoveMoveEventCBHandle);
+		Application::Get().GetEventSystem().UnsubscribeEvent<MouseMoveEvent>(*m_MouseMoveEventCBHandle);
 	}
 
 	void FPSCamera::OnMouseMoveEvent(MouseMoveEvent& event)
@@ -40,12 +39,6 @@ using namespace Ganymede;
 		m_LastCursorX = m_CursorPosX;
 		m_LastCursorY = m_CursorPosY;
 
-		if (m_IsFirstExecution)
-		{
-			m_IsFirstExecution = false;
-			return;
-		}
-
 		m_Yaw += mouseDelta.x;
 		m_Pitch += mouseDelta.y;
 
@@ -58,28 +51,5 @@ using namespace Ganymede;
 		direction.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
 		direction.y = sin(glm::radians(m_Pitch));
 		direction.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
-		m_RenderView.m_FrontVector = glm::normalize(direction);
-		m_RenderView.m_RightVector = glm::cross(m_RenderView.m_FrontVector, m_RenderView.m_UpVector);
-	}
-
-	const glm::mat4& FPSCamera::GetProjection() const
-	{
-		if (m_RecreateProjectionMatrix)
-		{
-			RecreateProjectionMatrix();
-			m_RecreateProjectionMatrix = false;
-		}
-
-		return m_RenderView.m_Perspective;
-	}
-
-	void FPSCamera::RecreateProjectionMatrix() const
-	{	
-		//REWORK: Do proper aspect ratio creatíon! the cam needs the screen size. Maybe needs entire rework. Not sure if this shoudl be done here.
-		m_RenderView.m_Perspective = glm::perspective(
-			glm::radians(m_FOV),													// Vertical FOV angle
-			static_cast<float>(1920) / static_cast<float>(1080),  // Screen Aspect Ratio
-			m_RenderView.m_NearClip,																		// Near clipping plane
-			m_RenderView.m_FarClip																		// Far clipping plane
-		);
+		m_RenderView.SetFrontVector(glm::normalize(direction));
 	}

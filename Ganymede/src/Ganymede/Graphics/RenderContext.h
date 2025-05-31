@@ -24,6 +24,12 @@ namespace Ganymede
 	class MeshWorldObject::Mesh;
 	class FPSCamera;
 
+	struct VisibleEntity
+	{
+		uint32_t m_EntityID; // entt ID
+		glm::uint m_GPUBufferDataIndex;
+	};
+
 	struct RenderMeshInstanceCommand
 	{
 		glm::uint m_MeshID;
@@ -38,7 +44,17 @@ namespace Ganymede
 		glm::uint m_LastIndex;
 	};
 
-	struct GANYMEDE_API RenderCommand
+	struct alignas(16) EntityData
+	{
+		glm::mat4 m_Transform;
+		std::array<glm::vec4, 8> m_AABB;
+		glm::uint m_MeshID;
+		glm::uint m_NumMeshIndices;
+		glm::uint m_AnimationDataOffset;
+		glm::uint m_EntityID;
+	};
+
+	struct RenderCommand
 	{
 		VertexObject* m_VO = nullptr;
 		Material* m_Material = nullptr;
@@ -149,10 +165,10 @@ namespace Ganymede
 		std::int32_t m_NextFreeCubemapSSBOInstanceDataIndex = 0;
 
 		GPUResourceSystem m_GpuResources;
-
-		RenderView& CreateRenderView();
+		//TODO proper viewid and groupid handling!
+		RenderView& CreateRenderView(glm::u32vec2 renderResolution, float fov, float nearClip, float farClip, unsigned int viewGroupID);
 		void DestroyRenderView(RenderView& renderView);
-		RenderView& GetRenderView(unsigned int viewID) { return m_RenderViews[viewID]; }
+		RenderView& GetRenderView(unsigned int viewID) { return m_RenderViews[viewID].value(); }
 		unsigned int GetNumRenderViews() const { return numRenderView; }
 		unsigned int numRenderView = 0;
 
@@ -160,6 +176,8 @@ namespace Ganymede
 		std::vector<RenderMeshInstanceCommand> m_RenderInfo;
 		std::vector<RenderMeshInstanceCommandOffsetsByView> m_RenderInfoOffsets;
 		std::vector<MeshWorldObject::Mesh*> m_MeshIDMapping;
+
+		std::vector<VisibleEntity>& GetVisibleEntities() { return m_VisibleEntities; }
 
 	private:
 		World& m_World;
@@ -177,9 +195,11 @@ namespace Ganymede
 		
 		std::vector<CachedVertexObject> m_VertexObjectCache;
 
+		std::vector<VisibleEntity> m_VisibleEntities;
+
 		FreeList m_MeshIDFreeList;
 
-		std::vector<RenderView> m_RenderViews;
+		std::vector<std::optional<RenderView>> m_RenderViews;
 		FreeList m_RenderViewFreeList;
 	};
 }

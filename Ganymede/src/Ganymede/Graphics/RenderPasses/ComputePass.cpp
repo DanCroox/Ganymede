@@ -4,6 +4,7 @@
 #include "Ganymede/ECS/Components/GCDynamicMobility.h"
 #include "Ganymede/ECS/Components/GCMesh.h"
 #include "Ganymede/ECS/Components/GCTransform.h"
+#include "Ganymede/ECS/Components/GCGPUEntityData.h"
 #include "Ganymede/ECS/Components/GCRigidBody.h"
 #include "Ganymede/Graphics/DataBuffer.h"
 #include "Ganymede/Graphics/OGLBindingHelper.h"
@@ -35,6 +36,7 @@ namespace Ganymede
 		ssbo_AppendBuffer = renderContext.CreateSSBO("InstanceData", 23, sizeof(InstanceData) * 1000000, false);
 		ssbo_IndirectDrawCmds = renderContext.CreateSSBO("IndirectDrawCommands", 24, sizeof(DrawElementsIndirectCommand) * 1000000, false);
 		ssbo_RenderInfos = renderContext.CreateSSBO("RenderInfos", 25, sizeof(RenderMeshInstanceCommand) * 1000000, false);
+		ssbo_VisibleEntities = renderContext.CreateSSBO("EntityIDGPUInstanceDataMapping", 26, sizeof(VisibleEntity) * 1000000, false);
 
 		m_FindVisibleEntitiesCompute = renderContext.LoadShader("FindVisibleEntitiesComputeShader", "res/shaders/Compute/FindVisibleEntitiesComputeShader.shader");
 		m_GenerateIndirectDrawCommands = renderContext.LoadShader("GenerateIndirectDrawCommands", "res/shaders/Compute/GenerateIndirectDrawCommands.shader");
@@ -53,23 +55,22 @@ namespace Ganymede
 
 			GPURenderView camView;
 			camView.m_ViewID = view.m_ViewID;
-			camView.m_FarClip = view.m_FarClip;
-			camView.m_NearClip = view.m_NearClip;
-			camView.m_Perspective = view.m_Perspective;
-			camView.m_Transform = view.ToTransform();
+			camView.m_FarClip = view.GetFarClip();
+			camView.m_NearClip = view.GetNearClip();
+			camView.m_Perspective = view.GetProjectionMatrix();
+			camView.m_Transform = view.GetViewMatrix();
 			camView.m_FaceIndex = view.m_FaceIndex;
 			camView.m_RenderViewGroup = view.m_RenderViewGroup;
-			camView.m_WorldPosition = glm::vec4(view.m_Position, 1);
+			camView.m_WorldPosition = glm::vec4(view.GetPosition(), 1);
 
 			ssbo_RenderViews->Write(i * sizeof(GPURenderView), sizeof(GPURenderView), &camView);
-
-			const glm::uint32 ii = i + 1;
-			ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumRenderViews), sizeof(glm::uint32), (void*) &ii);
 		}
+		const unsigned int numViews = renderContext.GetNumRenderViews();
+		ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumRenderViews), sizeof(glm::uint32), (void*) &numViews);
 
 		World& world = renderContext.GetWorld();
 
-		auto entitiesToAdd = world.GetEntities(Include<GCMesh, GCTransform>{}, Exclude<GCUploaded>{});
+		auto entitiesToAdd = world.GetEntities(Include<GCMesh, GCTransform>{}, Exclude<GCGPUEntityData>{});
 		for (auto [entity, gcMesh, gcTransform] : entitiesToAdd.each())
 		{
 			for (MeshWorldObject::Mesh* mesh : gcMesh.m_Meshes)
@@ -78,6 +79,8 @@ namespace Ganymede
 				data.m_Transform = gcTransform.GetMatrix();
 				data.m_MeshID = mesh->m_MeshID;
 				data.m_NumMeshIndices = mesh->m_VertexIndicies.size();
+				data.m_AnimationDataOffset = 0;
+				data.m_EntityID = static_cast<uint32_t>(entity);
 				data.m_AABB[0] = glm::vec4(mesh->m_BoundingBoxVertices[0].m_Position, 1);
 				data.m_AABB[1] = glm::vec4(mesh->m_BoundingBoxVertices[1].m_Position, 1);
 				data.m_AABB[2] = glm::vec4(mesh->m_BoundingBoxVertices[2].m_Position, 1);
@@ -98,22 +101,7 @@ namespace Ganymede
 				ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumEntities), sizeof(glm::uint32), (void*)&m_NumEntities);
 				ssbo_EntityData->Write(idx * sizeof(EntityData), sizeof(EntityData), &data);
 
-				world.AddComponent<GCUploaded>(entity, idx);
-			}
-		}
-
-		//TOOO: Eventually move to separte Data-update-pass
-		auto entitiesToUpdate = world.GetEntities(Include<GCTransform, GCUploaded, GCDynamicMobility>{});
-		for (auto [entity, gcTransform, gcUploaded] : entitiesToUpdate.each())
-		{
-			if (std::optional<GCRigidBody> gcRigidBody = world.GetComponentFromEntity<GCRigidBody>(entity))
-			{
-				const glm::mat4 rbTransform = gcRigidBody.value().m_RigidBody.GetWorldTransform();
-				ssbo_EntityData->Write(gcUploaded.m_SSBOIndex * sizeof(EntityData), sizeof(glm::mat4), (void*)&rbTransform);
-			}
-			else
-			{
-				ssbo_EntityData->Write(gcUploaded.m_SSBOIndex * sizeof(EntityData), sizeof(glm::mat4), (void*)&gcTransform.GetMatrix());
+				world.AddComponent<GCGPUEntityData>(entity, idx);
 			}
 		}
 
@@ -123,6 +111,7 @@ namespace Ganymede
 		const glm::uint32 zero = 0;
 		ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumAppends), sizeof(glm::uint32), (void*)&zero);
 		ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumIndirectCommands), sizeof(glm::uint32), (void*)&zero);
+		ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumVisibleEntities), sizeof(glm::uint32), (void*)&zero);
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -133,10 +122,15 @@ namespace Ganymede
 
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+		glm::uint numVisibleEntities;
+		ssbo_ComputePassCounters->Read(offsetof(ComputePassCounters, m_NumVisibleEntities), sizeof(glm::uint32), (void*)&numVisibleEntities);
+		std::vector<VisibleEntity>& visibleEntities = renderContext.GetVisibleEntities();
+		visibleEntities.resize(numVisibleEntities);
+		ssbo_VisibleEntities->Read(0, numVisibleEntities * sizeof(VisibleEntity), visibleEntities.data());
+
 		// Sort visible entities by RenderView and mesh. For simplicity we readback the instancedata buffer to sort. Later we do it directly in a compute pass
 		glm::uint numAppends;
 		ssbo_ComputePassCounters->Read(offsetof(ComputePassCounters, m_NumAppends), sizeof(glm::uint32), (void*)&numAppends);
-
 		std::vector<InstanceData> appends;
 		appends.resize(numAppends);
 		ssbo_AppendBuffer->Read(0, appends.size() * sizeof(InstanceData), appends.data());

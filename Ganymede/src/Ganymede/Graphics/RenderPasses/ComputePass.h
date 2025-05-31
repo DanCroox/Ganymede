@@ -20,6 +20,10 @@ namespace Ganymede
 		glm::uint32 m_NumAppends;
 		glm::uint32 m_NumIndirectCommands;
 		glm::uint32 m_NumRenderViews;
+		glm::uint32 m_NumVisibleEntities;
+		glm::uint32 m_Pad1;
+		glm::uint32 m_Pad2;
+		glm::uint32 m_Pad3;
 	};
 
 	struct alignas(16) GPURenderView
@@ -46,16 +50,6 @@ namespace Ganymede
 		glm::uint  baseInstance;
 	};
 
-	struct alignas(16) EntityData
-	{
-		glm::mat4 m_Transform;
-		std::array<glm::vec4, 8> m_AABB;
-		glm::uint m_MeshID;
-		glm::uint m_NumMeshIndices;
-		glm::uint m_Pad2;
-		glm::uint m_Pad3;
-	};
-
 	struct alignas(16) InstanceData
 	{
 		glm::mat4 m_Transform;
@@ -64,14 +58,9 @@ namespace Ganymede
 		glm::uint m_NumMeshIndices;
 		glm::uint m_FaceIndex;
 		glm::uint m_RenderViewGroup;
-		glm::uint m_Pad1;
+		glm::uint m_EntityDataIndex;
 		glm::uint m_Pad2;
 		glm::uint m_Pad3;
-	};
-
-	struct GCUploaded
-	{
-		unsigned int m_SSBOIndex;
 	};
 
 	class GANYMEDE_API ComputePass : public RenderPass2
@@ -90,6 +79,7 @@ namespace Ganymede
 		SSBO* ssbo_AppendBuffer; //InstanceData
 		SSBO* ssbo_IndirectDrawCmds; //DrawElementsIndirectCommand
 		SSBO* ssbo_RenderInfos; //RenderMeshInstanceCommand
+		SSBO* ssbo_VisibleEntities; //VisibleEntity
 
 		unsigned int m_NumEntities = 0;
 

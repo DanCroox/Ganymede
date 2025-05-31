@@ -17,12 +17,10 @@ namespace Ganymede
 	private:
 		struct CommonRenderData
 		{
-			glm::mat4 m_View;
-			glm::mat4 m_Projection;
-			float m_NearClip;
-			float m_FarClip;
 			float m_GameTime;
 			float m_DeltaTime;
+			glm::uint m_FrameNumber;
+			glm::uint m_Pad1;
 		};
 
 		CommonRenderData m_CommonRenderData;

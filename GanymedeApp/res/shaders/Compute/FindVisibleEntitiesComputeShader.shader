@@ -28,25 +28,35 @@ bool IsInFrustum(mat4 mvp, AABB aabb)
 void main() 
 {
 	uint entityDataIndex = gl_GlobalInvocationID.x;
-	if (entityDataIndex >= m_Counters.m_NumEntities) return;
+	if (entityDataIndex >= ssbo_Counters.m_NumEntities) return;
 
-	EntityData entity = entityDatas[entityDataIndex];
+	EntityData entity = ssbo_EntityData[entityDataIndex];
 
-	uint numViews = m_Counters.m_NumRenderViews;
+	bool visibleByAnyView = false;
+	uint numViews = ssbo_Counters.m_NumRenderViews;
 
 	for (uint viewIdx = 0; viewIdx < numViews; ++viewIdx)
 	{
-		RenderView view = renderViews[viewIdx];
-		mat4 mvp = view.m_Perspective * view.m_Transform * entity.m_Transform;
+		RenderView view = ssbo_RenderViews[viewIdx];
+		mat4 mvp = view.m_Projection * view.m_Transform * entity.m_Transform;
 		if (IsInFrustum(mvp, entity.m_AABB))
 		{
-			uint idx = atomicAdd(m_Counters.m_NumAppends, 1);
-			instanceDatas[idx].m_Transform = entity.m_Transform;
-			instanceDatas[idx].m_ViewID = view.m_ViewID;
-			instanceDatas[idx].m_MeshID = entity.m_MeshID;
-			instanceDatas[idx].m_NumMeshIndices = entity.m_NumMeshIndices;
-			instanceDatas[idx].m_FaceIndex = view.m_FaceIndex;
-			instanceDatas[idx].m_RenderViewGroup = view.m_RenderViewGroup;
+			if (visibleByAnyView == false)
+			{
+				uint mappingIndex = atomicAdd(ssbo_Counters.m_NumVisibleEntities, 1);
+				ssbo_VisibleEntities[mappingIndex].m_EntityID = entity.m_EntityID;
+				ssbo_VisibleEntities[mappingIndex].m_GPUBufferDataIndex = entityDataIndex;
+				visibleByAnyView = true;
+			}
+
+			uint idx = atomicAdd(ssbo_Counters.m_NumAppends, 1);
+			ssbo_InstanceData[idx].m_Transform = entity.m_Transform;
+			ssbo_InstanceData[idx].m_ViewID = view.m_ViewID;
+			ssbo_InstanceData[idx].m_MeshID = entity.m_MeshID;
+			ssbo_InstanceData[idx].m_NumMeshIndices = entity.m_NumMeshIndices;
+			ssbo_InstanceData[idx].m_FaceIndex = view.m_FaceIndex;
+			ssbo_InstanceData[idx].m_RenderViewGroup = view.m_RenderViewGroup;
+			ssbo_InstanceData[idx].m_EntityDataIndex = entityDataIndex;
 		}
 	}
 }

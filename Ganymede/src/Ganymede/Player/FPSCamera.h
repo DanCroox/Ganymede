@@ -22,48 +22,27 @@ namespace Ganymede
 
 		void Update(float deltaTime);
 
-		std::unique_ptr<EventCallbackHandle> m_MouseMoveEventCBHandle;
 		void OnMouseMoveEvent(MouseMoveEvent& event);
 
-		inline void SetPosition(glm::vec3 position) { m_RenderView.m_Position = position; }
-		inline glm::vec3 GetPosition() const { return m_RenderView.m_Position; }
-		inline glm::vec3 GetFrontVector() const { return m_RenderView.m_FrontVector; }
-		inline glm::vec3 GetUpVector() const { return m_RenderView.m_UpVector; }
-		inline glm::vec3 GetRightVector() const { return glm::normalize(glm::cross(GetFrontVector(), GetUpVector())); }
+		inline void SetPosition(const glm::vec3& position) { m_RenderView.SetPosition(position); }
+		inline const glm::vec3& GetPosition() const { return m_RenderView.GetPosition(); }
+		inline const glm::vec3& GetFrontVector() const { return m_RenderView.GetFrontVector(); }
+		inline const glm::vec3& GetUpVector() const { return m_RenderView.GetUpVector(); }
+		inline const glm::vec3& GetRightVector() const { return glm::normalize(glm::cross(GetFrontVector(), GetUpVector())); }
 
-		void SetRollInDegree(float roll) { m_RenderView.m_RollInDegree = roll; }
-		float GetRollInDegree() const { return m_RenderView.m_RollInDegree; }
-
-		const glm::mat4& GetProjection() const;
-
-		void SetFOV(float fov) { m_FOV = fov; m_RecreateProjectionMatrix = true; }
-		void SetNearClip(float nearclip) { m_RenderView.m_NearClip = nearclip; m_RecreateProjectionMatrix = true; }
-		void SetFarClip(float farclip) { m_RenderView.m_FarClip = farclip; m_RecreateProjectionMatrix = true; }
-
-		glm::u32vec2 GetScreenSize() const { return m_ScreenSize; }
-		float GetFOV() const { return m_FOV; }
-		float GetNearClip() const { return m_RenderView.m_NearClip; }
-		float GetFarClip() const { return m_RenderView.m_FarClip; }
+		void SetRollInDegree(float roll) { m_RenderView.SetRollInDegree(roll); }
+		float GetRollInDegree() const { return m_RenderView.GetRollInDegree(); }
 
 	private:
-		void RecreateProjectionMatrix() const;
-
 		RenderView& m_RenderView;
-
-		double m_CursorPosX = 0;
-		double m_CursorPosY = 0;
-
-		mutable bool m_RecreateProjectionMatrix = true;
-
-		glm::u32vec2 m_ScreenSize = glm::u32vec2(1920, 1080);
-		float m_FOV = 65.f;
+		std::unique_ptr<EventCallbackHandle> m_MouseMoveEventCBHandle;
 
 		float m_MouseSensitiviy = .015f;
 
+		double m_CursorPosX = 0;
+		double m_CursorPosY = 0;
 		float m_Yaw = -90;
 		float m_Pitch = 0;
-
-		bool m_IsFirstExecution = true;
 
 		double m_LastCursorX = 0;
 		double m_LastCursorY = 0;

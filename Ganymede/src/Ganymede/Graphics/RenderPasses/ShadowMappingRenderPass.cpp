@@ -74,7 +74,7 @@ namespace Ganymede
 		
 				glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
 				glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
-				NAMED_COUNTER("Num Drawcalls (Shadow Mapping)", 1);
+				NAMED_COUNTER("Num Drawcalls (Shadow Mapping)");
 			}
 		}
 	}

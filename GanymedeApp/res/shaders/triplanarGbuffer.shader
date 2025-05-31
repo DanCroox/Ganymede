@@ -1,81 +1,35 @@
 #shader vertex
-
-// core = does not allow to use deprecated functions
-
 #version 460 core
 
+#include "Compute/commoncompute.h"
 
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec2 TexCoords;
 layout(location = 2) in vec3 Normal;
 layout(location = 3) in vec3 Tangent;
 layout(location = 4) in vec3 Bitangent;
-layout(location = 7) in uint GBufferInstanceDataIndex;
 
 out vec2 v_TexCoords;
 out vec3 v_Normal;
 out vec3 v_FragPos;
 out mat3 v_TBN;
-out vec3 v_SSAOPos;
-out vec3 v_SSAONormal;
-
-struct CommonShaderData
-{
-	mat4 m_View;
-	mat4 m_Projection;
-	float m_NearClip;
-	float m_FarClip;
-	float m_GameTime;
-	float m_DeltaTime;
-};
-
-layout(std430, binding = 4) buffer CommonShaderDataBlock
-{
-	CommonShaderData CommonData;
-};
-
-struct GBufferInstanceData
-{
-	mat4 m_M;
-	uvec4 m_AnimationDataOffset;
-};
-
-layout(std140, binding = 3) buffer InstanceDataBlock
-{
-	GBufferInstanceData InstanceDatas[];
-};
-
-struct NewInstanceData
-{
-	mat4 m_Transform;
-	uint m_ViewID;
-	uint m_MeshID;
-	uint m_NumMeshIndices;
-	uint m_FaceIndex;
-	uint m_RenderViewGroup;
-	uint m_Pad1;
-	uint m_Pad2;
-	uint m_Pad3;
-};
-
-layout(std140, binding = 23) buffer NewInstanceDataBlock
-{
-	NewInstanceData NewInstanceDatas[];
-};
 
 void main()
 {
-	NewInstanceData instanceData = NewInstanceDatas[gl_BaseInstance + gl_InstanceID];
-	mat4 instance_MV = CommonData.m_View * instanceData.m_Transform;
+	InstanceData instanceData = ssbo_InstanceData[gl_BaseInstance + gl_InstanceID];
+
+	RenderView renderView = ssbo_RenderViews[instanceData.m_ViewID];
+
+	mat4 instance_MV = renderView.m_Transform * instanceData.m_Transform;
 	mat4 instance_M = instanceData.m_Transform;
 
-	v_SSAOPos = (instance_MV * vec4(Position, 1)).xyz;
-	v_SSAONormal = mat3(transpose(inverse(instance_MV))) * Normal;
-	mat4 u_MVP = CommonData.m_Projection * instance_MV;
-	gl_Position = u_MVP * vec4(Position, 1);
+	vec4 vertexPosition = vec4(Position, 1);
+
+	mat4 u_MVP = renderView.m_Projection * instance_MV;
+	gl_Position = u_MVP * vertexPosition;
 	v_Normal = mat3(transpose(inverse(instance_M))) * Normal;
 	v_TexCoords = TexCoords;
-	v_FragPos = (instance_M * vec4(Position, 1)).xyz;
+	v_FragPos = (instance_M * vertexPosition).xyz;
 	mat3 m = mat3(instance_M);
 	vec3 T = m * normalize(Tangent);
 	vec3 N = m * normalize(Normal);
@@ -93,8 +47,6 @@ layout(location = 2) out vec4 gAlbedo;
 layout(location = 3) out vec4 gMetalRough;
 layout(location = 4) out vec4 gEmission;
 layout(location = 5) out vec4 gComplexFragment;
-//layout(location = 4) out vec4 ssaoPosition;
-//layout(location = 5) out vec4 ssaoNormal;
 
 in vec2 v_TexCoords;
 in vec3 v_FragPos;
@@ -164,16 +116,8 @@ void main()
 	gAlbedo += texture(u_Texture0, uvZ) * triblend.z;
 	gAlbedo *= vec4(u_BaseColor, 1);
 
-	int count = 0;
-	for (int i = 0; i < 4; ++i)
-	{
-		if ((gl_SampleMaskIn[0] & (1 << i)) != 0)
-		{
-			++count;
-		}
-	}
-
-	if (count != 4)
+	// Store "complex" fragments (less than max number of samples) -> Used for MSAA
+	if (bitCount(gl_SampleMaskIn[0]) != 4)
 		gComplexFragment = vec4(1);
 	else
 		gComplexFragment = vec4(0, 0, 0, 1);
