@@ -1,16 +1,17 @@
 #include "GSCreature.h"
 
-#include "Ganymede/Data/AssetLoader.h"
 #include "Ganymede/AI/NavMesh.h"
-#include "Ganymede/World/MeshWorldObject.h"
-#include "Ganymede/World/World.h"
-#include "Ganymede/Player/PlayerCharacter.h"
-#include "Ganymede/ECS/Components/GCCreature.h"
+#include "Ganymede/Common/Helpers.h"
+#include "Ganymede/Data/AssetLoader.h"
+#include "Ganymede/Data/StaticData.h"
+#include "../../ECS/Components/GCCreature.h"
+#include "Ganymede/ECS/Components/GCName.h"
 #include "Ganymede/ECS/Components/GCSkeletal.h"
 #include "Ganymede/ECS/Components/GCTransform.h"
+#include "Ganymede/Player/PlayerCharacter.h"
 #include "Ganymede/Runtime/GMTime.h"
-#include "Ganymede/ECS/Components/GCName.h"
-#include "Ganymede/Common/Helpers.h"
+#include "Ganymede/World/MeshWorldObject.h"
+#include "Ganymede/World/World.h"
 
 namespace Ganymede
 {
@@ -23,8 +24,8 @@ namespace Ganymede
 		if (std::strcmp(name.m_Name.c_str(), "Matschkopf") == 0)
 		{
 			AssetLoader& assetLoader = creatureData.m_AssetLoader;
-			creatureData.m_IdleAnimation = assetLoader.GetAnimationByName(std::string("Idle"));
-			creatureData.m_WalkingAnimation = assetLoader.GetAnimationByName(std::string("Walking"));
+			creatureData.m_IdleAnimation = &StaticData::Instance->m_SceneAnimations[0];
+			creatureData.m_WalkingAnimation = &StaticData::Instance->m_SceneAnimations[1];
 			creatureData.motionSpeed = Helpers::Random::RandomFloatInRange(1.8f, 2.2f);
 			transform.SetScale(Helpers::Random::RandomFloatInRange(.75f, .85f));
 		}
@@ -226,17 +227,17 @@ namespace Ganymede
 		gcCreature.targetinterp = glm::clamp(gcCreature.motionSpeedMulti * gcCreature.motionSpeed, 0.1f, 1.f);
 
 		gcSkeletal.m_AnimationBoneData.clear();
-		for (unsigned int i = 0; i < gcCreature.m_WalkingAnimation->m_Bones.size(); ++i)
+		for (unsigned int i = 0; i < gcCreature.m_WalkingAnimation->m_BoneFrames.size(); ++i)
 		{
-			const float idleFrame2 = std::fmod(std::ceil(gcCreature.m_IdleAnimationFrame), gcCreature.m_IdleAnimation->m_Bones[0].m_Frames.size());
-			const float walkingFrame2 = std::fmod(std::ceil(gcCreature.m_WalkingAnimationFrame), gcCreature.m_WalkingAnimation->m_Bones[0].m_Frames.size());
+			const float idleFrame2 = std::fmod(std::ceil(gcCreature.m_IdleAnimationFrame), gcCreature.m_IdleAnimation->m_BoneFrames[0].size());
+			const float walkingFrame2 = std::fmod(std::ceil(gcCreature.m_WalkingAnimationFrame), gcCreature.m_WalkingAnimation->m_BoneFrames[0].size());
 			const float frameInterp = glm::fract(gcCreature.m_WalkingAnimationFrame);
 
-			const glm::mat4& idleTrans = gcCreature.m_IdleAnimation->m_Bones[i].m_Frames[(unsigned int)gcCreature.m_IdleAnimationFrame];
-			const glm::mat4& walkingTrans = gcCreature.m_WalkingAnimation->m_Bones[i].m_Frames[(unsigned int)gcCreature.m_WalkingAnimationFrame];
+			const glm::mat4& idleTrans = gcCreature.m_IdleAnimation->m_BoneFrames[i][(unsigned int)gcCreature.m_IdleAnimationFrame];
+			const glm::mat4& walkingTrans = gcCreature.m_WalkingAnimation->m_BoneFrames[i][(unsigned int)gcCreature.m_WalkingAnimationFrame];
 
-			const glm::mat4& idleTrans2 = gcCreature.m_IdleAnimation->m_Bones[i].m_Frames[(unsigned int)idleFrame2];
-			const glm::mat4& walkingTrans2 = gcCreature.m_WalkingAnimation->m_Bones[i].m_Frames[(unsigned int)walkingFrame2];
+			const glm::mat4& idleTrans2 = gcCreature.m_IdleAnimation->m_BoneFrames[i][(unsigned int)idleFrame2];
+			const glm::mat4& walkingTrans2 = gcCreature.m_WalkingAnimation->m_BoneFrames[i][(unsigned int)walkingFrame2];
 
 			const glm::mat4 idalFinal = (1 - frameInterp) * idleTrans + frameInterp * idleTrans2;
 			const glm::mat4 walkingFinal = (1 - frameInterp) * walkingTrans + frameInterp * walkingTrans2;
@@ -247,9 +248,9 @@ namespace Ganymede
 
 		gcCreature.interp = glm::mix(gcCreature.interp, gcCreature.targetinterp, .2f);
 
-		gcCreature.m_WalkingAnimationFrame = std::fmod((gcCreature.m_WalkingAnimationFrame + GMTime::s_DeltaTime * gcCreature.m_WalkingAnimation->m_FPS * .75f * gcCreature.motionSpeed), gcCreature.m_WalkingAnimation->m_Bones[0].m_Frames.size());
-		gcCreature.m_IdleAnimationFrame = std::fmod((gcCreature.m_IdleAnimationFrame + GMTime::s_DeltaTime * gcCreature.m_IdleAnimation->m_FPS), gcCreature.m_IdleAnimation->m_Bones[0].m_Frames.size());
-		GM_CORE_ASSERT(gcCreature.m_IdleAnimationFrame < gcCreature.m_IdleAnimation->m_Bones[0].m_Frames.size(), "Current frame must not exceed total number of frames for idle animation.");
-		GM_CORE_ASSERT(gcCreature.m_WalkingAnimationFrame < gcCreature.m_WalkingAnimation->m_Bones[0].m_Frames.size(), "Current frame must not exceed total number of frames for walking animation.");
+		gcCreature.m_WalkingAnimationFrame = std::fmod((gcCreature.m_WalkingAnimationFrame + GMTime::s_DeltaTime * gcCreature.m_WalkingAnimation->m_FPS * .75f * gcCreature.motionSpeed), gcCreature.m_WalkingAnimation->m_BoneFrames[0].size());
+		gcCreature.m_IdleAnimationFrame = std::fmod((gcCreature.m_IdleAnimationFrame + GMTime::s_DeltaTime * gcCreature.m_IdleAnimation->m_FPS), gcCreature.m_IdleAnimation->m_BoneFrames[0].size());
+		GM_CORE_ASSERT(gcCreature.m_IdleAnimationFrame < gcCreature.m_IdleAnimation->m_BoneFrames[0].size(), "Current frame must not exceed total number of frames for idle animation.");
+		GM_CORE_ASSERT(gcCreature.m_WalkingAnimationFrame < gcCreature.m_WalkingAnimation->m_BoneFrames[0].size(), "Current frame must not exceed total number of frames for walking animation.");
 	}
 }

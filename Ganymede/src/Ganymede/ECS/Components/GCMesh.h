@@ -7,6 +7,6 @@ namespace Ganymede
 {
 	struct GCMesh
 	{
-		 std::vector<MeshWorldObject::Mesh*>& m_Meshes;
+		 std::vector<MeshWorldObject::Mesh*> m_Meshes;
 	};
 }

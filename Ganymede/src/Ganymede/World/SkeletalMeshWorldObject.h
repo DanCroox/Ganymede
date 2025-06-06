@@ -6,70 +6,41 @@
 
 namespace Ganymede
 {
-	struct GANYMEDE_API BoneInfo
+	struct Bone
 	{
 		glm::mat4 m_OffsetTransform;
 		unsigned int m_Index;
+		std::string m_BoneName;
 	};
 
 
-	struct GANYMEDE_API BoneWeight
+	struct BoneWeight
 	{
-		unsigned int m_BoneIndex; //wie in vertex buffer
+		unsigned int m_BoneIndex; //like in vertex buffer
 		float m_Weight;
 	};
 
-	struct GANYMEDE_API Animation
+	struct Animation
 	{
-		struct Bone
-		{
-			std::vector<glm::mat4> m_Frames;
-		};
-
-		std::string m_Name;
-		std::vector<Bone> m_Bones;
-
+		using BoneFrame = std::vector<glm::mat4>;
+		
 		float m_FPS;
+		std::string m_Name;
+		// Has all frames related to a bone. m_BoneFrames[boneIndex] -> list of all animation frame-transforms for given boneIndex.
+		std::vector<BoneFrame> m_BoneFrames;
 	};
 
 	class GANYMEDE_API SkeletalMeshWorldObject : public MeshWorldObject
 	{
 	public:
 		using MeshWorldObject::MeshWorldObject;
-		void SetBoneInfoByName(const std::string& name, const BoneInfo& boneInfo)
-		{
-			m_BoneInfoByBoneName[name] = boneInfo;
-		}
-
-		bool HasBoneName(const std::string& name)
-		{
-			return m_BoneInfoByBoneName.count(name) > 0;
-		}
-
-		bool TryGetBoneInfoByName(const std::string& name, BoneInfo& boneInfoOut) const
-		{
-			if (m_BoneInfoByBoneName.count(name) > 0)
-			{
-				boneInfoOut = m_BoneInfoByBoneName.at(name);
-				return true;
-			}
-
-			return false;
-		}
-
-		unsigned int GetBoneCount() const
-		{
-			return m_NumBones;
-		}
-
-		//REWORK: Rework this bonecount- ref thingy...just done to fix the namespace dependencies
-		unsigned int& GetBoneCountRef() { return m_NumBones; }
-		const std::unordered_map<std::string, BoneInfo>& GetBoneInfoByBoneNameRef() const { return m_BoneInfoByBoneName; }
-
 		Type GetType() const override { return Type::SkeletalMesh; }
 
+		void AddBone(const Bone& boneInfo) { m_Bones.push_back(boneInfo); }
+		const std::vector<Bone>& GetBones() const { return m_Bones; }
+		unsigned int GetBoneCount() const { return m_Bones.size(); }
+
 	private:
-		std::unordered_map<std::string, BoneInfo> m_BoneInfoByBoneName;
-		unsigned int m_NumBones = 0;
+		std::vector<Bone> m_Bones;
 	};
 }

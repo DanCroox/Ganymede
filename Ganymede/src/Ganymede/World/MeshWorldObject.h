@@ -49,11 +49,8 @@ namespace Ganymede
 				glm::vec3 m_Normal;
 			};
 
-			Mesh() :
-				m_MeshID(s_NextMeshID++),
-				m_VAO_ID(0),
-				m_EBO_ID(0),
-				m_VertexBufferID(0)
+			Mesh(size_t meshID) :
+				m_MeshID(meshID)
 			{
 				m_BoundingBoxIndices.resize(12 * 3);
 
@@ -149,13 +146,7 @@ namespace Ganymede
 			glm::vec3 m_BoundingBoxCenter;
 			glm::vec3 m_BoundingBoxHalfSize;
 
-			mutable unsigned int m_VAO_ID;
-			mutable unsigned int m_EBO_ID;
-			unsigned int m_VertexBufferID;
-
-			std::uint32_t m_MeshID;
-		private:
-			static std::uint32_t s_NextMeshID;
+			size_t m_MeshID;
 		};
 
 		MeshWorldObject(const std::string& name);
@@ -171,7 +162,8 @@ namespace Ganymede
 		void SetCastShadows(bool cast) { m_CastShadows = cast; }
 		bool GetCastShadows() const { return m_CastShadows; }
 
-		mutable std::vector<Mesh*> m_Meshes;
+		mutable std::vector<Handle<MeshWorldObject::Mesh>> m_Meshes;
+
 	private:
 		PreferredPhysicsState m_PreferredPhysicsState = PreferredPhysicsState::Static;
 		bool m_ExcludeFromNavigationMesh = false;
@@ -179,5 +171,4 @@ namespace Ganymede
 
 		mutable bool m_IsBound = false;
 	};
-
 }

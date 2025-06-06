@@ -190,7 +190,8 @@ project "Ganymede"
 		"Ganymede/vendor/recastnavigation/Recast/include",
 		"Ganymede/vendor/stb_image",
 		"Ganymede/vendor/imgui",
-		"Ganymede/vendor/entt/single_include"
+		"Ganymede/vendor/entt/single_include",
+		"Ganymede/vendor/bitsery/include"
 	}
 
 	filter "system:windows"
@@ -307,7 +308,8 @@ project "GanymedeApp"
 		"Ganymede/src",
 		"Ganymede/vendor/spdlog/include",
 		"Ganymede/vendor/glm",
-		"Ganymede/vendor/entt/single_include"
+		"Ganymede/vendor/entt/single_include",
+		"Ganymede/vendor/bitsery/include"
 	}
 	
 	libdirs

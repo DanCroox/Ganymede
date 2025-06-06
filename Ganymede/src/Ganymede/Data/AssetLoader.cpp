@@ -8,6 +8,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
 #include "stb_image.h"
+#include "StaticData.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -22,7 +23,6 @@
 
 namespace Ganymede
 {
-
     namespace AssetLoader_Private
     {
         static glm::mat4 AssimpMatrixToGLM(const aiMatrix4x4& aiMatrix)
@@ -38,24 +38,13 @@ namespace Ganymede
         }
     }
 
+    AssetLoader::AssetLoader() :
+        m_DefaultWhite(TryLoadTextureFromPath("res/textures/default/default_albedo.png").value()),
+        m_DefaultBlack(TryLoadTextureFromPath("res/textures/default/default_black.png").value()),
+        m_DefaultNormal(TryLoadTextureFromPath("res/textures/default/default_normal.png").value())
+    {}
 
-    AssetLoader::AssetLoader()
-    {
-        m_DefaultWhite = TryLoadTextureFromPath("res/textures/default/default_albedo.png");
-        m_DefaultBlack = TryLoadTextureFromPath("res/textures/default/default_black.png");
-        m_DefaultNormal = TryLoadTextureFromPath("res/textures/default/default_normal.png");
-    }
-
-    AssetLoader::~AssetLoader()
-    {
-        delete m_DefaultWhite;
-        delete m_DefaultNormal;
-        delete m_DefaultBlack;
-    }
-
-
-
-    void AssetLoader::LoadNodeData(const aiNode& node, const aiScene& scene, std::vector<const WorldObject*>& loadedAssetsStorage, const std::unordered_map<std::string, aiLight*>& lightsByNameLookup)
+    void AssetLoader::LoadNodeData(const aiNode& node, const aiScene& scene, const std::unordered_map<std::string, aiLight*>& lightsByNameLookup)
     {
         const std::string nodename = std::string(node.mName.C_Str());
         auto it = lightsByNameLookup.find(nodename);
@@ -69,9 +58,7 @@ namespace Ganymede
                 parentNode = parentNode->mParent;
             }
 
-            PointlightWorldObject* pointlightWorldObject = new PointlightWorldObject(nodename);
-            loadedAssetsStorage.push_back(pointlightWorldObject);
-            m_WorldObjects.insert(std::make_pair(nodename, pointlightWorldObject));
+            PointlightWorldObject* pointlightWorldObject = &m_StaticData.m_PointlightWorldObjects.emplace_back(nodename);
 
             // Transpose ai matrix to glm matrix (column major)
             glm::mat4 glmGlobalTransform = {
@@ -131,6 +118,16 @@ namespace Ganymede
 
             MeshWorldObject* meshWorldObject = isSkeletal ? new SkeletalMeshWorldObject(name) : new MeshWorldObject(name);
 
+            if (isSkeletal)
+            {
+                m_SkeletalMeshToIndex[name] = m_StaticData.m_SkeletalMeshWorldObjects.size();
+                meshWorldObject = &m_StaticData.m_SkeletalMeshWorldObjects.emplace_back(name);
+            }
+            else
+            {
+                meshWorldObject = &m_StaticData.m_MeshWorldObjects.emplace_back(name);
+            }
+
             if (node.mMetaData != nullptr)
             {
                 for (int i = 0; i < node.mMetaData->mNumProperties; ++i)
@@ -178,9 +175,6 @@ namespace Ganymede
 
             meshWorldObject->SetTransform(glmGlobalTransform);
 
-            loadedAssetsStorage.push_back(meshWorldObject);
-            m_WorldObjects.insert(std::make_pair(std::string(name), meshWorldObject));
-
             for (unsigned int i = 0; i < node.mNumMeshes; i++)
             {
                 aiMesh& mesh = *scene.mMeshes[node.mMeshes[i]];
@@ -196,7 +190,7 @@ namespace Ganymede
         // Load data from child nodes recursively
         for (unsigned int i = 0; i < node.mNumChildren; i++)
         {
-            LoadNodeData(*node.mChildren[i], scene, loadedAssetsStorage, lightsByNameLookup);
+            LoadNodeData(*node.mChildren[i], scene, lightsByNameLookup);
         }
     }
 
@@ -284,39 +278,27 @@ namespace Ganymede
         matrixOut = matrixOut * boneOffsetTransform;
     }
 
-    void AssetLoader::LoadBones(SkeletalMeshWorldObject* smwo, const aiMesh& mesh, const aiScene& scene)
+    void AssetLoader::LoadBones(SkeletalMeshWorldObject* smwo, const aiMesh& aiMesh, const aiScene& scene)
     {
-        std::vector<MeshWorldObject::Mesh::Vertex>& meshVertices = smwo->m_Meshes.back()->m_Vertices;
+        const size_t meshID = smwo->m_Meshes.back().GetID();
+        std::vector<MeshWorldObject::Mesh::Vertex>& meshVertices = m_StaticData.m_Meshes[meshID].m_Vertices;
 
         std::vector<unsigned int> boneIndexCounter;
-        boneIndexCounter.reserve(mesh.mNumVertices);
-        for (unsigned int i = 0; i < mesh.mNumVertices; ++i)
+        boneIndexCounter.reserve(aiMesh.mNumVertices);
+        for (unsigned int i = 0; i < aiMesh.mNumVertices; ++i)
         {
             boneIndexCounter.push_back(0);
         }
 
-        for (unsigned int boneIdx = 0; boneIdx < mesh.mNumBones; ++boneIdx)
+        for (unsigned int boneIdx = 0; boneIdx < aiMesh.mNumBones; ++boneIdx)
         {
-            const aiBone& bone = *mesh.mBones[boneIdx];
-
-            unsigned int bIdx = 0;
-            BoneInfo boneInfo;
-            const std::string boneName(bone.mName.C_Str());
-            if (smwo->TryGetBoneInfoByName(boneName, boneInfo))
-            {
-                bIdx = boneInfo.m_Index;
-            }
-            else
-            {
-                smwo->SetBoneInfoByName(boneName, { AssetLoader_Private::AssimpMatrixToGLM(bone.mOffsetMatrix), smwo->GetBoneCountRef() });
-                bIdx = smwo->GetBoneCountRef();
-                ++smwo->GetBoneCountRef();
-            }
+            const aiBone& bone = *aiMesh.mBones[boneIdx];
+            smwo->AddBone({ AssetLoader_Private::AssimpMatrixToGLM(bone.mOffsetMatrix), boneIdx, bone.mName.C_Str() });
 
             for (unsigned int weightIdx = 0; weightIdx < bone.mNumWeights; ++weightIdx)
             {
                 const aiVertexWeight& vertexWeight = bone.mWeights[weightIdx];
-                meshVertices[vertexWeight.mVertexId].m_BoneIndex[boneIndexCounter[vertexWeight.mVertexId]] = (float)bIdx;
+                meshVertices[vertexWeight.mVertexId].m_BoneIndex[boneIndexCounter[vertexWeight.mVertexId]] = (float)boneIdx;
                 meshVertices[vertexWeight.mVertexId].m_BoneWeight[boneIndexCounter[vertexWeight.mVertexId]] = vertexWeight.mWeight;
 
                 ++(boneIndexCounter[vertexWeight.mVertexId]);
@@ -330,19 +312,18 @@ namespace Ganymede
 
         std::string animationName = std::string(animation.mName.C_Str());
 
-        auto [it, inserted] = m_SceneAnimations.emplace(animationName, Animation());
-        Animation& anim = (*it).second;
-        anim.m_Bones.resize(skeletalMwo.GetBoneCount());
+        Animation& anim = m_StaticData.m_SceneAnimations.emplace_back();
+        anim.m_BoneFrames.resize(skeletalMwo.GetBoneCount());
         anim.m_FPS = animation.mDuration / animation.mTicksPerSecond;
         anim.m_FPS *= 10;
 
-        for (const auto& [boneName, boneInfo] : skeletalMwo.GetBoneInfoByBoneNameRef())
+        for (const auto& boneInfo : skeletalMwo.GetBones())
         {
             const aiNodeAnim* bone = nullptr;
 
             for (unsigned int i = 0; i < animation.mNumChannels; ++i)
             {
-                if (std::string(animation.mChannels[i]->mNodeName.C_Str()) == boneName)
+                if (std::string(animation.mChannels[i]->mNodeName.C_Str()) == boneInfo.m_BoneName)
                 {
                     bone = animation.mChannels[i];
                     break;
@@ -352,39 +333,42 @@ namespace Ganymede
             if (bone == nullptr)
                 continue;
 
-
-            Animation::Bone& animBone = anim.m_Bones[boneInfo.m_Index];
+            Animation::BoneFrame& animBone = anim.m_BoneFrames[boneInfo.m_Index];
             for (unsigned int frameIdx = 0; frameIdx < (*bone).mNumPositionKeys; ++frameIdx)
             {
                 glm::mat4 finalBoneTransform = glm::identity<glm::mat4>();
                 CalcBoneTransform(skeletalMwo, boneInfo.m_OffsetTransform, *bone, animation.mChannels, animation.mNumChannels, *meshNode->mParent, frameIdx, finalBoneTransform);
-                animBone.m_Frames.push_back(finalBoneTransform);
+                animBone.push_back(finalBoneTransform);
             }
         }
     }
 
-    void AssetLoader::LoadMesh(MeshWorldObject* meshWorldObject, const aiMesh& mesh, const aiNode& node, const aiScene& scene)
+    void AssetLoader::LoadMesh(MeshWorldObject* meshWorldObject, const aiMesh& aiMesh, const aiNode& node, const aiScene& scene)
     {
-        const std::string meshName = mesh.mName.C_Str();
-        std::unordered_map<std::string, MeshWorldObject::Mesh>::iterator it = m_WorldObjectMeshes.find(meshName);
+        const std::string meshName = aiMesh.mName.C_Str();
 
-        if (it != m_WorldObjectMeshes.end())
+        auto it = m_MeshNameToIndex.find(meshName);
+        if (it != m_MeshNameToIndex.end())
         {
             // Mesh already loaded
-            meshWorldObject->m_Meshes.push_back(&it->second);
+            meshWorldObject->m_Meshes.push_back({it->second});
             return;
         }
 
         aiMaterial** materials = scene.mMaterials;
 
-        const unsigned int materialIndex = mesh.mMaterialIndex;
+        const unsigned int materialIndex = aiMesh.mMaterialIndex;
         const aiMaterial* aiMaterial = materials[materialIndex];
 
         // Object might hold multiple meshes (e.g. due to different materials)
         // Add a new mesh to it and setup material data and vertex data
 
+        const size_t meshID = m_StaticData.m_Meshes.size();
 
-        MeshWorldObject::Mesh meshData;
+        MeshWorldObject::Mesh& meshData = m_StaticData.m_Meshes.emplace_back(meshID);
+        m_MeshNameToIndex.emplace(meshName, meshID);
+        meshWorldObject->m_Meshes.push_back({ meshID });
+        
         Material& meshMaterial = meshData.m_Material;
 
         bool hasAlbedoTexture = false;
@@ -397,41 +381,41 @@ namespace Ganymede
             aiString str;
             aiMaterial->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &str);
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const Texture* texture = TryLoadAndStoreRAWTexture(textureAi);
-            hasAlbedoTexture = texture != nullptr;
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture0", hasAlbedoTexture ? texture : m_DefaultWhite);
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasAlbedoTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture0", hasAlbedoTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
             aiMaterial->GetTexture(aiTextureType::aiTextureType_NORMALS, 0, &str);
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const Texture* texture = TryLoadAndStoreRAWTexture(textureAi);
-            hasNormalTexture = texture != nullptr;
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture1", hasNormalTexture ? texture : m_DefaultNormal);
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasNormalTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture1", hasNormalTexture ? textureHandle.value() : m_DefaultNormal);
         }
         {
             aiString str;
             aiMaterial->GetTexture(aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS, 0, &str);
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const Texture* texture = TryLoadAndStoreRAWTexture(textureAi);
-            hasRoughnessTexture = texture != nullptr;
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture2", hasRoughnessTexture ? texture : m_DefaultWhite);
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasRoughnessTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture2", hasRoughnessTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
             aiMaterial->GetTexture(aiTextureType::aiTextureType_METALNESS, 0, &str);
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const Texture* texture = TryLoadAndStoreRAWTexture(textureAi);
-            hasMetallicTexture = texture != nullptr;
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture3", hasMetallicTexture ? texture : m_DefaultWhite);
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasMetallicTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture3", hasMetallicTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
             aiMaterial->GetTexture(aiTextureType::aiTextureType_EMISSIVE, 0, &str);
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const Texture* texture = TryLoadAndStoreRAWTexture(textureAi);
-            hasEmissionTexture = texture != nullptr;
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture4", hasEmissionTexture ? texture : m_DefaultWhite);
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasEmissionTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture4", hasEmissionTexture ? textureHandle.value() : m_DefaultWhite);
         }
 
         aiMaterialProperty** prop = aiMaterial->mProperties;
@@ -490,15 +474,15 @@ namespace Ganymede
             meshMaterial.SetShader(m_ShaderManager.RegisterAndLoadShader("gbuffer"));
         }
 
-        const int vertexCount = mesh.mNumVertices;
+        const int vertexCount = aiMesh.mNumVertices;
 
-        const aiVector3D* vertices = mesh.mVertices;
-        const aiVector3D* uvs = mesh.mTextureCoords[0];
-        const aiVector3D* normals = mesh.mNormals;
-        const aiVector3D* tangents = mesh.mTangents;
-        const aiVector3D* bitangents = mesh.mBitangents;
-        const aiColor4D* colors = mesh.mColors[0];
-        const aiFace* faces = mesh.mFaces;
+        const aiVector3D* vertices = aiMesh.mVertices;
+        const aiVector3D* uvs = aiMesh.mTextureCoords[0];
+        const aiVector3D* normals = aiMesh.mNormals;
+        const aiVector3D* tangents = aiMesh.mTangents;
+        const aiVector3D* bitangents = aiMesh.mBitangents;
+        const aiColor4D* colors = aiMesh.mColors[0];
+        const aiFace* faces = aiMesh.mFaces;
 
         MeshWorldObject::Mesh::AABB& boundingBoxVertices = meshData.m_BoundingBoxVertices;
         for (unsigned int i = 0; i < vertexCount; ++i)
@@ -594,18 +578,15 @@ namespace Ganymede
         meshData.m_BoundingBoxHalfSize.y = meshData.m_BoundingBoxCenter.y + boundingBoxVertices[1].m_Position.y;
         meshData.m_BoundingBoxHalfSize.z = meshData.m_BoundingBoxCenter.z - boundingBoxVertices[1].m_Position.z;
 
-        for (unsigned int i = 0; i < mesh.mNumFaces; ++i)
+        for (unsigned int i = 0; i < aiMesh.mNumFaces; ++i)
         {
             meshData.m_VertexIndicies.push_back(faces[i].mIndices[0]);
             meshData.m_VertexIndicies.push_back(faces[i].mIndices[1]);
             meshData.m_VertexIndicies.push_back(faces[i].mIndices[2]);
         }
-
-        m_WorldObjectMeshes.insert(std::make_pair(meshName, meshData));
-        meshWorldObject->m_Meshes.push_back(&m_WorldObjectMeshes[meshName]);
     }
 
-    std::vector<const WorldObject*> AssetLoader::LoadFromPath(const std::string& path)
+    void AssetLoader::LoadFromPath(const std::string& path)
     {
         std::vector<const WorldObject*> loadedAssetsStorage;
 
@@ -624,7 +605,7 @@ namespace Ganymede
         if (fbxPtr == nullptr)
         {
             // Cant load fbx
-            return loadedAssetsStorage;
+            return;
         }
 
         std::unordered_map<std::string, aiLight*> lightsByNameLookup;
@@ -636,7 +617,7 @@ namespace Ganymede
         }
 
         const aiScene& scene = *fbxPtr;
-        LoadNodeData(*fbxPtr->mRootNode, scene, loadedAssetsStorage, lightsByNameLookup);
+        LoadNodeData(*fbxPtr->mRootNode, scene, lightsByNameLookup);
 
         if (scene.HasAnimations())
         {
@@ -645,58 +626,34 @@ namespace Ganymede
                 const aiAnimation& animation = *scene.mAnimations[animationIdx];
                 if (std::strcmp(animation.mName.C_Str(), "Idle") == 0 || std::strcmp(animation.mName.C_Str(), "Walking") == 0)
                 {
-                    if (const SkeletalMeshWorldObject* smwo = dynamic_cast<const SkeletalMeshWorldObject*>(GetWorldObjectByName(std::string("Matschkopf"))))
+                    if (auto it = m_SkeletalMeshToIndex.find(std::string("Matschkopf")); it != m_SkeletalMeshToIndex.end())
                     {
-                        LoadAnimation(*smwo, animation, scene.mRootNode);
+                        LoadAnimation(m_StaticData.m_SkeletalMeshWorldObjects[it->second], animation, scene.mRootNode);
                     }
                 }
             }
         }
-
-        return loadedAssetsStorage;
     }
 
-    const WorldObject* AssetLoader::GetWorldObjectByName(const std::string& name) const
-    {
-        std::unordered_map<std::string, const WorldObject*>::const_iterator it = m_WorldObjects.find(name);
-
-        if (it != m_WorldObjects.end())
-        {
-            return it->second;
-        }
-
-        return nullptr;
-    }
-
-    const Animation* AssetLoader::GetAnimationByName(const std::string& name) const
-    {
-        std::unordered_map<std::string, Animation>::const_iterator it = m_SceneAnimations.find(name);
-
-        if (it != m_SceneAnimations.end())
-        {
-            return &it->second;
-        }
-
-        return nullptr;
-    }
-
-    const Texture* AssetLoader::TryLoadTextureFromPath(const std::string& path)
+    std::optional<Handle<Texture>> AssetLoader::TryLoadTextureFromPath(const std::string& path)
     {
         const std::string textureName = Helpers::ParseFileNameFromPath(path);
 
         const Texture* texture = nullptr;
-        auto textureSearchIt = m_Textures.find(textureName);
-        if (textureSearchIt == m_Textures.end())
+        auto textureSearchIt = m_TextureNameToIndex.find(textureName);
+        if (textureSearchIt == m_TextureNameToIndex.end())
         {
-            texture = new Texture(path);
-            m_Textures.insert(std::make_pair(textureName, texture));
+            const size_t textureID = m_StaticData.m_Textures.size();
+
+            m_TextureNameToIndex.emplace(textureName, textureID);
+            m_StaticData.m_Textures.emplace_back(path);
+            return Handle<Texture> { textureID };
         }
         else
         {
-            texture = textureSearchIt->second;
+            const size_t textureID = textureSearchIt->second;
+            return Handle<Texture> { textureID };
         }
-
-        return texture;
     }
 
     ShaderManager& AssetLoader::GetShaderManager()
@@ -704,15 +661,14 @@ namespace Ganymede
         return m_ShaderManager;
     }
 
-    const Texture* AssetLoader::TryLoadAndStoreRAWTexture(const aiTexture* rawTexture)
+    std::optional<Handle<Texture>> AssetLoader::TryLoadAndStoreRAWTexture(const aiTexture* rawTexture)
     {
         if (rawTexture != nullptr)
         {
             std::string name = Helpers::ParseFileNameFromPath(rawTexture->mFilename.C_Str());
 
-            const Texture* texture;
-            auto textureSearchIt = m_Textures.find(name);
-            if (textureSearchIt == m_Textures.end())
+            auto textureSearchIt = m_TextureNameToIndex.find(name);
+            if (textureSearchIt == m_TextureNameToIndex.end())
             {
                 const unsigned int pixelsTotal = rawTexture->mWidth; // mHeight is 0 if embedded. mWidth is the byte count
                 unsigned char* bytes = reinterpret_cast<unsigned char*>(rawTexture->pcData);
@@ -726,22 +682,27 @@ namespace Ganymede
 
                 if (buffer)
                 {
-                    const Texture* texture = new Texture(buffer, width, height, channelCount);
-                    m_Textures.insert(std::make_pair(name, texture));
+                    const size_t textureID = m_StaticData.m_Textures.size();
+                    m_TextureNameToIndex.emplace(name, textureID);
+                    const Texture* texture = &m_StaticData.m_Textures.emplace_back(buffer, width, height, channelCount, textureID);
                     stbi_image_free(buffer);
-                    return texture;
+                    return Handle<Texture> { textureID };
                 }
 
+                GM_CORE_ASSERT(false, "Couldn't load texture.");
                 // Couldnt load texture
-                return nullptr;
+                {
+                    return std::nullopt;
+                }
             }
             else
             {
                 // Texture already in cache. Reuse!
-                return textureSearchIt->second;
+                const size_t textureID = textureSearchIt->second;
+                return Handle<Texture>{ textureID };
             }
         }
 
-        return nullptr;
+        return std::nullopt;
     }
 }

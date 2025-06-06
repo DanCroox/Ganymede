@@ -1,5 +1,6 @@
 #include "EntityHelpers.h"
 
+#include "Ganymede/Data/StaticData.h"
 #include "Ganymede/ECS/Components/GCDynamicMobility.h"
 #include "Ganymede/ECS/Components/GCEntityID.h"
 #include "Ganymede/ECS/Components/GCIgnoreForNavMesh.h"
@@ -53,7 +54,13 @@ entt::entity EntityHelpers::CreateMeshEntity(
 	using namespace Ganymede;
 
 	entt::entity entity = CreateWorldEntity(world, mwo, mobility);
-	world.AddComponent<GCMesh>(entity, mwo.m_Meshes);
+
+	GCMesh& gcMesh = world.AddComponent<GCMesh>(entity);
+	for (const Handle<MeshWorldObject::Mesh> meshHandle : mwo.m_Meshes)
+	{
+		gcMesh.m_Meshes.push_back(&StaticData::Instance->m_Meshes[meshHandle.GetID()]);
+	}
+
 
 	if (mwo.GetExcludeFromNavigationMesh())
 	{

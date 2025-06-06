@@ -1,8 +1,10 @@
 #pragma once
 
 #include "Ganymede/Core/Core.h"
+#include "Ganymede/Data/Handle.h"
 #include "glm/glm.hpp"
 #include <unordered_map>
+#include <variant>
 
 namespace Ganymede
 {
@@ -20,23 +22,20 @@ namespace Ganymede
 
 		void AddMaterialFloatProperty(const std::string& name, float value)
 		{
-			MaterialPropertyData propertyData;
-			propertyData.m_Scalar = value;
-			m_MaterialProperties[name] = { MaterialProperty::Type::Float, propertyData };
+			MaterialPropertyData propertyData = value;
+			m_MaterialProperties[name] = { propertyData };
 		}
 
 		void AddMaterialVector3fProperty(const std::string& name, glm::vec3 value)
 		{
-			MaterialPropertyData propertyData;
-			propertyData.m_Vector3f = value;
-			m_MaterialProperties[name] = { MaterialProperty::Type::Vector3f, propertyData };
+			MaterialPropertyData propertyData = value;
+			m_MaterialProperties[name] = { propertyData };
 		}
 
-		void AddMaterialTextureSamplerProperty(const std::string& name, const Texture* value)
+		void AddMaterialTextureSamplerProperty(const std::string& name, const Handle<Texture>& value)
 		{
-			MaterialPropertyData propertyData;
-			propertyData.m_Texture = value;
-			m_MaterialProperties[name] = { MaterialProperty::Type::TextureSampler, propertyData };
+			MaterialPropertyData propertyData = value;
+			m_MaterialProperties[name] = { propertyData };
 		}
 
 		bool operator==(const Material& other) const;
@@ -47,39 +46,13 @@ namespace Ganymede
 		}
 
 	private:
-		union MaterialPropertyData
-		{
-			float m_Scalar;
-			glm::vec3 m_Vector3f;
-			const Texture* m_Texture;
-		};
+		using MaterialPropertyData = std::variant<float, glm::vec3,	Handle<Texture>>;
 
 		struct MaterialProperty
 		{
-			enum class Type
-			{
-				Float,
-				Vector3f,
-				TextureSampler
-			};
-
 			bool operator==(const MaterialProperty& other) const
 			{
-				bool dataEqual = false;
-
-				switch (m_Type)
-				{
-				case Type::Float:
-					return m_Data.m_Scalar == other.m_Data.m_Scalar;
-				case Type::Vector3f:
-					return m_Data.m_Vector3f == other.m_Data.m_Vector3f;
-				case Type::TextureSampler:
-					return m_Data.m_Texture == other.m_Data.m_Texture;
-				default:
-					// TODO Add assert to not fail compare if other type is not reflected here
-					return false;
-					break;
-				}
+				return m_Data == other.m_Data;
 			}
 
 			bool operator!=(const MaterialProperty& other) const
@@ -87,7 +60,6 @@ namespace Ganymede
 				return !(other == *this);
 			}
 
-			Type m_Type = Type::Float;
 			MaterialPropertyData m_Data;
 		};
 

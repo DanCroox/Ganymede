@@ -25,27 +25,22 @@ namespace Ganymede
 		while (it != m_MaterialProperties.end())
 		{
 			const std::string& propertyName = it->first;
-			const MaterialProperty& propertyValue = it->second;
-			const MaterialProperty::Type propertyType = propertyValue.m_Type;
+			const MaterialPropertyData& propertyValue = it->second.m_Data;
 
-			switch (propertyType)
+			if (std::holds_alternative<float>(propertyValue))
 			{
-			case MaterialProperty::Type::Float:
-				m_Shader->SetUniform1f(propertyName.c_str(), propertyValue.m_Data.m_Scalar);
-				break;
-			case MaterialProperty::Type::Vector3f:
-				m_Shader->SetUniform3f(propertyName.c_str(), propertyValue.m_Data.m_Vector3f.x, propertyValue.m_Data.m_Vector3f.y, propertyValue.m_Data.m_Vector3f.z);
-				break;
-			case MaterialProperty::Type::TextureSampler:
-				propertyValue.m_Data.m_Texture->Bind(nextTextureSlot);
+				m_Shader->SetUniform1f(propertyName.c_str(), std::get<float>(propertyValue));
+			}
+			else if (std::holds_alternative<glm::vec3>(propertyValue))
+			{
+				m_Shader->SetUniform3f(propertyName.c_str(), std::get<glm::vec3>(propertyValue));
+			}
+			else if (std::holds_alternative<Handle<Texture>>(propertyValue))
+			{
+				std::get<Handle<Texture>>(propertyValue).GetData().Bind(nextTextureSlot);
 				m_Shader->SetUniform1i(propertyName, nextTextureSlot);
 				++nextTextureSlot;
-				// TODO limit number of texture slots
-				break;
-			default:
-				break;
 			}
-
 			it++;
 		}
 	}

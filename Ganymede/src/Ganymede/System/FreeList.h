@@ -20,6 +20,8 @@ namespace Ganymede
 
 		void Free(size_t index)
 		{
+			// TODO: Currently possible to "free" same index multiple times.
+			// In this case we will have a bug cause "Append" will hand-out indices which are in use.
 			GM_CORE_ASSERT(index <= m_HighestIndex, "FreeList does not contain given index.");
 			m_NextFreeIndices.push_back(index);
 		}

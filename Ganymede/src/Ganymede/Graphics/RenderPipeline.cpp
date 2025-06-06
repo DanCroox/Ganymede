@@ -1,6 +1,5 @@
 #include "RenderPipeline.h"
 
-#include "CullingSystem.h"
 #include "Ganymede/Player/FPSCamera.h"
 #include "GPUDebugHandler.h"
 #include "GPUResourceSystem.h"

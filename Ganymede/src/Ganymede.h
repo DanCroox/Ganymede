@@ -6,7 +6,7 @@
 #include <Ganymede/Common/Helpers.h>
 #include <Ganymede/Core/Application.h>
 #include <Ganymede/Data/AssetLoader.h>
-#include <Ganymede/ECS/Components/GCCreature.h>
+#include <Ganymede/Data/StaticData.h>
 #include <Ganymede/ECS/Components/GCDoor.h>
 #include <Ganymede/ECS/Components/GCDynamicMobility.h>
 #include <Ganymede/ECS/Components/GCEntityID.h>
@@ -20,7 +20,6 @@
 #include <Ganymede/ECS/Components/GCStaticMobility.h>
 #include <Ganymede/ECS/Components/GCTickable.h>
 #include <Ganymede/ECS/Components/GCTransform.h>
-#include <Ganymede/ECS/Systems/GSCreature.h>
 #include <Ganymede/ECS/Systems/GSDoor.h>
 #include <Ganymede/Events/Event.h>
 #include <Ganymede/Graphics/DataBuffer.h>

@@ -27,16 +27,54 @@ namespace Ganymede
 		}
 	}
 
-	Texture::Texture(unsigned char* data, int width, int height, unsigned char channelCount)
+	Texture::Texture(unsigned char* data, int width, int height, unsigned char channelCount, size_t textureID) :
+		m_Width(width),
+		m_Height(height),
+		m_ChannelCount(channelCount),
+		m_TextureID(textureID)
 	{
-		m_Width = width;
-		m_Height = height;
-		m_ChannelCount = channelCount;
 		PushTextureToGPU(data);
 	}
+
 	Texture::~Texture()
 	{
 		GLCall(glDeleteTextures(1, &m_RendererID));
+	}
+
+	Texture::Texture(Texture&& other) noexcept
+		: m_RendererID(other.m_RendererID),
+		m_FilePath(std::move(other.m_FilePath)),
+		m_Width(other.m_Width),
+		m_Height(other.m_Height),
+		m_ChannelCount(other.m_ChannelCount),
+		m_TextureID(other.m_TextureID)
+	{
+		other.m_RendererID = 0;
+		other.m_Width = 0;
+		other.m_Height = 0;
+		other.m_ChannelCount = 0;
+		other.m_TextureID = 0;
+	}
+
+	Texture& Texture::operator=(Texture&& other) noexcept
+	{
+		if (this != &other)
+		{
+			m_RendererID = other.m_RendererID;
+			m_FilePath = std::move(other.m_FilePath);
+			m_Width = other.m_Width;
+			m_Height = other.m_Height;
+			m_ChannelCount = other.m_ChannelCount;
+			m_TextureID = other.m_TextureID;
+
+			other.m_RendererID = 0;
+			other.m_Width = 0;
+			other.m_Height = 0;
+			other.m_ChannelCount = 0;
+			other.m_TextureID = 0;
+		}
+
+		return *this;
 	}
 
 	void Texture::Bind(unsigned int slot) const
