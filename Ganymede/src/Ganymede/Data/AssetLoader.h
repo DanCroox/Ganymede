@@ -20,9 +20,12 @@ struct aiScene;
 struct aiLight;
 struct aiMesh;
 struct aiTexture;
+struct aiMaterial;
 
 namespace Ganymede
 {
+	class Material;
+
 	class GANYMEDE_API AssetLoader
 	{
 	public:
@@ -38,6 +41,7 @@ namespace Ganymede
 
 	private:
 		std::unordered_map<std::string, size_t> m_MeshNameToIndex;
+		std::unordered_map<std::string, size_t> m_MaterialNameToIndex;
 		std::unordered_map<std::string, size_t> m_TextureNameToIndex;
 		std::unordered_map<std::string, size_t> m_SkeletalMeshToIndex;
 		
@@ -50,6 +54,7 @@ namespace Ganymede
 		void LoadMesh(MeshWorldObject* meshWorldObject, const aiMesh& mesh, const aiNode& node, const aiScene& scene);
 		void LoadBones(SkeletalMeshWorldObject* smwo, const aiMesh& mesh, const aiScene& scene);
 		void LoadAnimation(const SkeletalMeshWorldObject& skeletalMwo, const aiAnimation& animation, const aiNode* rootNode);
+		void LoadMaterial(Material& material, const aiMaterial& aiMaterial, const aiScene& scene);
 
 		Handle<Texture> m_DefaultWhite;
 		Handle<Texture> m_DefaultBlack;

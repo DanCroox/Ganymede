@@ -80,8 +80,8 @@ namespace Ganymede
 		{
 			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
 			MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
-			Material& material = mesh.m_Material;
-			material.Bind();
+			const Material& material = mesh.m_MaterialHandle.GetData();
+			renderContext.BindMaterial(material);
 			OGLBindingHelper::BindShader(material.GetShader()->GetRendererID());
 
 			const VertexObject& voPtr = renderContext.GetVO(mesh);

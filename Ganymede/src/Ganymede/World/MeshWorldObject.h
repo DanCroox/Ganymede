@@ -49,8 +49,9 @@ namespace Ganymede
 				glm::vec3 m_Normal;
 			};
 
-			Mesh(size_t meshID) :
-				m_MeshID(meshID)
+			Mesh(size_t meshID, Handle<Material> materialHandle) :
+				m_MeshID(meshID),
+				m_MaterialHandle(materialHandle)
 			{
 				m_BoundingBoxIndices.resize(12 * 3);
 
@@ -136,7 +137,7 @@ namespace Ganymede
 
 			using AABB = std::array<BoundingBoxVertex, 8>;
 
-			Material m_Material;
+			Handle<Material> m_MaterialHandle;
 
 			std::vector<unsigned int> m_VertexIndicies;
 			std::vector<Vertex> m_Vertices;

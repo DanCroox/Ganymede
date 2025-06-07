@@ -4,7 +4,7 @@
 
 #include "DataBuffer.h"
 #include "FrameBuffer.h"
-#include "GPUResourceSystem.h"
+#include "Ganymede/System/FreeList.h"
 #include "Renderer.h"
 #include "RenderTarget.h"
 #include "RenderView.h"
@@ -121,6 +121,8 @@ namespace Ganymede
 			return instanceDataBuffer;
 		}
 
+		void BindMaterial(const Material& material);
+
 		FrameBuffer* GetFrameBuffer(const std::string& name);
 		SinglesampleRenderTarget* GetSingleSampleRenderTarget(const std::string& name);
 		MultisampleRenderTarget* GetMultiSampleRenderTarget(const std::string& name);
@@ -164,7 +166,6 @@ namespace Ganymede
 		std::vector<std::int32_t> m_InstanceIDToCubemapShadowMappingInstanceDataIndexLookup;
 		std::int32_t m_NextFreeCubemapSSBOInstanceDataIndex = 0;
 
-		GPUResourceSystem m_GpuResources;
 		//TODO proper viewid and groupid handling!
 		RenderView& CreateRenderView(glm::u32vec2 renderResolution, float fov, float nearClip, float farClip, unsigned int viewGroupID);
 		void DestroyRenderView(RenderView& renderView);

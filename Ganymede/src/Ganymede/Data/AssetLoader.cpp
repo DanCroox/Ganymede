@@ -359,120 +359,27 @@ namespace Ganymede
 
         const unsigned int materialIndex = aiMesh.mMaterialIndex;
         const aiMaterial* aiMaterial = materials[materialIndex];
+        const std::string materialName = aiMaterial->GetName().C_Str();
 
-        // Object might hold multiple meshes (e.g. due to different materials)
-        // Add a new mesh to it and setup material data and vertex data
+        size_t materialID = 0;
+        auto matNameToIdxIt = m_MaterialNameToIndex.find(materialName);
+        if (matNameToIdxIt == m_MaterialNameToIndex.end())
+        {
+            materialID = m_StaticData.m_Materials.size();
+            m_MaterialNameToIndex.emplace(materialName, materialID);
+            Material& meshMaterial = m_StaticData.m_Materials.emplace_back();
+            LoadMaterial(meshMaterial, *aiMaterial, scene);
+        }
+        else
+        {
+            materialID = matNameToIdxIt->second;
+        }
 
         const size_t meshID = m_StaticData.m_Meshes.size();
-
-        MeshWorldObject::Mesh& meshData = m_StaticData.m_Meshes.emplace_back(meshID);
+        MeshWorldObject::Mesh& meshData = m_StaticData.m_Meshes.emplace_back(meshID, materialID);
         m_MeshNameToIndex.emplace(meshName, meshID);
+
         meshWorldObject->m_Meshes.push_back({ meshID });
-        
-        Material& meshMaterial = meshData.m_Material;
-
-        bool hasAlbedoTexture = false;
-        bool hasNormalTexture = false;
-        bool hasRoughnessTexture = false;
-        bool hasMetallicTexture = false;
-        bool hasEmissionTexture = false;
-
-        {
-            aiString str;
-            aiMaterial->GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &str);
-            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
-            hasAlbedoTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture0", hasAlbedoTexture ? textureHandle.value() : m_DefaultWhite);
-        }
-        {
-            aiString str;
-            aiMaterial->GetTexture(aiTextureType::aiTextureType_NORMALS, 0, &str);
-            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
-            hasNormalTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture1", hasNormalTexture ? textureHandle.value() : m_DefaultNormal);
-        }
-        {
-            aiString str;
-            aiMaterial->GetTexture(aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS, 0, &str);
-            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
-            hasRoughnessTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture2", hasRoughnessTexture ? textureHandle.value() : m_DefaultWhite);
-        }
-        {
-            aiString str;
-            aiMaterial->GetTexture(aiTextureType::aiTextureType_METALNESS, 0, &str);
-            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
-            hasMetallicTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture3", hasMetallicTexture ? textureHandle.value() : m_DefaultWhite);
-        }
-        {
-            aiString str;
-            aiMaterial->GetTexture(aiTextureType::aiTextureType_EMISSIVE, 0, &str);
-            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
-            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
-            hasEmissionTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture4", hasEmissionTexture ? textureHandle.value() : m_DefaultWhite);
-        }
-
-        aiMaterialProperty** prop = aiMaterial->mProperties;
-
-        for (unsigned int i = 0; i < aiMaterial->mNumProperties; ++i)
-        {
-            aiString propName = prop[i]->mKey;
-            unsigned int dataLen = prop[i]->mDataLength;
-            char* data = prop[i]->mData;
-
-            if (strcmp(propName.C_Str(), "?mat.name") == 0)
-            {
-                // First 4 bytes are name length, followed by characters and null terminator
-                const std::string materialName(static_cast<const char*>(data) + sizeof(uint32_t));
-
-                // Parse shader from material name. If none found, default shader will be loaded (defined in material constructor)
-                const size_t pos = materialName.find("_S#");
-                if (pos != -1)
-                {
-                    const std::string shaderName = materialName.substr(pos + 3, materialName.size());
-                    Shader* shader = m_ShaderManager.RegisterAndLoadShader(shaderName.c_str());
-                    if (shader != nullptr)
-                    {
-                        meshMaterial.SetShader(shader);
-                    }
-                }
-            }
-
-            if (strcmp(propName.C_Str(), "$clr.diffuse") == 0)
-            {
-                glm::vec3 baseColor;
-                memcpy(&baseColor.x, data, 12);
-                meshMaterial.AddMaterialVector3fProperty("u_BaseColor", hasAlbedoTexture ? glm::vec3(1) : baseColor);
-            }
-            else if (strcmp(propName.C_Str(), "$mat.roughnessFactor") == 0)
-            {
-                float roughness = *reinterpret_cast<float*>(data);
-                meshMaterial.AddMaterialFloatProperty("u_Roughness", hasRoughnessTexture ? 1.f : roughness);
-            }
-            else if (strcmp(propName.C_Str(), "$mat.reflectivity") == 0)
-            {
-                float metalness = *reinterpret_cast<float*>(data);
-                meshMaterial.AddMaterialFloatProperty("u_Metalness", hasMetallicTexture ? 1.f : metalness);
-            }
-            else if (strcmp(propName.C_Str(), "$clr.emissive") == 0)
-            {
-                glm::vec4 emissionColor;
-                memcpy(&emissionColor.x, data, 16);
-                meshMaterial.AddMaterialVector3fProperty("u_EmissiveColor", hasEmissionTexture ? glm::vec3(1) : glm::vec3(emissionColor));
-            }
-        }
-
-        // Material does not have a special shader defined so we use default shader.
-        if (meshMaterial.GetShader() == nullptr)
-        {
-            meshMaterial.SetShader(m_ShaderManager.RegisterAndLoadShader("gbuffer"));
-        }
 
         const int vertexCount = aiMesh.mNumVertices;
 
@@ -632,6 +539,112 @@ namespace Ganymede
                     }
                 }
             }
+        }
+    }
+
+    void AssetLoader::LoadMaterial(Material& meshMaterial, const aiMaterial& aiMaterial, const aiScene& scene)
+    {
+        bool hasAlbedoTexture = false;
+        bool hasNormalTexture = false;
+        bool hasRoughnessTexture = false;
+        bool hasMetallicTexture = false;
+        bool hasEmissionTexture = false;
+
+        {
+            aiString str;
+            aiMaterial.GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &str);
+            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasAlbedoTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture0", hasAlbedoTexture ? textureHandle.value() : m_DefaultWhite);
+        }
+        {
+            aiString str;
+            aiMaterial.GetTexture(aiTextureType::aiTextureType_NORMALS, 0, &str);
+            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasNormalTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture1", hasNormalTexture ? textureHandle.value() : m_DefaultNormal);
+        }
+        {
+            aiString str;
+            aiMaterial.GetTexture(aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS, 0, &str);
+            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasRoughnessTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture2", hasRoughnessTexture ? textureHandle.value() : m_DefaultWhite);
+        }
+        {
+            aiString str;
+            aiMaterial.GetTexture(aiTextureType::aiTextureType_METALNESS, 0, &str);
+            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasMetallicTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture3", hasMetallicTexture ? textureHandle.value() : m_DefaultWhite);
+        }
+        {
+            aiString str;
+            aiMaterial.GetTexture(aiTextureType::aiTextureType_EMISSIVE, 0, &str);
+            const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
+            const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
+            hasEmissionTexture = textureHandle.has_value();
+            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture4", hasEmissionTexture ? textureHandle.value() : m_DefaultWhite);
+        }
+
+        aiMaterialProperty** prop = aiMaterial.mProperties;
+
+        for (unsigned int i = 0; i < aiMaterial.mNumProperties; ++i)
+        {
+            aiString propName = prop[i]->mKey;
+            unsigned int dataLen = prop[i]->mDataLength;
+            char* data = prop[i]->mData;
+
+            if (strcmp(propName.C_Str(), "?mat.name") == 0)
+            {
+                // First 4 bytes are name length, followed by characters and null terminator
+                const std::string materialName(static_cast<const char*>(data) + sizeof(uint32_t));
+
+                // Parse shader from material name. If none found, default shader will be loaded (defined in material constructor)
+                const size_t pos = materialName.find("_S#");
+                if (pos != -1)
+                {
+                    const std::string shaderName = materialName.substr(pos + 3, materialName.size());
+                    Shader* shader = m_ShaderManager.RegisterAndLoadShader(shaderName.c_str());
+                    if (shader != nullptr)
+                    {
+                        meshMaterial.SetShader(shader);
+                    }
+                }
+            }
+
+            if (strcmp(propName.C_Str(), "$clr.diffuse") == 0)
+            {
+                glm::vec3 baseColor;
+                memcpy(&baseColor.x, data, 12);
+                meshMaterial.AddMaterialVector3fProperty("u_BaseColor", hasAlbedoTexture ? glm::vec3(1) : baseColor);
+            }
+            else if (strcmp(propName.C_Str(), "$mat.roughnessFactor") == 0)
+            {
+                float roughness = *reinterpret_cast<float*>(data);
+                meshMaterial.AddMaterialFloatProperty("u_Roughness", hasRoughnessTexture ? 1.f : roughness);
+            }
+            else if (strcmp(propName.C_Str(), "$mat.reflectivity") == 0)
+            {
+                float metalness = *reinterpret_cast<float*>(data);
+                meshMaterial.AddMaterialFloatProperty("u_Metalness", hasMetallicTexture ? 1.f : metalness);
+            }
+            else if (strcmp(propName.C_Str(), "$clr.emissive") == 0)
+            {
+                glm::vec4 emissionColor;
+                memcpy(&emissionColor.x, data, 16);
+                meshMaterial.AddMaterialVector3fProperty("u_EmissiveColor", hasEmissionTexture ? glm::vec3(1) : glm::vec3(emissionColor));
+            }
+        }
+
+        // Material does not have a special shader defined so we use default shader.
+        if (meshMaterial.GetShader() == nullptr)
+        {
+            meshMaterial.SetShader(m_ShaderManager.RegisterAndLoadShader("gbuffer"));
         }
     }
 

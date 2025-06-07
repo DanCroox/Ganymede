@@ -1,5 +1,6 @@
 #include "Handle.h"
 
+#include "Ganymede/Graphics/Material.h"
 #include "Ganymede/Graphics/Texture.h"
 #include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/World/PointlightWorldObject.h"
@@ -21,4 +22,6 @@ namespace Ganymede
 	const Animation& Handle<Animation>::GetData() const { return StaticData::Instance->m_SceneAnimations[m_Index]; }
 	template <>
 	const MeshWorldObject::Mesh& Handle<MeshWorldObject::Mesh>::GetData() const { return StaticData::Instance->m_Meshes[m_Index]; }
+	template <>
+	const Material& Handle<Material>::GetData() const { return StaticData::Instance->m_Materials[m_Index]; }
 }

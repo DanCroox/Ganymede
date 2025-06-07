@@ -2,7 +2,6 @@
 
 #include "Ganymede/Player/FPSCamera.h"
 #include "GPUDebugHandler.h"
-#include "GPUResourceSystem.h"
 #include "RenderContext.h"
 #include "Ganymede/Common/Helpers.h"
 

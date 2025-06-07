@@ -1,15 +1,15 @@
 #include "RenderContext.h"
 
-#include "Ganymede/World/World.h"
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/Runtime/GMTime.h"
+#include "Ganymede/World/World.h"
+#include "Texture.h"
 #include <memory>
 
 namespace Ganymede
 {
     RenderContext::RenderContext(World& world) :
-        m_World(world),
-        m_GpuResources(world)
+        m_World(world)
     {
         m_VertexObjectCache.resize(1000000);
         m_RenderViews.resize(10000);
@@ -116,6 +116,32 @@ namespace Ganymede
             return nullptr;
         }
         return ptr;
+    }
+
+    void RenderContext::BindMaterial(const Material& material)
+    {
+        const auto& propertiesMap = material.GetMaterialProperties();
+
+        int nextTextureSlot = 0;
+        for (const auto& [propertyName, property] : propertiesMap)
+        {
+            const Material::MaterialPropertyData& propertyValue = property.m_Data;
+
+            if (std::holds_alternative<float>(propertyValue))
+            {
+                material.GetShader()->SetUniform1f(propertyName.c_str(), std::get<float>(propertyValue));
+            }
+            else if (std::holds_alternative<glm::vec3>(propertyValue))
+            {
+                material.GetShader()->SetUniform3f(propertyName.c_str(), std::get<glm::vec3>(propertyValue));
+            }
+            else if (std::holds_alternative<Handle<Texture>>(propertyValue))
+            {
+                std::get<Handle<Texture>>(propertyValue).GetData().Bind(nextTextureSlot);
+                material.GetShader()->SetUniform1i(propertyName, nextTextureSlot);
+                ++nextTextureSlot;
+            }
+        }
     }
 
     FrameBuffer* RenderContext::GetFrameBuffer(const std::string& name)
