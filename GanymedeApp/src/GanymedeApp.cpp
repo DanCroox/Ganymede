@@ -53,16 +53,17 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
 	m_RenderPipeline->AddRenderPass<LightingRenderPass>();
 	m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
-	m_RenderPipeline->Initialize();
 
 	m_Camera = std::make_unique<FPSCamera>(m_RenderContext->CreateRenderView({1920, 1080}, 55.0f, 0.01f, 1000.0f, 0));
 	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
 	
 	//m_AssetLoader->LoadFromPath("res/models/ShadowMappingTest.glb");
 	m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
+	StaticData::Instance = &m_AssetLoader->m_StaticData;
+	m_RenderPipeline->Initialize();
+
 	//m_AssetLoader->LoadFromPath("res/models/physicstest.glb");
 	//m_AssetLoader->LoadFromPath("res/models/backroom2.glb");
-	StaticData::Instance = &m_AssetLoader->m_StaticData;
 	GM_INFO("WorldObjects loaded from glb.");
 
 	glm::vec3 worldBoundsMin(Numbers::MAX_FLOAT);

@@ -2,41 +2,51 @@
 
 #include "Ganymede/Core/Core.h"
 
+#include "glm/glm.hpp"
 #include <string>
 #include <unordered_map>
 
-#include "glm/glm.hpp"
-
 namespace Ganymede
 {
-	class SSBO;
 	class RenderTarget;
-
-	struct GANYMEDE_API ShaderProgramSource
-	{
-		std::string ComputeSource;
-		std::string VertexSource;
-		std::string FragmentSource;
-		std::string GeometrySource;
-	};
+	class ShaderBinary;
 
 	class GANYMEDE_API Shader
 	{
-	private:
-		std::string m_FilePath;
-		unsigned int m_RendererID;
-		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
 	public:
-		Shader(const std::string& filepath);
+		Shader(const ShaderBinary& shaderBinary);
 		~Shader();
 
-		void Bind() const;
-		void Unbind() const;
+		Shader(const Shader&) = delete;
+		Shader& operator=(const Shader&) = delete;
+
+		Shader(Shader&& other) noexcept : 
+			m_RendererID(other.m_RendererID),
+			m_UniformLocationCache(other.m_UniformLocationCache),
+			m_ShaderTextureSlots(other.m_ShaderTextureSlots),
+			m_NextAvailableTextureSlot(other.m_NextAvailableTextureSlot)
+		{
+			other.m_RendererID = 0;
+		}
+
+		Shader& operator=(Shader&& other) noexcept
+		{
+			if (this != &other)
+			{
+				m_RendererID = other.m_RendererID;
+				m_UniformLocationCache = other.m_UniformLocationCache;
+				m_ShaderTextureSlots = other.m_ShaderTextureSlots;
+				m_NextAvailableTextureSlot = other.m_NextAvailableTextureSlot;
+
+				other.m_RendererID = 0;
+			}
+
+			return *this;
+		}
 
 		void BindTexture(RenderTarget& texture, const char* textureName);
 
 		unsigned int GetRendererID() const { return m_RendererID; }
-
 		inline bool IsValid() const { return m_RendererID != 0; }
 
 		// Set Uniforms
@@ -57,12 +67,10 @@ namespace Ganymede
 
 	private:
 		int GetUniformLocation(const std::string& name) const;
-		ShaderProgramSource ParseShader(const std::string& filepath);
-		void ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut);
-		unsigned int CompileShader(unsigned int type, const std::string& source);
-		unsigned int CreateShader(const std::string& computeShader, const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader);
 
+		mutable std::unordered_map<std::string, int> m_UniformLocationCache;
 		std::unordered_map<std::string, int> m_ShaderTextureSlots;
 		unsigned int m_NextAvailableTextureSlot = 0;
+		unsigned int m_RendererID;
 	};
 }

@@ -4,9 +4,9 @@
 #include "Ganymede/ECS/Components/GCTransform.h"
 #include "Ganymede/Graphics/FrameBuffer.h"
 #include "Ganymede/Graphics/RenderContext.h"
-#include "Ganymede/Graphics/RendererTypes.h"
 #include "Ganymede/Graphics/RenderTarget.h"
 #include "Ganymede/Graphics/Shader.h"
+#include "Ganymede/Graphics/ShaderBinary.h"
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Graphics/VertexObject.h"
 #include "Ganymede/Player/FPSCamera.h"
@@ -21,7 +21,7 @@ namespace Ganymede
 		m_FrameBuffer = renderContext.CreateFrameBuffer("Lighting", { 1920, 1080 }, false);
 		m_LightingRT = renderContext.CreateSingleSampleRenderTarget("Lighting", RenderTargetTypes::ComponentType::RGBA, RenderTargetTypes::ChannelDataType::Float, RenderTargetTypes::ChannelPrecision::B32, { 1920, 1080 });
 		m_FrameBuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Color0, *m_LightingRT);
-		m_LightingShader = renderContext.LoadShader("Lighting", "res/shaders/lighting.shader");
+		m_LightingShader = renderContext.LoadShader("Lighting", { "res/shaders/lighting.shader" });
 		m_PointLightSortedToCamDistanceSSBO = renderContext.CreateSSBO("PointlightData", 0, 320 * (sizeof(PointLight)), true);
 		
 		std::vector<glm::vec3> vertices = {

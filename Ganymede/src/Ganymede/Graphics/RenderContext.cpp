@@ -3,6 +3,7 @@
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
+#include "Ganymede/Data/StaticData.h"
 #include "Texture.h"
 #include <memory>
 
@@ -13,6 +14,7 @@ namespace Ganymede
     {
         m_VertexObjectCache.resize(1000000);
         m_RenderViews.resize(10000);
+        m_TextureObjectCache.resize(10000);
     }
 
     World& RenderContext::GetWorld()
@@ -104,18 +106,12 @@ namespace Ganymede
         return ptr;
     }
 
-    Shader* RenderContext::LoadShader(const std::string& name, const std::string& path)
+    Shader* RenderContext::LoadShader(const std::string& name, const ShaderBinary& binary)
     {
-        auto [it, inserted] = m_Shaders.try_emplace(name, path.c_str());
-        GM_CORE_ASSERT(inserted, "Tried to load shader which already existed. Using from cache.");
-        Shader* ptr = &it->second;
-        if (!ptr->IsValid())
-        {
-            m_Shaders.erase(name);
-            GM_CORE_ASSERT(false, "Shader is invalid.");
-            return nullptr;
-        }
-        return ptr;
+        auto [it2, created] = m_Shaders.try_emplace(name, binary);
+        //GM_CORE_ASSERT(created, "Tried to load shader which already existed. Using from cache.");
+
+        return &it2->second;
     }
 
     void RenderContext::BindMaterial(const Material& material)
@@ -127,20 +123,31 @@ namespace Ganymede
         {
             const Material::MaterialPropertyData& propertyValue = property.m_Data;
 
+            const ShaderBinary& shaderBinary = material.GetShaderBinary().GetData();
+            Shader& shader = *LoadShader(shaderBinary.GetFilePath(), shaderBinary);
+
             if (std::holds_alternative<float>(propertyValue))
             {
-                material.GetShader()->SetUniform1f(propertyName.c_str(), std::get<float>(propertyValue));
+                shader.SetUniform1f(propertyName.c_str(), std::get<float>(propertyValue));
             }
             else if (std::holds_alternative<glm::vec3>(propertyValue))
             {
-                material.GetShader()->SetUniform3f(propertyName.c_str(), std::get<glm::vec3>(propertyValue));
+                shader.SetUniform3f(propertyName.c_str(), std::get<glm::vec3>(propertyValue));
             }
             else if (std::holds_alternative<Handle<Texture>>(propertyValue))
             {
-                std::get<Handle<Texture>>(propertyValue).GetData().Bind(nextTextureSlot);
-                material.GetShader()->SetUniform1i(propertyName, nextTextureSlot);
+                const Handle<Texture>& handle = std::get<Handle<Texture>>(propertyValue);
+                std::optional<GPUTexture>& gpuTexture = m_TextureObjectCache[handle.GetID()];
+                if (!gpuTexture.has_value())
+                {
+                    m_TextureObjectCache[handle.GetID()] = { handle.GetData() };
+                }
+                gpuTexture.value().Bind(nextTextureSlot);
+                shader.SetUniform1i(propertyName, nextTextureSlot);
                 ++nextTextureSlot;
             }
+
+            OGLBindingHelper::BindShader(shader.GetRendererID());
         }
     }
 

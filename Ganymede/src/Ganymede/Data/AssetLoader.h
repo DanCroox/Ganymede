@@ -2,7 +2,6 @@
 
 #include "Ganymede/Core/Core.h"
 
-#include "Ganymede/Graphics/ShaderManager.h"
 #include "Ganymede/Graphics/Texture.h"
 #include "Ganymede/System/FreeList.h"
 #include "Ganymede/World/MeshWorldObject.h"
@@ -35,8 +34,6 @@ namespace Ganymede
 
 		void LoadFromPath(const std::string& path);
 
-		ShaderManager& GetShaderManager();
-
 		StaticData m_StaticData;
 
 	private:
@@ -44,9 +41,8 @@ namespace Ganymede
 		std::unordered_map<std::string, size_t> m_MaterialNameToIndex;
 		std::unordered_map<std::string, size_t> m_TextureNameToIndex;
 		std::unordered_map<std::string, size_t> m_SkeletalMeshToIndex;
+		std::unordered_map<std::string, size_t> m_ShaderBinaryToIndex;
 		
-		ShaderManager m_ShaderManager;
-
 		std::optional<Handle<Texture>> TryLoadAndStoreRAWTexture(const aiTexture* rawTexture);
 		std::optional<Handle<Texture>> TryLoadTextureFromPath(const std::string& path);
 
@@ -54,7 +50,7 @@ namespace Ganymede
 		void LoadMesh(MeshWorldObject* meshWorldObject, const aiMesh& mesh, const aiNode& node, const aiScene& scene);
 		void LoadBones(SkeletalMeshWorldObject* smwo, const aiMesh& mesh, const aiScene& scene);
 		void LoadAnimation(const SkeletalMeshWorldObject& skeletalMwo, const aiAnimation& animation, const aiNode* rootNode);
-		void LoadMaterial(Material& material, const aiMaterial& aiMaterial, const aiScene& scene);
+		size_t LoadMaterial(const aiMaterial& aiMaterial, const aiScene& scene);
 
 		Handle<Texture> m_DefaultWhite;
 		Handle<Texture> m_DefaultBlack;

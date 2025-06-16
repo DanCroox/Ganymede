@@ -20,6 +20,13 @@ namespace Ganymede
 		void Execute(RenderContext& renderContext) override;
 
 	private:
+		struct PointLight
+		{
+			glm::vec4 m_LightColor;
+			glm::vec3 lightPos;
+			int u_LightID = -1;
+		};
+
 		FrameBuffer* m_FrameBuffer;
 		SinglesampleRenderTarget* m_LightingRT;
 		SSBO* m_PointLightSortedToCamDistanceSSBO;

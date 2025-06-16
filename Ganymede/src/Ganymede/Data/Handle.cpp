@@ -2,6 +2,7 @@
 
 #include "Ganymede/Graphics/Material.h"
 #include "Ganymede/Graphics/Texture.h"
+#include "Ganymede/Graphics/ShaderBinary.h"
 #include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/World/PointlightWorldObject.h"
 #include "Ganymede/World/SkeletalMeshWorldObject.h"
@@ -24,4 +25,6 @@ namespace Ganymede
 	const MeshWorldObject::Mesh& Handle<MeshWorldObject::Mesh>::GetData() const { return StaticData::Instance->m_Meshes[m_Index]; }
 	template <>
 	const Material& Handle<Material>::GetData() const { return StaticData::Instance->m_Materials[m_Index]; }
+	template <>
+	const ShaderBinary& Handle<ShaderBinary>::GetData() const { return StaticData::Instance->m_ShaderBinaries[m_Index]; }
 }

@@ -6,6 +6,7 @@
 #include "Ganymede/Graphics/FrameBuffer.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/Shader.h"
+#include "Ganymede/Graphics/ShaderBinary.h"
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Graphics/VertexDataTypes.h"
 #include "Ganymede/Player/FPSCamera.h"
@@ -21,9 +22,7 @@ namespace Ganymede
 		m_Framebuffer = renderContext.CreateFrameBuffer("OmniDirectionalShadowMapping", { m_ShadowMapSize, m_ShadowMapSize }, false);
 		m_Framebuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Depth, *m_ShadowMapsArray);
 
-		m_ShadowMappingShader = renderContext.LoadShader("OmniDirectionalShadowMappingShader", "res/shaders/OmnidirectionalShadowMapInstances.shader");
-		
-		//m_AnimationDataSSBO = renderContext.GetSSBO("AnimationData");
+		m_ShadowMappingShader = renderContext.LoadShader("OmniDirectionalShadowMappingShader", {"res/shaders/OmnidirectionalShadowMapInstances.shader"});
 
 		return true;
 	}

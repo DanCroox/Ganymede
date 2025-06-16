@@ -5,6 +5,7 @@
 #include "DataBuffer.h"
 #include "FrameBuffer.h"
 #include "Ganymede/System/FreeList.h"
+#include "GPUTexture.h"
 #include "Renderer.h"
 #include "RenderTarget.h"
 #include "RenderView.h"
@@ -97,7 +98,7 @@ namespace Ganymede
 		CubeMapArrayRenderTarget* CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		VertexObject* CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices);
 		SSBO* CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize);
-		Shader* LoadShader(const std::string& name, const std::string& path);
+		Shader* LoadShader(const std::string& name, const ShaderBinary& binary);
 		
 		template <typename T>
 		DataBuffer<T>* CreateDataBuffer(const std::string& name, T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType)
@@ -195,6 +196,7 @@ namespace Ganymede
 		std::unordered_map<std::string, std::pair<ClassID, void*>> m_DataBuffers;
 		
 		std::vector<CachedVertexObject> m_VertexObjectCache;
+		std::vector<std::optional<GPUTexture>> m_TextureObjectCache;
 
 		std::vector<VisibleEntity> m_VisibleEntities;
 

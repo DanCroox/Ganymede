@@ -8,7 +8,7 @@
 
 namespace Ganymede
 {
-	class Shader;
+	class ShaderBinary;
 	class Texture;
 
 	class Material
@@ -24,21 +24,23 @@ namespace Ganymede
 			MaterialPropertyData m_Data;
 		};
 
+		Material() = delete;
+		Material(const Handle<ShaderBinary>& shaderHandle) : m_ShaderBinaryHandle(shaderHandle) {};
+
 		void AddMaterialFloatProperty(const std::string& name, float value) { m_MaterialProperties.emplace(name, value); }
 		void AddMaterialVector3fProperty(const std::string& name, glm::vec3 value) { m_MaterialProperties.emplace(name, value);	}
 		void AddMaterialTextureSamplerProperty(const std::string& name, const Handle<Texture>& value) {	m_MaterialProperties.emplace(name, value); }
 
-		bool operator==(const Material& other) const { return m_Shader == other.m_Shader && m_MaterialProperties == other.m_MaterialProperties;	}
+		bool operator==(const Material& other) const { return m_ShaderBinaryHandle == other.m_ShaderBinaryHandle && m_MaterialProperties == other.m_MaterialProperties;	}
 		bool operator!=(const Material& other) const { return !(other == *this); }
 
-		void SetShader(Shader* shader) { m_Shader = shader; }
-		const Shader* GetShader() const { return m_Shader; }
+		void SetShader(const Handle<ShaderBinary>& shaderHandle) { m_ShaderBinaryHandle = shaderHandle; }
+		const Handle<ShaderBinary>& GetShaderBinary() const { return m_ShaderBinaryHandle; }
 
 		const std::unordered_map<std::string, MaterialProperty>& GetMaterialProperties() const { return m_MaterialProperties; }
 
 	private:
 		mutable std::unordered_map<std::string, MaterialProperty> m_MaterialProperties;
-		// TODO: Implement proper shader binding!
-		Shader* m_Shader = nullptr;
+		Handle<ShaderBinary> m_ShaderBinaryHandle;
 	};
 }

@@ -1,18 +1,16 @@
 #pragma once
 
-#include "Ganymede/Core/Core.h"
-
 namespace Ganymede
 {
 	class RenderContext;
 
-	class GANYMEDE_API RenderPass2
+	class RenderPass2
 	{
 	public:
 		RenderPass2(const RenderPass2&) = delete;
 		RenderPass2& operator=(const RenderPass2&) = delete;
 
-		RenderPass2();
+		RenderPass2() : m_IsBypassed(false) {}
 		virtual ~RenderPass2() = default;
 
 		virtual bool Initialize(RenderContext& renderContext) = 0;

@@ -1,143 +1,65 @@
 #include "Texture.h"
-#include "GL/glew.h"
+
 #include "stb_image.h"
 
 namespace Ganymede
 {
-
 	Texture::Texture(const std::string& path)
-		: m_FilePath(path),
-		m_Width(0),
-		m_Height(0),
-		m_ChannelCount(0)
 	{
-		m_FilePath = path;
-		// flip texture cause in opengl 0 is at bottom while in texture is top
-		stbi_set_flip_vertically_on_load(1);
-		// 4 == rgba channels to load
-		unsigned char* buffer = stbi_load(path.c_str(), &m_Width, &m_Height, &m_ChannelCount, 4);
+		unsigned char* buffer = nullptr;
 
-		GM_CORE_ASSERT(buffer != nullptr, "File broken or not existent.");
-
-		PushTextureToGPU(buffer);
-
-		if (buffer)
+		if (stbi_is_16_bit(path.c_str()))
 		{
-			stbi_image_free(buffer);
-		}
-	}
-
-	Texture::Texture(unsigned char* data, int width, int height, unsigned char channelCount, size_t textureID) :
-		m_Width(width),
-		m_Height(height),
-		m_ChannelCount(channelCount),
-		m_TextureID(textureID)
-	{
-		PushTextureToGPU(data);
-	}
-
-	Texture::~Texture()
-	{
-		GLCall(glDeleteTextures(1, &m_RendererID));
-	}
-
-	Texture::Texture(Texture&& other) noexcept
-		: m_RendererID(other.m_RendererID),
-		m_FilePath(std::move(other.m_FilePath)),
-		m_Width(other.m_Width),
-		m_Height(other.m_Height),
-		m_ChannelCount(other.m_ChannelCount),
-		m_TextureID(other.m_TextureID)
-	{
-		other.m_RendererID = 0;
-		other.m_Width = 0;
-		other.m_Height = 0;
-		other.m_ChannelCount = 0;
-		other.m_TextureID = 0;
-	}
-
-	Texture& Texture::operator=(Texture&& other) noexcept
-	{
-		if (this != &other)
-		{
-			m_RendererID = other.m_RendererID;
-			m_FilePath = std::move(other.m_FilePath);
-			m_Width = other.m_Width;
-			m_Height = other.m_Height;
-			m_ChannelCount = other.m_ChannelCount;
-			m_TextureID = other.m_TextureID;
-
-			other.m_RendererID = 0;
-			other.m_Width = 0;
-			other.m_Height = 0;
-			other.m_ChannelCount = 0;
-			other.m_TextureID = 0;
-		}
-
-		return *this;
-	}
-
-	void Texture::Bind(unsigned int slot) const
-	{
-		GLCall(glActiveTexture(GL_TEXTURE0 + slot));
-		GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
-	}
-
-	void Texture::Unbind() const
-	{
-		GLCall(glBindTexture(GL_TEXTURE_2D, 0));
-	}
-
-	void Texture::PushTextureToGPU(unsigned char* data)
-	{
-		GLCall(glGenTextures(1, &m_RendererID));
-		GLCall(glBindTexture(GL_TEXTURE_2D, m_RendererID));
-
-		// GL_RGBA -> supplied format like texture data has 4 channels
-		// GL_RGBA8 -> how to deal supplied data internally
-		int internalType = GL_RGBA8;
-		int type = GL_RGBA;
-		/*
-		if (m_ChannelCount == 4)
-		{
-			internalType = GL_RGBA8;
-			type = GL_RGBA;
-		}
-		else if (m_ChannelCount == 3)
-		{
-			internalType = GL_RGB8;
-			type = GL_RGB;
-		}
-		else if (m_ChannelCount == 2)
-		{
-			internalType = GL_RG8;
-			type = GL_RG;
-		}
-		else if (m_ChannelCount == 1)
-		{
-			internalType = GL_R8;
-			type = GL_R;
+			// If loading 16bit failes, it is probably 8bit (or 32bit - but we don't support it for now)
+			// Seems in stb there is no better way to check if it is a 16bit or 8bit texture
+			if (const unsigned short* buffer16 = stbi_load_16(path.c_str(), &m_Width, &m_Height, &m_ChannelCount, 0))
+			{
+				buffer = (unsigned char*)buffer16;
+				m_BitDepth = 16;
+			}
 		}
 		else
 		{
-			ASSERT(false);
+			buffer = stbi_load(path.c_str(), &m_Width, &m_Height, &m_ChannelCount, 0);
+			m_BitDepth = 8;
 		}
-		*/
 
+		if (buffer == nullptr)
+		{
+			GM_CORE_ASSERT(false, "Couldn't load texture");
+			return;
+		}
 
-		GLCall(glTexImage2D(GL_TEXTURE_2D, 0, internalType, m_Width, m_Height, 0, type, GL_UNSIGNED_BYTE, data));
+		if (m_BitDepth != 16 && m_BitDepth != 8)
+		{
+			GM_CORE_ASSERT(false, "Invalid bit depth");
+			return;
+		}
 
-		// Enable mipmapping
-		GLCall(glGenerateMipmap(GL_TEXTURE_2D));
-		// Lod bias for higher mip map resolution all over
-		GLCall(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0));
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)); // horizontal
-		GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)); // vertical
+		// No matter how many channels the texture really has - Here we can define how many channels we would like to output.
+		const unsigned int bytesPerTexel = (m_BitDepth / 8);
+		const unsigned int charBufferSize = m_Width * m_Height * m_ChannelCount * bytesPerTexel;
+		m_Bytes.resize(charBufferSize);
+		memcpy(m_Bytes.data(), buffer, charBufferSize);
+		stbi_image_free(buffer);
+	}
 
-		GLCall(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 8.f));
+	Texture::Texture(unsigned char* data, int width, int height, unsigned char channelCount, unsigned int bitDepth) :
+		m_Width(width),
+		m_Height(height),
+		m_ChannelCount(channelCount),
+		m_BitDepth(bitDepth)
+	{
+		if (m_BitDepth != 16 && m_BitDepth != 8)
+		{
+			GM_CORE_ASSERT(false, "Invalid bit depth");
+			return;
+		}
 
-		GLCall(glBindTexture(GL_TEXTURE_2D, 0));
+		const unsigned int bytesPerTexel = (m_BitDepth / 8);
+		const unsigned int charBufferSize = m_Width * m_Height * m_ChannelCount * bytesPerTexel;
+		m_Bytes.resize(charBufferSize);
+
+		memcpy(m_Bytes.data(), data, charBufferSize);
 	}
 }

@@ -9,26 +9,21 @@ namespace Ganymede
 	{
 	public:
 		Texture(const std::string& path);
-		Texture(unsigned char* data, int width, int height, unsigned char channelCount, size_t textureID);
-		~Texture();
-
-		Texture(const Texture&) = delete;
-		Texture& operator=(const Texture&) = delete;
-
-		Texture& operator=(Texture&& other) noexcept;
-		Texture(Texture&& other) noexcept;
-
-		void Bind(unsigned int slot = 0) const;
-		void Unbind() const;
+		Texture(unsigned char* data, int width, int height, unsigned char channelCount, unsigned int bitDepth);
 
 		inline int GetWidth() const { return m_Width; }
 		inline int GetHeight() const { return m_Height; }
-	private:
-		void PushTextureToGPU(unsigned char* data);
-		unsigned int m_RendererID;
+		inline unsigned int GetNumChannels() const { return m_ChannelCount; }
+		inline unsigned int GetBitDepth() const { return m_BitDepth; }
 
-		std::string m_FilePath;
-		int m_Width, m_Height, m_ChannelCount;
-		size_t m_TextureID;
+		const std::vector<unsigned char>& GetBytes() const { return m_Bytes; }
+
+	private:
+		int m_Width;
+		int m_Height;
+		int m_ChannelCount;
+		unsigned int m_BitDepth;
+
+		std::vector<unsigned char> m_Bytes;
 	};
 }

@@ -2,14 +2,15 @@
 
 #include "Ganymede/Common/Helpers.h"
 #include "Ganymede/ECS/Components/GCDynamicMobility.h"
-#include "Ganymede/ECS/Components/GCMesh.h"
-#include "Ganymede/ECS/Components/GCTransform.h"
 #include "Ganymede/ECS/Components/GCGPUEntityData.h"
+#include "Ganymede/ECS/Components/GCMesh.h"
 #include "Ganymede/ECS/Components/GCRigidBody.h"
+#include "Ganymede/ECS/Components/GCTransform.h"
 #include "Ganymede/Graphics/DataBuffer.h"
 #include "Ganymede/Graphics/OGLBindingHelper.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/Shader.h"
+#include "Ganymede/Graphics/ShaderBinary.h"
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Graphics/VertexDataTypes.h"
 #include "Ganymede/Graphics/VertexObject.h"
@@ -38,8 +39,8 @@ namespace Ganymede
 		ssbo_RenderInfos = renderContext.CreateSSBO("RenderInfos", 25, sizeof(RenderMeshInstanceCommand) * 1000000, false);
 		ssbo_VisibleEntities = renderContext.CreateSSBO("EntityIDGPUInstanceDataMapping", 26, sizeof(VisibleEntity) * 1000000, false);
 
-		m_FindVisibleEntitiesCompute = renderContext.LoadShader("FindVisibleEntitiesComputeShader", "res/shaders/Compute/FindVisibleEntitiesComputeShader.shader");
-		m_GenerateIndirectDrawCommands = renderContext.LoadShader("GenerateIndirectDrawCommands", "res/shaders/Compute/GenerateIndirectDrawCommands.shader");
+		m_FindVisibleEntitiesCompute = renderContext.LoadShader("FindVisibleEntitiesComputeShader", { "res/shaders/Compute/FindVisibleEntitiesComputeShader.shader" });
+		m_GenerateIndirectDrawCommands = renderContext.LoadShader("GenerateIndirectDrawCommands", { "res/shaders/Compute/GenerateIndirectDrawCommands.shader" });
 
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ssbo_IndirectDrawCmds->m_RenderID);
 

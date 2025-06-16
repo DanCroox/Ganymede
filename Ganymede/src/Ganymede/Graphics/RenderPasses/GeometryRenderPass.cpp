@@ -10,6 +10,7 @@
 #include "Ganymede/Graphics/VertexDataTypes.h"
 #include "Ganymede/Graphics/VertexObject.h"
 #include "Ganymede/Player/FPSCamera.h"
+#include "Ganymede/Data/StaticData.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
 #include "gl/glew.h"
@@ -80,9 +81,9 @@ namespace Ganymede
 		{
 			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
 			MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
+			StaticData& sd = *StaticData::Instance;
 			const Material& material = mesh.m_MaterialHandle.GetData();
 			renderContext.BindMaterial(material);
-			OGLBindingHelper::BindShader(material.GetShader()->GetRendererID());
 
 			const VertexObject& voPtr = renderContext.GetVO(mesh);
 			OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());

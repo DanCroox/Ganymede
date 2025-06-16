@@ -1,7 +1,6 @@
 #include "AssetLoader.h"
 
 #include "Ganymede/Common/Helpers.h"
-#include "Ganymede/Graphics/ShaderManager.h"
 #include "Ganymede/Graphics/Texture.h"
 #include "Ganymede/World/PointlightWorldObject.h"
 #include "Ganymede/World/WorldObject.h"
@@ -365,10 +364,8 @@ namespace Ganymede
         auto matNameToIdxIt = m_MaterialNameToIndex.find(materialName);
         if (matNameToIdxIt == m_MaterialNameToIndex.end())
         {
-            materialID = m_StaticData.m_Materials.size();
+            materialID = LoadMaterial(*aiMaterial, scene);
             m_MaterialNameToIndex.emplace(materialName, materialID);
-            Material& meshMaterial = m_StaticData.m_Materials.emplace_back();
-            LoadMaterial(meshMaterial, *aiMaterial, scene);
         }
         else
         {
@@ -542,8 +539,54 @@ namespace Ganymede
         }
     }
 
-    void AssetLoader::LoadMaterial(Material& meshMaterial, const aiMaterial& aiMaterial, const aiScene& scene)
+    size_t AssetLoader::LoadMaterial(const aiMaterial& aiMaterial, const aiScene& scene)
     {
+        aiMaterialProperty** prop = aiMaterial.mProperties;
+
+        size_t materialID = 0;
+        Material* meshMaterial = nullptr;
+
+        for (unsigned int i = 0; i < aiMaterial.mNumProperties; ++i)
+        {
+            const aiString propName = prop[i]->mKey;
+            char* data = prop[i]->mData;
+
+            if (strcmp(propName.C_Str(), "?mat.name") == 0)
+            {
+                // First 4 bytes are name length, followed by characters and null terminator
+                const std::string materialName(static_cast<const char*>(data) + sizeof(uint32_t));
+
+                // Parse shader from material name. If none found, default shader will be loaded
+                const size_t pos = materialName.find("_S#");
+                const bool useCustomShader = pos != -1;
+
+                std::string locBaseShaderFolder("res/shaders/");
+                std::string shaderName = useCustomShader ? materialName.substr(pos + 3, materialName.size()) : "gbuffer";
+                shaderName = locBaseShaderFolder + shaderName + ".shader";
+
+                size_t shaderID = 0;
+                auto it = m_ShaderBinaryToIndex.find(shaderName);
+                if (it == m_ShaderBinaryToIndex.end())
+                {
+                    shaderID = m_StaticData.m_ShaderBinaries.size();
+                    m_StaticData.m_ShaderBinaries.emplace_back(shaderName.c_str());
+                    m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
+                }
+                else
+                {
+                    shaderID = it->second;
+                }
+
+                Handle<ShaderBinary> shaderHandle(shaderID);
+
+                materialID = m_StaticData.m_Materials.size();
+                meshMaterial = &m_StaticData.m_Materials.emplace_back(shaderHandle);
+                break;
+            }
+        }
+
+        GM_CORE_ASSERT(meshMaterial != nullptr, "No material loaded!");
+
         bool hasAlbedoTexture = false;
         bool hasNormalTexture = false;
         bool hasRoughnessTexture = false;
@@ -556,7 +599,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasAlbedoTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture0", hasAlbedoTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture0", hasAlbedoTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
@@ -564,7 +607,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasNormalTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture1", hasNormalTexture ? textureHandle.value() : m_DefaultNormal);
+            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture1", hasNormalTexture ? textureHandle.value() : m_DefaultNormal);
         }
         {
             aiString str;
@@ -572,7 +615,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasRoughnessTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture2", hasRoughnessTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture2", hasRoughnessTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
@@ -580,7 +623,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasMetallicTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture3", hasMetallicTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture3", hasMetallicTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
@@ -588,10 +631,8 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasEmissionTexture = textureHandle.has_value();
-            meshMaterial.AddMaterialTextureSamplerProperty("u_Texture4", hasEmissionTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture4", hasEmissionTexture ? textureHandle.value() : m_DefaultWhite);
         }
-
-        aiMaterialProperty** prop = aiMaterial.mProperties;
 
         for (unsigned int i = 0; i < aiMaterial.mNumProperties; ++i)
         {
@@ -599,53 +640,31 @@ namespace Ganymede
             unsigned int dataLen = prop[i]->mDataLength;
             char* data = prop[i]->mData;
 
-            if (strcmp(propName.C_Str(), "?mat.name") == 0)
-            {
-                // First 4 bytes are name length, followed by characters and null terminator
-                const std::string materialName(static_cast<const char*>(data) + sizeof(uint32_t));
-
-                // Parse shader from material name. If none found, default shader will be loaded (defined in material constructor)
-                const size_t pos = materialName.find("_S#");
-                if (pos != -1)
-                {
-                    const std::string shaderName = materialName.substr(pos + 3, materialName.size());
-                    Shader* shader = m_ShaderManager.RegisterAndLoadShader(shaderName.c_str());
-                    if (shader != nullptr)
-                    {
-                        meshMaterial.SetShader(shader);
-                    }
-                }
-            }
-
             if (strcmp(propName.C_Str(), "$clr.diffuse") == 0)
             {
                 glm::vec3 baseColor;
                 memcpy(&baseColor.x, data, 12);
-                meshMaterial.AddMaterialVector3fProperty("u_BaseColor", hasAlbedoTexture ? glm::vec3(1) : baseColor);
+                meshMaterial->AddMaterialVector3fProperty("u_BaseColor", hasAlbedoTexture ? glm::vec3(1) : baseColor);
             }
             else if (strcmp(propName.C_Str(), "$mat.roughnessFactor") == 0)
             {
                 float roughness = *reinterpret_cast<float*>(data);
-                meshMaterial.AddMaterialFloatProperty("u_Roughness", hasRoughnessTexture ? 1.f : roughness);
+                meshMaterial->AddMaterialFloatProperty("u_Roughness", hasRoughnessTexture ? 1.f : roughness);
             }
             else if (strcmp(propName.C_Str(), "$mat.reflectivity") == 0)
             {
                 float metalness = *reinterpret_cast<float*>(data);
-                meshMaterial.AddMaterialFloatProperty("u_Metalness", hasMetallicTexture ? 1.f : metalness);
+                meshMaterial->AddMaterialFloatProperty("u_Metalness", hasMetallicTexture ? 1.f : metalness);
             }
             else if (strcmp(propName.C_Str(), "$clr.emissive") == 0)
             {
                 glm::vec4 emissionColor;
                 memcpy(&emissionColor.x, data, 16);
-                meshMaterial.AddMaterialVector3fProperty("u_EmissiveColor", hasEmissionTexture ? glm::vec3(1) : glm::vec3(emissionColor));
+                meshMaterial->AddMaterialVector3fProperty("u_EmissiveColor", hasEmissionTexture ? glm::vec3(1) : glm::vec3(emissionColor));
             }
         }
 
-        // Material does not have a special shader defined so we use default shader.
-        if (meshMaterial.GetShader() == nullptr)
-        {
-            meshMaterial.SetShader(m_ShaderManager.RegisterAndLoadShader("gbuffer"));
-        }
+        return materialID;
     }
 
     std::optional<Handle<Texture>> AssetLoader::TryLoadTextureFromPath(const std::string& path)
@@ -669,17 +688,11 @@ namespace Ganymede
         }
     }
 
-    ShaderManager& AssetLoader::GetShaderManager()
-    {
-        return m_ShaderManager;
-    }
-
     std::optional<Handle<Texture>> AssetLoader::TryLoadAndStoreRAWTexture(const aiTexture* rawTexture)
     {
         if (rawTexture != nullptr)
         {
             std::string name = Helpers::ParseFileNameFromPath(rawTexture->mFilename.C_Str());
-
             auto textureSearchIt = m_TextureNameToIndex.find(name);
             if (textureSearchIt == m_TextureNameToIndex.end())
             {
@@ -691,22 +704,35 @@ namespace Ganymede
                 int width;
                 int height;
                 int channelCount;
-                unsigned char* buffer = stbi_load_from_memory(bytes, pixelsTotal, &width, &height, &channelCount, 4);
 
-                if (buffer)
+                unsigned char* buffer = nullptr;
+                unsigned int bitDepth = 0;
+
+                const unsigned short* buffer16 = stbi_load_16_from_memory(bytes, pixelsTotal, &width, &height, &channelCount, 0);
+                if (buffer16 != nullptr)
+                {
+                    // Its a 16bit texture
+                    buffer = (unsigned char*)buffer16;
+                    bitDepth = 16;
+                }
+                else
+                {
+                    // Its an 8bit texture
+                    buffer = stbi_load_from_memory(bytes, pixelsTotal, &width, &height, &channelCount, 0);
+                    bitDepth = 8;
+                }
+
+                if (buffer != nullptr)
                 {
                     const size_t textureID = m_StaticData.m_Textures.size();
                     m_TextureNameToIndex.emplace(name, textureID);
-                    const Texture* texture = &m_StaticData.m_Textures.emplace_back(buffer, width, height, channelCount, textureID);
+                    const Texture* texture = &m_StaticData.m_Textures.emplace_back(buffer, width, height, channelCount, bitDepth);
                     stbi_image_free(buffer);
                     return Handle<Texture> { textureID };
                 }
 
                 GM_CORE_ASSERT(false, "Couldn't load texture.");
-                // Couldnt load texture
-                {
-                    return std::nullopt;
-                }
+                return std::nullopt;
             }
             else
             {
