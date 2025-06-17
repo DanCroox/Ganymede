@@ -5,35 +5,21 @@
 
 namespace Ganymede
 {
-	GPUTexture::GPUTexture(const Texture& texture)
+	GPUTexture::GPUTexture(const Texture& texture) :
+		m_Width(texture.GetWidth()),
+		m_Height(texture.GetHeight()),
+		m_ChannelCount(texture.GetNumChannels()),
+		m_BitDepth(texture.GetBitDepth())
 	{
 		glGenTextures(1, &m_RendererID);
 		glBindTexture(GL_TEXTURE_2D, m_RendererID);
 
-		int internalType = 0;
-		int type = 0;
-		if (texture.GetNumChannels() == 3)
-		{
-			internalType = GL_RGB8;
-			type = GL_RGB;
-		}
-		else if (texture.GetNumChannels() == 4)
-		{
-			internalType = GL_RGBA8;
-			type = GL_RGBA;
-		}
-		else
-		{
-			GM_CORE_ASSERT(false, "Unsupported number of channels in texture");
-		}
-		
 		unsigned int dataFormat = 0;
-		const unsigned int bitDepth = texture.GetBitDepth();
-		if (bitDepth == 16)
+		if (m_BitDepth == 16)
 		{
 			dataFormat = GL_UNSIGNED_SHORT;
 		}
-		else if (bitDepth == 8)
+		else if (m_BitDepth == 8)
 		{
 			dataFormat = GL_UNSIGNED_BYTE;
 		}
@@ -42,6 +28,33 @@ namespace Ganymede
 			GM_CORE_ASSERT(false, "Unsupported number of bits per channel in texture");
 		}
 
+		int internalType = 0;
+		int type = 0;
+		if (texture.GetNumChannels() == 1)
+		{
+			internalType = m_BitDepth == 8 ? GL_R8 : GL_R16;
+			type = GL_RED;
+		}
+		else if (texture.GetNumChannels() == 2)
+		{
+			internalType = m_BitDepth == 8 ? GL_RG8 : GL_RG16;
+			type = GL_RG;
+		}
+		else if (texture.GetNumChannels() == 3)
+		{
+			internalType = m_BitDepth == 8 ? GL_RGB8 : GL_RGB16;
+			type = GL_RGB;
+		}
+		else if (texture.GetNumChannels() == 4)
+		{
+			internalType = m_BitDepth == 8 ? GL_RGBA8 : GL_RGBA16;
+			type = GL_RGBA;
+		}
+		else
+		{
+			GM_CORE_ASSERT(false, "Unsupported number of channels in texture");
+		}
+		
 		glTexImage2D(GL_TEXTURE_2D, 0, internalType, texture.GetWidth(), texture.GetHeight(), 0, type, dataFormat, texture.GetBytes().data());
 
 		// Enable mipmapping
@@ -64,9 +77,14 @@ namespace Ganymede
 	{
 		GLCall(glDeleteTextures(1, &m_RendererID));
 	}
-
+	int m_Width, m_Height, m_ChannelCount;
+	unsigned int m_RendererID;
 	GPUTexture::GPUTexture(GPUTexture&& other) noexcept
-		: m_RendererID(other.m_RendererID)
+		: m_RendererID(other.m_RendererID),
+		m_Width(other.m_Width),
+		m_Height(other.m_Height),
+		m_ChannelCount(other.m_ChannelCount),
+		m_BitDepth(other.m_BitDepth)
 	{
 		other.m_RendererID = 0;
 	}
@@ -76,6 +94,11 @@ namespace Ganymede
 		if (this != &other)
 		{
 			m_RendererID = other.m_RendererID;
+			m_Width = other.m_Width;
+			m_Height = other.m_Height;
+			m_ChannelCount = other.m_ChannelCount;
+			m_BitDepth = other.m_BitDepth;
+
 			other.m_RendererID = 0;
 		}
 

@@ -200,8 +200,6 @@ namespace Ganymede
 
 		std::vector<VisibleEntity> m_VisibleEntities;
 
-		FreeList m_MeshIDFreeList;
-
 		std::vector<std::optional<RenderView>> m_RenderViews;
 		FreeList m_RenderViewFreeList;
 	};

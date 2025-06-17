@@ -24,6 +24,8 @@ namespace Ganymede
 {
     namespace AssetLoader_Private
     {
+        inline constexpr std::string locBaseShaderFolder("res/shaders/");
+
         static glm::mat4 AssimpMatrixToGLM(const aiMatrix4x4& aiMatrix)
         {
             glm::mat4 glmGlobalTransform = {
@@ -38,10 +40,32 @@ namespace Ganymede
     }
 
     AssetLoader::AssetLoader() :
-        m_DefaultWhite(TryLoadTextureFromPath("res/textures/default/default_albedo.png").value()),
-        m_DefaultBlack(TryLoadTextureFromPath("res/textures/default/default_black.png").value()),
-        m_DefaultNormal(TryLoadTextureFromPath("res/textures/default/default_normal.png").value())
-    {}
+        m_DefaultWhite(CreateDefaultTexture({ 255, 255, 255 }, "DefaultWhite")),
+        m_DefaultBlack(CreateDefaultTexture({ 0, 0, 0 }, "DefaultBlack")),
+        m_DefaultNormal(CreateDefaultTexture({ 128, 128, 255}, "DefaultNormal")),
+        m_DefaultMaterial({0})
+    {
+        // Load default textures and materials
+        std::string shaderName = AssetLoader_Private::locBaseShaderFolder + "gbuffer.shader";
+
+        size_t shaderID = m_StaticData.m_ShaderBinaries.size();
+        m_StaticData.m_ShaderBinaries.emplace_back(shaderName.c_str());
+        m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
+
+        size_t materialID = m_StaticData.m_Materials.size();
+        Material& material = m_StaticData.m_Materials.emplace_back(Handle<ShaderBinary>(shaderID));
+
+        material.AddMaterialTextureSamplerProperty("u_Texture0", m_DefaultWhite);
+        material.AddMaterialTextureSamplerProperty("u_Texture1", m_DefaultNormal);
+        material.AddMaterialTextureSamplerProperty("u_Texture2", m_DefaultWhite);
+        material.AddMaterialTextureSamplerProperty("u_Texture3", m_DefaultWhite);
+        material.AddMaterialTextureSamplerProperty("u_Texture4", m_DefaultWhite);
+
+        material.AddMaterialVector3fProperty("u_BaseColor", { 0.8f, 0.8f, 0.8f });
+        material.AddMaterialVector3fProperty("u_EmissiveColor", { 0.0f, 0.0f, 0.0f });
+        material.AddMaterialFloatProperty("u_Roughness", 0.2f);
+        material.AddMaterialFloatProperty("u_Metalness", 0.0f);
+    }
 
     void AssetLoader::LoadNodeData(const aiNode& node, const aiScene& scene, const std::unordered_map<std::string, aiLight*>& lightsByNameLookup)
     {
@@ -560,9 +584,8 @@ namespace Ganymede
                 const size_t pos = materialName.find("_S#");
                 const bool useCustomShader = pos != -1;
 
-                std::string locBaseShaderFolder("res/shaders/");
                 std::string shaderName = useCustomShader ? materialName.substr(pos + 3, materialName.size()) : "gbuffer";
-                shaderName = locBaseShaderFolder + shaderName + ".shader";
+                shaderName = AssetLoader_Private::locBaseShaderFolder + shaderName + ".shader";
 
                 size_t shaderID = 0;
                 auto it = m_ShaderBinaryToIndex.find(shaderName);
@@ -585,7 +608,10 @@ namespace Ganymede
             }
         }
 
-        GM_CORE_ASSERT(meshMaterial != nullptr, "No material loaded!");
+        if (meshMaterial == nullptr)
+        {
+            return m_DefaultMaterial.GetID();
+        }
 
         bool hasAlbedoTexture = false;
         bool hasNormalTexture = false;
@@ -743,5 +769,23 @@ namespace Ganymede
         }
 
         return std::nullopt;
+    }
+
+    Handle<Texture> AssetLoader::CreateDefaultTexture(const glm::u8vec3& color, const std::string& name)
+    {
+        auto textureSearchIt = m_TextureNameToIndex.find(name);
+        if (textureSearchIt == m_TextureNameToIndex.end())
+        {
+            const size_t textureID = m_StaticData.m_Textures.size();
+
+            m_TextureNameToIndex.emplace(name, textureID);
+            m_StaticData.m_Textures.emplace_back((unsigned char*) &color.r, 1, 1, 3, 8); 
+            return Handle<Texture> { textureID };
+        }
+        else
+        {
+            const size_t textureID = textureSearchIt->second;
+            return Handle<Texture> { textureID };
+        }
     }
 }

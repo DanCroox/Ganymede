@@ -23,6 +23,9 @@ namespace Ganymede
 			// TODO: Currently possible to "free" same index multiple times.
 			// In this case we will have a bug cause "Append" will hand-out indices which are in use.
 			GM_CORE_ASSERT(index <= m_HighestIndex, "FreeList does not contain given index.");
+			GM_CORE_ASSERT(!m_NextFreeIndices.empty() &&
+				std::find(m_NextFreeIndices.begin(), m_NextFreeIndices.end(), index) != m_NextFreeIndices.end(),
+				"Trying to free an index which is not in use!");
 			m_NextFreeIndices.push_back(index);
 		}
 

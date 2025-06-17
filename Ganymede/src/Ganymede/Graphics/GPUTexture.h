@@ -22,7 +22,10 @@ namespace Ganymede
 		void Unbind() const;
 
 	private:
-		int m_Width, m_Height, m_ChannelCount;
+		unsigned int m_Width;
+		unsigned int m_Height;
+		unsigned int m_ChannelCount;
+		unsigned int m_BitDepth;
 		unsigned int m_RendererID;
 	};
 }

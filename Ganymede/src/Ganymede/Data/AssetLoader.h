@@ -45,6 +45,7 @@ namespace Ganymede
 		
 		std::optional<Handle<Texture>> TryLoadAndStoreRAWTexture(const aiTexture* rawTexture);
 		std::optional<Handle<Texture>> TryLoadTextureFromPath(const std::string& path);
+		Handle<Texture> CreateDefaultTexture(const glm::u8vec3& color, const std::string& name);
 
 		void LoadNodeData(const aiNode& node, const aiScene& scene, const std::unordered_map<std::string, aiLight*>& lightsByNameLookup);
 		void LoadMesh(MeshWorldObject* meshWorldObject, const aiMesh& mesh, const aiNode& node, const aiScene& scene);
@@ -52,6 +53,7 @@ namespace Ganymede
 		void LoadAnimation(const SkeletalMeshWorldObject& skeletalMwo, const aiAnimation& animation, const aiNode* rootNode);
 		size_t LoadMaterial(const aiMaterial& aiMaterial, const aiScene& scene);
 
+		Handle<Material> m_DefaultMaterial;
 		Handle<Texture> m_DefaultWhite;
 		Handle<Texture> m_DefaultBlack;
 		Handle<Texture> m_DefaultNormal;

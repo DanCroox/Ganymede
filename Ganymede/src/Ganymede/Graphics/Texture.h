@@ -19,9 +19,9 @@ namespace Ganymede
 		const std::vector<unsigned char>& GetBytes() const { return m_Bytes; }
 
 	private:
-		int m_Width;
-		int m_Height;
-		int m_ChannelCount;
+		unsigned int m_Width;
+		unsigned int m_Height;
+		unsigned int m_ChannelCount;
 		unsigned int m_BitDepth;
 
 		std::vector<unsigned char> m_Bytes;

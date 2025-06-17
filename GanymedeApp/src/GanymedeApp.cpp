@@ -62,7 +62,6 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	StaticData::Instance = &m_AssetLoader->m_StaticData;
 	m_RenderPipeline->Initialize();
 
-	//m_AssetLoader->LoadFromPath("res/models/physicstest.glb");
 	//m_AssetLoader->LoadFromPath("res/models/backroom2.glb");
 	GM_INFO("WorldObjects loaded from glb.");
 
