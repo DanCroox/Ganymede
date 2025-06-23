@@ -194,6 +194,11 @@ project "Ganymede"
 		"Ganymede/vendor/bitsery/include"
 	}
 
+	-- MSVC doesnt set __cplusplus correctly out of the box so we need to tell it to do so explicity
+	filter { "action:vs*", "system:windows" }
+		buildoptions { "/Zc:__cplusplus" }
+	filter {}
+
 	filter "system:windows"
 		cppdialect "C++20"
 		systemversion "latest"
@@ -320,6 +325,11 @@ project "GanymedeApp"
 	{
 		"Ganymede"
 	}
+
+	-- MSVC doesnt set __cplusplus correctly out of the box so we need to tell it to do so explicity
+	filter { "action:vs*", "system:windows" }
+		buildoptions { "/Zc:__cplusplus" }
+	filter {}
 
 	filter "system:windows"
 		cppdialect "C++20"

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Ganymede/Data/Handle.h"
+#include "Ganymede/Data/SerializerTraits.h"
 #include "glm/glm.hpp"
 #include <string>
 #include <unordered_map>
@@ -18,13 +19,14 @@ namespace Ganymede
 
 		struct MaterialProperty
 		{
+			GM_SERIALIZABLE(MaterialProperty);
+
 			bool operator==(const MaterialProperty& other) const { return m_Data == other.m_Data; }
 			bool operator!=(const MaterialProperty& other) const { return !(other == *this); }
 
 			MaterialPropertyData m_Data;
 		};
 
-		Material() = delete;
 		Material(const Handle<ShaderBinary>& shaderHandle) : m_ShaderBinaryHandle(shaderHandle) {};
 
 		void AddMaterialFloatProperty(const std::string& name, float value) { m_MaterialProperties.emplace(name, value); }
@@ -40,6 +42,9 @@ namespace Ganymede
 		const std::unordered_map<std::string, MaterialProperty>& GetMaterialProperties() const { return m_MaterialProperties; }
 
 	private:
+		GM_SERIALIZABLE(Material);
+		Material() : m_ShaderBinaryHandle(Handle<ShaderBinary>(0)) {}
+
 		mutable std::unordered_map<std::string, MaterialProperty> m_MaterialProperties;
 		Handle<ShaderBinary> m_ShaderBinaryHandle;
 	};

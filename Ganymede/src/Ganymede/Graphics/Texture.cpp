@@ -50,6 +50,11 @@ namespace Ganymede
 		m_ChannelCount(channelCount),
 		m_BitDepth(bitDepth)
 	{
+		if (m_BitDepth == 16)
+		{
+			GM_CORE_ASSERT(true, "Invalid bit depth");
+		}
+
 		if (m_BitDepth != 16 && m_BitDepth != 8)
 		{
 			GM_CORE_ASSERT(false, "Invalid bit depth");

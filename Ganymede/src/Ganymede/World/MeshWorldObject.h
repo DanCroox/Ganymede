@@ -2,10 +2,10 @@
 
 #include "Ganymede/Core/Core.h"
 
+#include "Ganymede/Data/SerializerTraits.h"
+#include "Ganymede/Graphics/Material.h"
 #include "WorldObject.h"
 #include <array>
-#include "Ganymede/Graphics/Material.h"
-
 
 namespace Ganymede
 {
@@ -14,7 +14,7 @@ namespace Ganymede
 	class GANYMEDE_API MeshWorldObject : public WorldObject
 	{
 	public:
-		enum PreferredPhysicsState
+		enum PreferredPhysicsState : uint8_t
 		{
 			None, Static, Dynamic
 		};
@@ -23,6 +23,8 @@ namespace Ganymede
 		{
 			struct Vertex
 			{
+				GM_SERIALIZABLE(Vertex);
+
 				Vertex() :
 					m_Color(glm::vec4(1))
 				{
@@ -45,6 +47,8 @@ namespace Ganymede
 
 			struct BoundingBoxVertex
 			{
+				GM_SERIALIZABLE(BoundingBoxVertex);
+
 				glm::vec3 m_Position;
 				glm::vec3 m_Normal;
 			};
@@ -148,9 +152,13 @@ namespace Ganymede
 			glm::vec3 m_BoundingBoxHalfSize;
 
 			size_t m_MeshID;
+
+			private:
+				GM_SERIALIZABLE(Mesh);
+				Mesh() : m_MaterialHandle(Handle<Material>(0)) {}
 		};
 
-		MeshWorldObject(const std::string& name);
+		MeshWorldObject(const std::string& name) : WorldObject(name) {}
 
 		virtual Type GetType() const { return Type::Mesh; }
 
@@ -166,10 +174,11 @@ namespace Ganymede
 		mutable std::vector<Handle<MeshWorldObject::Mesh>> m_Meshes;
 
 	private:
+		GM_SERIALIZABLE(MeshWorldObject);
+		MeshWorldObject() : WorldObject("") {}
+
 		PreferredPhysicsState m_PreferredPhysicsState = PreferredPhysicsState::Static;
 		bool m_ExcludeFromNavigationMesh = false;
 		bool m_CastShadows = true;
-
-		mutable bool m_IsBound = false;
 	};
 }

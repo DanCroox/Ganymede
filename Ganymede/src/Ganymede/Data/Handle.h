@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Ganymede/Data/SerializerTraits.h"
 #include <vector>
 
 namespace Ganymede
@@ -22,8 +23,11 @@ namespace Ganymede
 		}
 
 		size_t GetID() const { return m_Index; };
-	
+
 	private:
+		GM_SERIALIZABLE_TEMPLATED(Handle<T>, typename T);
+		Handle() = default;
+
 		size_t m_Index;
 	};
 }

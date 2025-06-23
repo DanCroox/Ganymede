@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Ganymede/Core/Core.h"
-#include "Ganymede/Graphics/Texture.h"
+#include "SerializerTraits.h"
 #include "Ganymede/Graphics/ShaderBinary.h"
+#include "Ganymede/Graphics/Texture.h"
 #include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/World/PointlightWorldObject.h"
 #include "Ganymede/World/SkeletalMeshWorldObject.h"
@@ -13,6 +13,8 @@ namespace Ganymede
 	class StaticData
 	{
 	public:
+		GM_SERIALIZABLE(StaticData);
+
 		std::vector<MeshWorldObject> m_MeshWorldObjects;
 		std::vector<SkeletalMeshWorldObject> m_SkeletalMeshWorldObjects;
 		std::vector<PointlightWorldObject> m_PointlightWorldObjects;

@@ -2,26 +2,24 @@
 
 #include "Ganymede/Core/Core.h"
 
+#include "Ganymede/Data/SerializerTraits.h"
 #include "MeshWorldObject.h"
 
 namespace Ganymede
 {
 	struct Bone
 	{
+		GM_SERIALIZABLE(Bone);
+
 		glm::mat4 m_OffsetTransform;
 		unsigned int m_Index;
 		std::string m_BoneName;
 	};
 
-
-	struct BoneWeight
-	{
-		unsigned int m_BoneIndex; //like in vertex buffer
-		float m_Weight;
-	};
-
 	struct Animation
 	{
+		GM_SERIALIZABLE(Animation);
+
 		using BoneFrame = std::vector<glm::mat4>;
 		
 		float m_FPS;
@@ -41,6 +39,9 @@ namespace Ganymede
 		unsigned int GetBoneCount() const { return m_Bones.size(); }
 
 	private:
+		GM_SERIALIZABLE(SkeletalMeshWorldObject);
+		SkeletalMeshWorldObject() : MeshWorldObject("") {};
+
 		std::vector<Bone> m_Bones;
 	};
 }

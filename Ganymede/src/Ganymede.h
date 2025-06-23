@@ -6,6 +6,9 @@
 #include <Ganymede/Common/Helpers.h>
 #include <Ganymede/Core/Application.h>
 #include <Ganymede/Data/AssetLoader.h>
+#include <Ganymede/Data/Serializer.h>
+#include <Ganymede/Data/SerializerTraits.h>
+#include <Ganymede/Data/SerializerTypes.h>
 #include <Ganymede/Data/StaticData.h>
 #include <Ganymede/ECS/Components/GCDoor.h>
 #include <Ganymede/ECS/Components/GCDynamicMobility.h>
@@ -22,6 +25,7 @@
 #include <Ganymede/ECS/Components/GCTransform.h>
 #include <Ganymede/ECS/Systems/GSDoor.h>
 #include <Ganymede/Events/Event.h>
+#include <Ganymede/Filesystem/FileIO.h>
 #include <Ganymede/Graphics/DataBuffer.h>
 #include <Ganymede/Graphics/FrameBuffer.h>
 #include <Ganymede/Graphics/GPUDebugHandler.h>

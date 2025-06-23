@@ -59,7 +59,12 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	
 	//m_AssetLoader->LoadFromPath("res/models/ShadowMappingTest.glb");
 	m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
-	StaticData::Instance = &m_AssetLoader->m_StaticData;
+
+	// Just for testing: We serialize entire static data container back and forth to see its working
+	const std::vector<uint8_t> serializedStaticData = Serializer::Serialize(m_AssetLoader->m_StaticData);
+	m_StaticData = std::make_unique<StaticData>(Serializer::Deserialize<StaticData>(serializedStaticData));
+	StaticData::Instance = m_StaticData.get();
+
 	m_RenderPipeline->Initialize();
 
 	//m_AssetLoader->LoadFromPath("res/models/backroom2.glb");
@@ -111,7 +116,7 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 		}
 
 		const glm::mat4 transform = mwo.GetTransform();
-		const MeshWorldObject::Mesh& mesh = m_AssetLoader->m_StaticData.m_Meshes[mwo.m_Meshes[0].GetID()];
+		const MeshWorldObject::Mesh& mesh = StaticData::Instance->m_Meshes[mwo.m_Meshes[0].GetID()];
 
 		const glm::vec3& bbVertMin = transform * glm::vec4(mesh.m_BoundingBoxVertices[7].m_Position, 1.0f); //Left Bottom Front
 		const glm::vec3& bbVertMax = transform * glm::vec4(mesh.m_BoundingBoxVertices[1].m_Position, 1.0f); //Right Top Back

@@ -2,11 +2,11 @@
 
 #include "Ganymede/Core/Core.h"
 
-
+#include "Ganymede/Data/SerializerTraits.h"
 #include "WorldObject.h"
+
 namespace Ganymede
 {
-
 	class GANYMEDE_API PointlightWorldObject : public WorldObject
 	{
 	public:
@@ -24,6 +24,9 @@ namespace Ganymede
 		int GetImportance() const { return m_Importance; }
 
 	private:
+		GM_SERIALIZABLE(PointlightWorldObject);
+		PointlightWorldObject() : WorldObject("") {}
+
 		glm::vec3 m_Color = glm::vec3(1.0f);
 		float m_Brightness = 10.f;
 		int m_Importance = 0;

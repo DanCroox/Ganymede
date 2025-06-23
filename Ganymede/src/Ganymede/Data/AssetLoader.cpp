@@ -1,6 +1,7 @@
 #include "AssetLoader.h"
 
 #include "Ganymede/Common/Helpers.h"
+#include "Ganymede/Log/Log.h"
 #include "Ganymede/Graphics/Texture.h"
 #include "Ganymede/World/PointlightWorldObject.h"
 #include "Ganymede/World/WorldObject.h"
@@ -24,7 +25,7 @@ namespace Ganymede
 {
     namespace AssetLoader_Private
     {
-        inline constexpr std::string locBaseShaderFolder("res/shaders/");
+        inline std::string locBaseShaderFolder("res/shaders/");
 
         static glm::mat4 AssimpMatrixToGLM(const aiMatrix4x4& aiMatrix)
         {
@@ -722,7 +723,9 @@ namespace Ganymede
             auto textureSearchIt = m_TextureNameToIndex.find(name);
             if (textureSearchIt == m_TextureNameToIndex.end())
             {
-                const unsigned int pixelsTotal = rawTexture->mWidth; // mHeight is 0 if embedded. mWidth is the byte count
+                // mHeight == 0 -> mWidth is the byte count -> can be 16 or 8 bit per channel
+                // mHeight > 0  -> mWith x mHeight represents the width and height. can only be 8 bit per channel and always uses sizeof(aiTexel) per pixel
+                const size_t dataLen = rawTexture->mHeight == 0 ? rawTexture->mWidth : rawTexture->mHeight * rawTexture->mWidth * sizeof(aiTexel);
                 unsigned char* bytes = reinterpret_cast<unsigned char*>(rawTexture->pcData);
 
                 // Texture not cached yet. Load and everything
@@ -734,17 +737,15 @@ namespace Ganymede
                 unsigned char* buffer = nullptr;
                 unsigned int bitDepth = 0;
 
-                const unsigned short* buffer16 = stbi_load_16_from_memory(bytes, pixelsTotal, &width, &height, &channelCount, 0);
-                if (buffer16 != nullptr)
+                if (stbi_is_16_bit_from_memory(bytes, rawTexture->mWidth))
                 {
-                    // Its a 16bit texture
+                    const unsigned short* buffer16 = stbi_load_16_from_memory(bytes, dataLen, &width, &height, &channelCount, 0);
                     buffer = (unsigned char*)buffer16;
                     bitDepth = 16;
                 }
                 else
                 {
-                    // Its an 8bit texture
-                    buffer = stbi_load_from_memory(bytes, pixelsTotal, &width, &height, &channelCount, 0);
+                    buffer = stbi_load_from_memory(bytes, dataLen, &width, &height, &channelCount, 0);
                     bitDepth = 8;
                 }
 

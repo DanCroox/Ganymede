@@ -1,6 +1,7 @@
 #pragma once
 #include "Ganymede/Core/Core.h"
 
+#include "Ganymede/Data/SerializerTraits.h"
 #include <string>
 
 namespace Ganymede
@@ -19,6 +20,9 @@ namespace Ganymede
 		const std::vector<unsigned char>& GetBytes() const { return m_Bytes; }
 
 	private:
+		GM_SERIALIZABLE(Texture);
+		Texture() = default;
+
 		unsigned int m_Width;
 		unsigned int m_Height;
 		unsigned int m_ChannelCount;

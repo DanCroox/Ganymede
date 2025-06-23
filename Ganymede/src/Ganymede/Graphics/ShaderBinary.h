@@ -1,6 +1,7 @@
 #pragma once
 #include "Ganymede/Core/Core.h"
 
+#include "Ganymede/Data/SerializerTraits.h"
 #include <string>
 #include <vector>
 
@@ -22,6 +23,9 @@ namespace Ganymede
 		const std::string& GetFilePath() const { return m_FilePath; }
 
 	private:
+		GM_SERIALIZABLE(ShaderBinary);
+		ShaderBinary() = default;
+
 		enum class ShaderType : int
 		{
 			NONE = -1,

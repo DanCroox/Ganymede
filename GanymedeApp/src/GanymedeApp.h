@@ -26,6 +26,7 @@ private:
 	std::unique_ptr<NavMesh> m_NavMesh = nullptr;
 	std::unique_ptr<RenderContext> m_RenderContext = nullptr;
 	std::unique_ptr<RenderPipeline> m_RenderPipeline = nullptr;
+	std::unique_ptr<StaticData> m_StaticData = nullptr;
 };
 
 // This is an external function, invoked by the main function within the Ganymede core.

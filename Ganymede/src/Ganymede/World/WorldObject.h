@@ -2,10 +2,12 @@
 
 #include "Ganymede/Core/Core.h"
 
+#include "Ganymede/Data/SerializerTraits.h"
 #include "glm/glm.hpp"
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <string>
+
 namespace Ganymede
 {
 	class GANYMEDE_API WorldObject
@@ -14,6 +16,7 @@ namespace Ganymede
 		enum class Type
 		{
 			Invalid,
+
 			Mesh,
 			SkeletalMesh,
 			PointLight,
@@ -29,6 +32,8 @@ namespace Ganymede
 		void SetTransform(const glm::mat4& transform) { m_Transform = transform; }
 
 	private:
+		GM_SERIALIZABLE(WorldObject);
+
 		std::string m_Name = "none";
 
 		// Will hold the imported transformation.
