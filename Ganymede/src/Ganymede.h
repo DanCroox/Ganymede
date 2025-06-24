@@ -25,7 +25,7 @@
 #include <Ganymede/ECS/Components/GCTransform.h>
 #include <Ganymede/ECS/Systems/GSDoor.h>
 #include <Ganymede/Events/Event.h>
-#include <Ganymede/Filesystem/FileIO.h>
+#include <Ganymede/Filesystem/File.h>
 #include <Ganymede/Graphics/DataBuffer.h>
 #include <Ganymede/Graphics/FrameBuffer.h>
 #include <Ganymede/Graphics/GPUDebugHandler.h>

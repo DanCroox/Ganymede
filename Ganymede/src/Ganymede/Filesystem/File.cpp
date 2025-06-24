@@ -1,14 +1,16 @@
-#include "FileIO.h"
+#include "File.h"
 
+#include <cassert>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace Ganymede
 {
-    bool FileIO::WriteBytesToFile(const std::string& filename, const std::vector<uint8_t>& data)
+    bool File::WriteBytesToFile(const std::string& filename, const std::vector<uint8_t>& data)
     {
         std::ofstream out(filename, std::ios::binary);
         if (!out)
@@ -21,7 +23,7 @@ namespace Ganymede
         return out.good();
     }
 
-    std::optional<std::vector<uint8_t>> FileIO::ReadBytesFromFile(const std::string& filename)
+    std::optional<std::vector<uint8_t>> File::ReadBytesFromFile(const std::string& filename)
     {
         std::ifstream in(filename, std::ios::binary | std::ios::ate);
         if (!in)
@@ -39,5 +41,11 @@ namespace Ganymede
         }
 
         return buffer;
+    }
+
+    bool File::EndsWith(std::string_view str, std::string_view suffix)
+    {
+        return str.size() >= suffix.size()
+            && str.substr(str.size() - suffix.size()) == suffix;
     }
 }

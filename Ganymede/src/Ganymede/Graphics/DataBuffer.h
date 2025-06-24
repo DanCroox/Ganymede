@@ -70,28 +70,28 @@ namespace Ganymede
 			return *this;
 		}
 
-		DataBuffer(T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType) :
+		DataBuffer(typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType) :
 			m_BufferType(bufferType)
 		{
 			m_BufferType = bufferType;
-			m_BufferSize = sizeof(T::VertexDataType) * numElements;
-			static_assert(std::is_base_of<VertexDataDescriptor, T>::value, "You can only create a DataBuffer with a VertexDataDescriptor derivate.");
+			m_BufferSize = sizeof(typename T::VertexDataType) * numElements;
+			static_assert(std::is_base_of<VertexDataDescriptor<typename T::VertexDataType>, T>::value, "You can only create a DataBuffer with a VertexDataDescriptor derivate.");
 			m_RenderID = DataBufferNativeFunctions::GenerateBuffer();
-			DataBufferNativeFunctions::InitializeBufferData(m_RenderID, (const void*) data, sizeof(T::VertexDataType) * numElements, bufferType);
+			DataBufferNativeFunctions::InitializeBufferData(m_RenderID, (const void*) data, sizeof(typename T::VertexDataType) * numElements, bufferType);
 		}
 
-		void Write(T::VertexDataType* data, unsigned int numElements, unsigned int offset)
+		void Write(typename T::VertexDataType* data, unsigned int numElements, unsigned int offset)
 		{
 			GM_CORE_ASSERT(m_BufferType == DataBufferType::Dynamic, "Writing data to a statically initialized data buffer is not possible.");
 			
-			const size_t numBytesRequested = (sizeof(T::VertexDataType) * numElements) + (sizeof(T::VertexDataType) * offset);
+			const size_t numBytesRequested = (sizeof(typename T::VertexDataType) * numElements) + (sizeof(typename T::VertexDataType) * offset);
 			if (numBytesRequested > m_BufferSize)
 			{
 				DataBufferNativeFunctions::InitializeBufferData(m_RenderID, nullptr, numBytesRequested, m_BufferType);
 				m_BufferSize = numBytesRequested;
 			}
 
-			DataBufferNativeFunctions::Write(m_RenderID, (const void*)&data[0], sizeof(T::VertexDataType) * numElements, sizeof(T::VertexDataType) * offset);
+			DataBufferNativeFunctions::Write(m_RenderID, (const void*)&data[0], sizeof(typename T::VertexDataType) * numElements, sizeof(typename T::VertexDataType) * offset);
 		}
 
 		const std::vector<VertexDataPrimitiveTypeInfo>& GetVertexDataPrimitiveTypeInfo()
@@ -99,7 +99,7 @@ namespace Ganymede
 			return T::GetVertexDataPrimitiveTypeInfo();
 		}
 
-		unsigned int GetElementSize() { return sizeof(T::VertexDataType); }
+		unsigned int GetElementSize() { return sizeof(typename T::VertexDataType); }
 
 	private:
 		DataBufferType m_BufferType;

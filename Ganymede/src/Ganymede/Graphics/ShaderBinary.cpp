@@ -1,16 +1,17 @@
 #include "ShaderBinary.h"
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include "glm/glm.hpp"
-#include "GL/glew.h"
-#include <glm/gtc/type_ptr.hpp>
-#include "SSBO.h"
-#include "RenderTarget.h"
-#include "OGLBindingHelper.h"
+#include "Ganymede/Filesystem/File.h"
 #include "Ganymede/Log/Log.h"
+#include "GL/glew.h"
+#include "glm/glm.hpp"
+#include "OGLBindingHelper.h"
+#include "RenderTarget.h"
+#include "SSBO.h"
+#include <fstream>
+#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 namespace Ganymede
 {
@@ -62,13 +63,13 @@ namespace Ganymede
 
     ShaderBinary::ShaderBinary(const std::string& filepath) : m_FilePath(filepath)
     {
-        if (filepath.ends_with(".shader"))
+        if (File::EndsWith({ filepath }, ".shader"))
         {
             // Is source file
             ProgramSource source = ParseShader(m_FilePath);
             CompileProgram(source);
         }
-        else if (filepath.ends_with(".bin"))
+        else if (File::EndsWith({ filepath }, ".bin"))
         {
             // Is binary file
             GM_CORE_ASSERT(false, "TODO: Implement binary loading");

@@ -101,7 +101,7 @@ namespace Ganymede
 		Shader* LoadShader(const std::string& name, const ShaderBinary& binary);
 		
 		template <typename T>
-		DataBuffer<T>* CreateDataBuffer(const std::string& name, T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType)
+		DataBuffer<T>* CreateDataBuffer(const std::string& name, typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType)
 		{
 			auto it = m_DataBuffers.find(name);
 			if (it != m_DataBuffers.end())
@@ -113,7 +113,7 @@ namespace Ganymede
 					GM_CORE_ASSERT(false, "Template type does not match stored object type.");
 					return nullptr;
 				}
-
+				
 				return (DataBuffer<T>*) pair.second;
 			}
 

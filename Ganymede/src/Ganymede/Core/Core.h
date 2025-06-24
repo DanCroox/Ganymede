@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include <typeindex>
 #include <functional>
-#include <format>
 
 namespace Ganymede
 {
@@ -25,6 +24,11 @@ namespace Ganymede
 		bool operator==(const ClassID& other) const
 		{
 			return m_ClassID == other.m_ClassID;
+		}
+
+		bool operator!=(const ClassID& other) const
+		{
+			return m_ClassID != other.m_ClassID;
 		}
 
 		inline bool IsValid() const { return m_ClassID != -1; }
@@ -79,7 +83,7 @@ namespace Ganymede
 				std::cerr << "Assertion failed: " << #condition << std::endl;			\
 				std::cerr << "  file    : " << __FILE__ << std::endl;					\
 				std::cerr << "  line    : " << __LINE__	<< std::endl;					\
-				std::cerr << "  message : " << std::format(__VA_ARGS__) << std::endl;	\
+				std::cerr << "  message : " << __VA_ARGS__ << std::endl;	\
 				__debugbreak();															\
 			}																			\
 		}

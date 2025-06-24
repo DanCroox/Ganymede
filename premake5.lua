@@ -200,7 +200,7 @@ project "Ganymede"
 	filter {}
 
 	filter "system:windows"
-		cppdialect "C++20"
+		cppdialect "C++17"
 		systemversion "latest"
 
 		defines
@@ -332,7 +332,7 @@ project "GanymedeApp"
 	filter {}
 
 	filter "system:windows"
-		cppdialect "C++20"
+		cppdialect "C++17"
 		systemversion "latest"
 
 		defines

@@ -27,8 +27,10 @@ namespace Ganymede
         unsigned int m_ByteOffset = 0;
     };
 
+    template<typename T>
     struct VertexDataDescriptor
     {
+        using VertexDataType = T;
         VertexDataDescriptor() = default;
         virtual ~VertexDataDescriptor() = default;
     };
@@ -36,10 +38,9 @@ namespace Ganymede
     #define M(member, primitiveType, numComponents) { primitiveType, numComponents, offsetof(VertexDataType, member) }
 
     #define VertexDataDefinition(type, basetype, ...)                                                           \
-    struct type : public VertexDataDescriptor                                                                   \
+    struct type : public VertexDataDescriptor<basetype>                                                         \
     {                                                                                                           \
         GM_GENERATE_STATIC_CLASS_ID(type);                                                                      \
-        using VertexDataType = basetype;                                                                        \
         static inline const std::vector<VertexDataPrimitiveTypeInfo>& GetVertexDataPrimitiveTypeInfo()          \
         {                                                                                                       \
             static const std::vector<VertexDataPrimitiveTypeInfo> vertexAttributePosition = { __VA_ARGS__ };    \

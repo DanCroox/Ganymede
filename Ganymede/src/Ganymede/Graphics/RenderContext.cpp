@@ -230,43 +230,43 @@ namespace Ganymede
 
     void RenderContext::DeleteFrameBuffer(const std::string& name)
     {
-        GM_CORE_ASSERT(m_FrameBuffers.contains(name), "Tried to delete framebuffer which does not exist.");
+        GM_CORE_ASSERT(m_FrameBuffers.count(name) > 1, "Tried to delete framebuffer which does not exist.");
         m_FrameBuffers.erase(name);
     }
 
     void RenderContext::DeleteSingleSampleRenderTarget(const std::string& name)
     {
-        GM_CORE_ASSERT(m_SingleSampleRenderTargets.contains(name), "Tried to delete single sample rendertarget which does not exist.");
+        GM_CORE_ASSERT(m_SingleSampleRenderTargets.count(name) > 1, "Tried to delete single sample rendertarget which does not exist.");
         m_SingleSampleRenderTargets.erase(name);
     }
 
     void RenderContext::DeleteMultiSampleRenderTarget(const std::string& name)
     {
-        GM_CORE_ASSERT(m_MultiSampleRenderTargets.contains(name), "Tried to delete multi sample rendertarget which does not exist.");
+        GM_CORE_ASSERT(m_MultiSampleRenderTargets.count(name) > 1, "Tried to delete multi sample rendertarget which does not exist.");
         m_MultiSampleRenderTargets.erase(name);
     }
 
     void RenderContext::DeleteCubeMapArrayRenderTarget(const std::string& name)
     {
-        GM_CORE_ASSERT(m_CubeMapArrayRenderTargets.contains(name), "Tried to delete cube map array rendertarget which does not exist.");
+        GM_CORE_ASSERT(m_CubeMapArrayRenderTargets.count(name) > 1, "Tried to delete cube map array rendertarget which does not exist.");
         m_CubeMapArrayRenderTargets.erase(name);
     }
 
     void RenderContext::DeleteVertexObject(const std::string& name)
     {
-        GM_CORE_ASSERT(m_VertexObjects.contains(name), "Tried to delete vertexobject which does not exist.");
+        GM_CORE_ASSERT(m_VertexObjects.count(name) > 1, "Tried to delete vertexobject which does not exist.");
         m_VertexObjects.erase(name);
     }
 
     void RenderContext::UnloadShader(const std::string& name)
     {
-        GM_CORE_ASSERT(m_Shaders.contains(name), "Tried to delete shader which does not exist.");
+        GM_CORE_ASSERT(m_Shaders.count(name) > 1, "Tried to delete shader which does not exist.");
         m_Shaders.erase(name);
     }
 
     void RenderContext::DeleteDataBuffer(const std::string& name)
     {
-        GM_CORE_ASSERT(m_DataBuffers.contains(name), "Tried to delete databuffer which does not exist.");
+        GM_CORE_ASSERT(m_DataBuffers.count(name) > 1, "Tried to delete databuffer which does not exist.");
         m_DataBuffers.erase(name);
     }
 

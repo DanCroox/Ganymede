@@ -21,6 +21,11 @@ namespace Ganymede
 		{
 			GM_SERIALIZABLE(MaterialProperty);
 
+			MaterialProperty() = default;
+			MaterialProperty(float value) : m_Data(value) {}
+			MaterialProperty(glm::vec3 value) : m_Data(value) {}
+			MaterialProperty(Handle<Texture> value) : m_Data(value) {}
+
 			bool operator==(const MaterialProperty& other) const { return m_Data == other.m_Data; }
 			bool operator!=(const MaterialProperty& other) const { return !(other == *this); }
 
