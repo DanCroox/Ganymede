@@ -120,38 +120,6 @@ project "imgui"
 
 	filter { "configurations:Release or configurations:Retail" }
     		optimize "On"
-
-project "stb_image"
-	location "Ganymede/vendor/stb_image"
-	kind "StaticLib"
-	language "C"
-	staticruntime "Off"
-
-	flags { "MultiProcessorCompile" }
-
-	targetdir (bindir .. outputdir .. "/%{prj.name}")
-	objdir (intermediatedir .. outputdir .. "/%{prj.name}")
-
-	files
-	{
-		"Ganymede/vendor/stb_image/**.h",
-		"Ganymede/vendor/stb_image/**.cpp"
-	}
-
-	includedirs
-	{
-		"Ganymede/vendor/stb_image"
-	}
-
-	filter "system:windows"
-		systemversion "latest"
-
-	filter "configurations:Debug"
-		symbols "On"
-
-	filter { "configurations:Release or configurations:Retail" }
-    		optimize "On"
-
 group ""
 
 
@@ -230,7 +198,6 @@ project "Ganymede"
 		links
 		{
 			"imgui",
-			"stb_image",
 			"DetourRecast",
 			"opengl32.lib",
 			"libglew32d.lib",
@@ -262,7 +229,6 @@ project "Ganymede"
     		links
     		{
 			"imgui",
-			"stb_image",
 			"DetourRecast",
 			"opengl32.lib",
 			"libglew32.lib",
