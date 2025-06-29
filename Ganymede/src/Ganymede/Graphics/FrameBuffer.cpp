@@ -1,7 +1,7 @@
 #include "FrameBuffer.h"
 
 #include "RenderTarget.h"
-#include "OGLBindingHelper.h"
+#include "OGLContext.h"
 #include "Ganymede/Log/Log.h"
 #include <GL/glew.h>
 
@@ -90,13 +90,13 @@ namespace Ganymede
 	
 	FrameBuffer::~FrameBuffer()
 	{
-		OGLBindingHelper::UnbindFrameBuffer();
+		OGLContext::UnbindFrameBuffer();
 		glDeleteFramebuffers(1, &m_RenderID);
 	}
 
 	void FrameBuffer::SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture)
 	{
-		OGLBindingHelper::BindFrameBuffer(*this);
+		OGLContext::BindFrameBuffer(*this);
 		FrameBuffer_Private::BindFrameBufferTexture(attachmentType, frameBufferTexture);
 		m_FrameBufferAttachments[attachmentType] = &frameBufferTexture;
 		UpdateActiveDrawBufferAttachments();

@@ -66,8 +66,6 @@ namespace Ganymede
 	class GANYMEDE_API ComputePass : public RenderPass2
 	{
 	public:
-		~ComputePass();
-
 		bool Initialize(RenderContext& renderContext) override;
 		void Execute(RenderContext& renderContext) override;
 

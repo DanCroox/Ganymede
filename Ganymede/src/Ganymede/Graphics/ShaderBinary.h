@@ -7,25 +7,11 @@
 
 namespace Ganymede
 {
+	class ShaderLoader;
+
 	class GANYMEDE_API ShaderBinary
 	{
 	public:
-		struct Binary
-		{
-			std::vector<unsigned char> m_Data;
-			unsigned int m_DataFormat;
-		};
-		using BinaryContainer = std::vector<Binary>;
-
-		ShaderBinary(const std::string& filepath);
-		const BinaryContainer& GetBinaryContainer() const { return m_BinaryContainer; }
-
-		const std::string& GetFilePath() const { return m_FilePath; }
-
-	private:
-		GM_SERIALIZABLE(ShaderBinary);
-		ShaderBinary() = default;
-
 		enum class ShaderType : int
 		{
 			NONE = -1,
@@ -37,22 +23,26 @@ namespace Ganymede
 			_COUNT
 		};
 
-		struct ProgramSource
+		struct Binary
 		{
-			std::string ComputeSource;
-			std::string VertexSource;
-			std::string FragmentSource;
-			std::string GeometrySource;
+			std::vector<unsigned char> m_Data;
+			unsigned int m_DataFormat = 0;
+			ShaderType m_BinaryType = ShaderType::NONE;
 		};
-		
-		ProgramSource ParseShader(const std::string& filepath);
-		void ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut);
-		void CompileProgram(const ProgramSource& programSource);
+
+		const std::vector<Binary>& GetBinaryContainer() const { return m_BinaryContainer; }
+		const std::string& GetFilePath() const { return m_FilePath; }
+
+	private:
+		friend class ShaderLoader;
+
+		GM_SERIALIZABLE(ShaderBinary);
+		ShaderBinary() = default;
 
 		std::string m_FilePath;
 
 		// Holds compiled shader binaries. It is a 2 dimensional container.
 		// Can be used to store individual stages-binaries or entire program binaries (according to implementation).
-		BinaryContainer m_BinaryContainer;
+		std::vector<Binary> m_BinaryContainer;
 	};
 }

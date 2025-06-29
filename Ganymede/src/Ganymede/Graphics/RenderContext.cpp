@@ -1,16 +1,19 @@
 #include "RenderContext.h"
 
+#include "Ganymede/Data/StaticData.h"
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
-#include "Ganymede/Data/StaticData.h"
+#include "ShaderCompiler.h"
+#include "ShaderLoader.h"
 #include "Texture.h"
 #include <memory>
 
 namespace Ganymede
 {
     RenderContext::RenderContext(World& world) :
-        m_World(world)
+        m_World(world),
+        m_Renderer(*this)
     {
         m_VertexObjectCache.resize(1000000);
         m_RenderViews.resize(10000);
@@ -106,12 +109,22 @@ namespace Ganymede
         return ptr;
     }
 
-    Shader* RenderContext::LoadShader(const std::string& name, const ShaderBinary& binary)
+    Shader* RenderContext::LoadShader(const std::string& name, const std::string& shaderFile)
     {
-        auto [it2, created] = m_Shaders.try_emplace(name, binary);
-        //GM_CORE_ASSERT(created, "Tried to load shader which already existed. Using from cache.");
+        auto it = m_Shaders.find(name);
+        if (it != m_Shaders.end())
+        {
+            return &it->second;
+        }
 
-        return &it2->second;
+        if (std::optional<ShaderBinary> shaderBinary = ShaderLoader::Load(shaderFile))
+        {
+            auto [it2, created] = m_Shaders.try_emplace(shaderFile, shaderBinary.value());
+            return &it2->second;
+        }
+
+        GM_CORE_ASSERT(false, "Couldnt load shader");
+        return nullptr;
     }
 
     void RenderContext::BindMaterial(const Material& material)
@@ -124,7 +137,7 @@ namespace Ganymede
             const Material::MaterialPropertyData& propertyValue = property.m_Data;
 
             const ShaderBinary& shaderBinary = material.GetShaderBinary().GetData();
-            Shader& shader = *LoadShader(shaderBinary.GetFilePath(), shaderBinary);
+            Shader& shader = *LoadShader(shaderBinary.GetFilePath(), shaderBinary.GetFilePath());
 
             if (std::holds_alternative<float>(propertyValue))
             {
@@ -147,7 +160,7 @@ namespace Ganymede
                 ++nextTextureSlot;
             }
 
-            OGLBindingHelper::BindShader(shader.GetRendererID());
+            OGLContext::BindShader(shader.GetRendererID());
         }
     }
 

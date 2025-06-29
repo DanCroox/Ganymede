@@ -12,8 +12,6 @@
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/World/World.h"
 
-#include <GL/glew.h>
-
 namespace Ganymede
 {
 	bool LightingRenderPass::Initialize(RenderContext& renderContext)

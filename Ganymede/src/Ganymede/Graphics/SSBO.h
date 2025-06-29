@@ -19,6 +19,8 @@ namespace Ganymede
 
 		size_t GetSize() const { return m_BufferSize; }
 
+		void Barrier();
+
 		char* m_DirectAccessBuffer = nullptr;
 		unsigned int m_RenderID;
 	private:

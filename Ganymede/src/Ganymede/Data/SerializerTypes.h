@@ -249,8 +249,8 @@ namespace Ganymede
     {
         constexpr size_t MAX_SHADER_STAGE_BYTES = 10000000;
         s.container1b(bin.m_Data, MAX_SHADER_STAGE_BYTES);
-
         s.value4b(bin.m_DataFormat);
+        s.value4b(bin.m_BinaryType);
     }
 
     template<typename S>

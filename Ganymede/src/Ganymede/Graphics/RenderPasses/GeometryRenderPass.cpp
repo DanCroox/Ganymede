@@ -13,7 +13,6 @@
 #include "Ganymede/Data/StaticData.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
-#include "gl/glew.h"
 
 namespace Ganymede
 {
@@ -58,6 +57,8 @@ namespace Ganymede
 		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Color4, FrameBuffer::AttachmentType::Color4, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
 		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Depth, FrameBuffer::AttachmentType::Depth, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
 
+		ssbo_IndirectDrawCmds = renderContext.GetSSBO("IndirectDrawCommands");
+
 		return true;
 	}
 
@@ -70,9 +71,6 @@ namespace Ganymede
 		renderer.ClearFrameBuffer(*m_FrameBuffer, true, true);
 
 		std::vector<RenderMeshInstanceCommand>& renderInfos = renderContext.m_RenderInfo;
-		glEnable(GL_DEPTH_TEST);
-
-		OGLBindingHelper::BindFrameBuffer(*m_FrameBufferMS);
 
 		const RenderMeshInstanceCommandOffsetsByView offset = renderContext.m_RenderInfoOffsets[0];
 		NUMBERED_NAMED_COUNTER("Num Drawcalls (FPS Camera)", offset.m_LastIndex);
@@ -81,15 +79,10 @@ namespace Ganymede
 		{
 			RenderMeshInstanceCommand& renderInfo = renderInfos[idx];
 			MeshWorldObject::Mesh& mesh = *renderContext.m_MeshIDMapping[renderInfo.m_MeshID];
-			StaticData& sd = *StaticData::Instance;
 			const Material& material = mesh.m_MaterialHandle.GetData();
-			renderContext.BindMaterial(material);
-
 			const VertexObject& voPtr = renderContext.GetVO(mesh);
-			OGLBindingHelper::BindVertexArrayObject(voPtr.GetRenderID());
 
-			glm::uint offset = renderInfo.m_IndirectCommandIndex * 20;
-			glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)offset);
+			renderer.DrawIndirect(voPtr, *ssbo_IndirectDrawCmds, renderInfo.m_IndirectCommandIndex, *m_FrameBufferMS, material, true);
 		}
 
 		FrameBuffer::Blit(m_MultiToSingleSampleBlitFBConfig);

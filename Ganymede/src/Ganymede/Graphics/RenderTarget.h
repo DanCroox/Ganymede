@@ -60,6 +60,10 @@ namespace Ganymede
 
 		inline bool IsValid() const { return m_RenderID != 0; }
 
+		RenderTargetTypes::ComponentType GetComponentType() const { return m_ComponentType; }
+		RenderTargetTypes::ChannelDataType GetChannelDataType() const { return m_ChannelDataType; }
+		RenderTargetTypes::ChannelPrecision GetChannelPrecision() const { return m_ChannelPrecision; }
+
 	protected:
 		unsigned int m_RenderID = 0;
 

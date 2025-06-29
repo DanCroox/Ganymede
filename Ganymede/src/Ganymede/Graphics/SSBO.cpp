@@ -1,5 +1,5 @@
 #include "SSBO.h"
-#include "OGLBindingHelper.h"
+#include "OGLContext.h"
 
 #include <GL/glew.h>
 
@@ -16,6 +16,11 @@ namespace Ganymede
 	SSBO::~SSBO()
 	{
 		DeleteBuffer();
+	}
+
+	void SSBO::Barrier()
+	{
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
 
 	void SSBO::CreateBuffer(size_t bufferSize)

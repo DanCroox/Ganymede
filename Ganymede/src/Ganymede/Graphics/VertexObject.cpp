@@ -123,16 +123,16 @@ namespace Ganymede
 		m_CurrentVertexAttribPointer(0)
 	{
 		glGenVertexArrays(1, &m_RenderID);
-		OGLBindingHelper::BindVertexArrayObject(m_RenderID);
+		OGLContext::BindVertexArrayObject(m_RenderID);
 		m_IndexBufferPtr = std::make_unique<VertexObjectIndexBuffer>(indicesData, numIndices);
 		m_IndexBufferPtr->Bind();
-		OGLBindingHelper::BindVertexArrayObject(0);
+		OGLContext::BindVertexArrayObject(0);
 		m_IndexBufferPtr->UnBind();
 	}
 
 	VertexObject::~VertexObject()
 	{
-		OGLBindingHelper::BindVertexArrayObject(0);
+		OGLContext::BindVertexArrayObject(0);
 		glDeleteVertexArrays(1, &m_RenderID);
 	}
 }

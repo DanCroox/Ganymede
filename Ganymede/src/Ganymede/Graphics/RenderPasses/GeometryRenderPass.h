@@ -44,6 +44,8 @@ namespace Ganymede
 		SinglesampleRenderTarget* m_EmissionRT;
 		SinglesampleRenderTarget* m_DepthRT;
 
+		SSBO* ssbo_IndirectDrawCmds;
+
 		FrameBuffer::BlitFrameBufferConfig m_MultiToSingleSampleBlitFBConfig;
 	};
 }

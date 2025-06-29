@@ -1,14 +1,15 @@
 #include "AssetLoader.h"
 
 #include "Ganymede/Common/Helpers.h"
-#include "Ganymede/Log/Log.h"
+#include "Ganymede/Graphics/ShaderLoader.h"
 #include "Ganymede/Graphics/Texture.h"
+#include "Ganymede/Log/Log.h"
 #include "Ganymede/World/PointlightWorldObject.h"
 #include "Ganymede/World/WorldObject.h"
 #include "glm/glm.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
-#include "stb_image.h"
 #include "StaticData.h"
+#include "stb_image.h"
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -50,8 +51,15 @@ namespace Ganymede
         std::string shaderName = AssetLoader_Private::locBaseShaderFolder + "gbuffer.shader";
 
         size_t shaderID = m_StaticData.m_ShaderBinaries.size();
-        m_StaticData.m_ShaderBinaries.emplace_back(shaderName.c_str());
-        m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
+        if (std::optional<ShaderBinary> shaderBinary = ShaderLoader::Load(shaderName))
+        {        
+            m_StaticData.m_ShaderBinaries.push_back(shaderBinary.value());
+            m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
+        }
+        else
+        {
+            GM_CORE_ASSERT(false, "Couldnt load shader");
+        }
 
         size_t materialID = m_StaticData.m_Materials.size();
         Material& material = m_StaticData.m_Materials.emplace_back(Handle<ShaderBinary>(shaderID));
@@ -592,9 +600,16 @@ namespace Ganymede
                 auto it = m_ShaderBinaryToIndex.find(shaderName);
                 if (it == m_ShaderBinaryToIndex.end())
                 {
-                    shaderID = m_StaticData.m_ShaderBinaries.size();
-                    m_StaticData.m_ShaderBinaries.emplace_back(shaderName.c_str());
-                    m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
+                    if (std::optional<ShaderBinary> shaderBinary = ShaderLoader::Load(shaderName))
+                    {
+                        shaderID = m_StaticData.m_ShaderBinaries.size();
+                        m_StaticData.m_ShaderBinaries.push_back(shaderBinary.value());
+                        m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
+                    }
+                    else
+                    {
+                        GM_CORE_ASSERT(false, "Cant load shader");
+                    }
                 }
                 else
                 {

@@ -3,7 +3,7 @@
 #include "Ganymede/Log/Log.h"
 #include "GL/glew.h"
 #include "glm/glm.hpp"
-#include "OGLBindingHelper.h"
+#include "OGLContext.h"
 #include "RenderTarget.h"
 #include "ShaderBinary.h"
 #include "SSBO.h"
@@ -33,7 +33,7 @@ namespace Ganymede
 
     Shader::~Shader()
     {
-        OGLBindingHelper::BindShader(0);
+        OGLContext::BindShader(0);
         GLCall(glDeleteProgram(m_RendererID));
     }
 
@@ -57,7 +57,7 @@ namespace Ganymede
             textureSlot = it->second;
         }
 
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         glActiveTexture(GL_TEXTURE0 + textureSlot);
         texture.Bind();
         SetUniform1i(textureName, textureSlot);
@@ -67,85 +67,85 @@ namespace Ganymede
 
     void Shader::SetUniform1i(const std::string& name, const int value) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform1i(GetUniformLocation(name), value));
     }
 
     void Shader::SetUniform1iv(const std::string& name, const int* value, unsigned int count) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         glUniform1iv(GetUniformLocation(name), count, value);
     }
 
     void Shader::SetUniform2i(const std::string& name, int v1, int v2) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform2i(GetUniformLocation(name), v1, v2));
     }
 
     void Shader::SetUniform2iv(const std::string& name, const int* values, unsigned int count) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform3iv(GetUniformLocation(name), count, values));
     }
 
     void Shader::SetUniform1f(const std::string& name, const float value) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform1f(GetUniformLocation(name), value));
     }
 
     void Shader::SetUniform1fv(const std::string& name, const float* value, unsigned int count) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform1fv(GetUniformLocation(name), count, &value[0]));
     }
 
     void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
     }
 
     void Shader::SetUniform3f(const std::string& name, float value1, float value2, float value3) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform3f(GetUniformLocation(name), value1, value2, value3));
     }
 
     void Shader::SetUniform2f(const std::string& name, float value1, float value2) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform2f(GetUniformLocation(name), value1, value2));
     }
 
     void Shader::SetUniform3f(const std::string& name, const glm::vec3& value) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform3f(GetUniformLocation(name), value.x, value.y, value.z));
     }
 
     void Shader::SetUniform2f(const std::string& name, const glm::vec2& value) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform2f(GetUniformLocation(name), value.x, value.y));
     }
 
     void Shader::SetUniform3fv(const std::string& name, const float* values, unsigned int count) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniform3fv(GetUniformLocation(name), count, values));
     }
 
     void Shader::SetUniformMat4f(const std::string& name, const glm::mat4* matrix, unsigned int count) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniformMatrix4fv(GetUniformLocation(name), count, GL_FALSE, glm::value_ptr(matrix[0])));
     }
 
     void Shader::SetUniformMat4f(const std::string& name, const glm::mat4& matrix) const
     {
-        OGLBindingHelper::BindShader(m_RendererID);
+        OGLContext::BindShader(m_RendererID);
         GLCall(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)));
     }
 

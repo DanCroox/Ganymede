@@ -3,7 +3,7 @@
 #include "Ganymede/Core/Core.h"
 
 #include "VertexDataTypes.h"
-#include "OGLBindingHelper.h"
+#include "OGLContext.h"
 #include "DataBuffer.h"
 
 namespace Ganymede
@@ -66,7 +66,7 @@ namespace Ganymede
 		{
 			const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBuffer.GetVertexDataPrimitiveTypeInfo();
 
-			OGLBindingHelper::BindVertexArrayObject(m_RenderID);
+			OGLContext::BindVertexArrayObject(m_RenderID);
 			dataBuffer.Bind();
 
 			for (const auto& typeInfo : typeInfos)
@@ -85,7 +85,7 @@ namespace Ganymede
 		{
 			const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBufferPtr->GetVertexDataPrimitiveTypeInfo();
 
-			OGLBindingHelper::BindVertexArrayObject(m_RenderID);
+			OGLContext::BindVertexArrayObject(m_RenderID);
 			dataBufferPtr->Bind();
 
 			for (const auto& typeInfo : typeInfos)

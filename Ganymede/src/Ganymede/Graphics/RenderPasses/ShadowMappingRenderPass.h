@@ -46,6 +46,8 @@ namespace Ganymede
 		DataBuffer<ShadowMappingInstanceVertexData>* m_InstanceDataBuffer;
 		std::vector<glm::u32vec1> m_InterInstanceDataIndexBuffer;
 
+		SSBO* ssbo_IndirectDrawCmds;
+
 		glm::mat4 m_PointLightProjectionMatrix;
 		float m_PointLightNearClip;
 		float m_PointLightFarClip;

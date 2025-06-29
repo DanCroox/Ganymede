@@ -7,7 +7,7 @@
 #include "Ganymede/ECS/Components/GCRigidBody.h"
 #include "Ganymede/ECS/Components/GCTransform.h"
 #include "Ganymede/Graphics/DataBuffer.h"
-#include "Ganymede/Graphics/OGLBindingHelper.h"
+#include "Ganymede/Graphics/GPUCommands.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/Shader.h"
 #include "Ganymede/Graphics/ShaderBinary.h"
@@ -17,17 +17,11 @@
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/World/World.h"
-#include "GL/glew.h"
 #include <chrono>
 #include <thread>
 
 namespace Ganymede
 {
-	ComputePass::~ComputePass()
-	{
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-	}
-
 	bool ComputePass::Initialize(RenderContext& renderContext)
 	{
 		ssbo_ComputePassCounters = renderContext.CreateSSBO("ComputePassCounters", 20, sizeof(ComputePassCounters), false);
@@ -41,8 +35,6 @@ namespace Ganymede
 
 		m_FindVisibleEntitiesCompute = renderContext.LoadShader("FindVisibleEntitiesComputeShader", { "res/shaders/Compute/FindVisibleEntitiesComputeShader.shader" });
 		m_GenerateIndirectDrawCommands = renderContext.LoadShader("GenerateIndirectDrawCommands", { "res/shaders/Compute/GenerateIndirectDrawCommands.shader" });
-
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ssbo_IndirectDrawCmds->m_RenderID);
 
 		return true;
 	}
@@ -106,7 +98,8 @@ namespace Ganymede
 			}
 		}
 
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		ssbo_ComputePassCounters->Barrier();
+		ssbo_EntityData->Barrier();
 
 		// Reset all compute counters
 		const glm::uint32 zero = 0;
@@ -114,14 +107,15 @@ namespace Ganymede
 		ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumIndirectCommands), sizeof(glm::uint32), (void*)&zero);
 		ssbo_ComputePassCounters->Write(offsetof(ComputePassCounters, m_NumVisibleEntities), sizeof(glm::uint32), (void*)&zero);
 
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		ssbo_ComputePassCounters->Barrier();
 
 		const unsigned int numComputeThreads = 256;
 		// Find visible entities for all registered views
-		OGLBindingHelper::BindShader(m_FindVisibleEntitiesCompute->GetRendererID());
-		glDispatchCompute((m_NumEntities + numComputeThreads - 1) / numComputeThreads, 1, 1);
+		GPUCommands::Compute::Dispatch(*m_FindVisibleEntitiesCompute, (m_NumEntities + numComputeThreads - 1) / numComputeThreads, 1, 1);
 
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		ssbo_ComputePassCounters->Barrier();
+		ssbo_VisibleEntities->Barrier();
+		ssbo_AppendBuffer->Barrier();
 
 		glm::uint numVisibleEntities;
 		ssbo_ComputePassCounters->Read(offsetof(ComputePassCounters, m_NumVisibleEntities), sizeof(glm::uint32), (void*)&numVisibleEntities);
@@ -146,13 +140,15 @@ namespace Ganymede
 		);
 		ssbo_AppendBuffer->Write(0, numAppends * sizeof(InstanceData), appends.data());
 
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		ssbo_AppendBuffer->Barrier();
 
 		// Generate draw commands based on sorted instances
-		OGLBindingHelper::BindShader(m_GenerateIndirectDrawCommands->GetRendererID());
-		glDispatchCompute((numAppends + numComputeThreads - 1) / numComputeThreads, 1, 1);
+		GPUCommands::Compute::Dispatch(*m_GenerateIndirectDrawCommands, (numAppends + numComputeThreads - 1) / numComputeThreads, 1, 1);
 
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		ssbo_AppendBuffer->Barrier();
+		ssbo_ComputePassCounters->Barrier();
+		ssbo_RenderInfos->Barrier();
+		ssbo_IndirectDrawCmds->Barrier();
 
 		// Receive render command list
 		glm::uint numCommands;
@@ -203,7 +199,5 @@ namespace Ganymede
 
 			++count;
 		}
-
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
 }

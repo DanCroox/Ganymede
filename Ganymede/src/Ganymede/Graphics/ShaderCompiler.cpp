@@ -1,11 +1,8 @@
-#include "ShaderBinary.h"
+#include "ShaderCompiler.h"
 
-#include "Ganymede/Filesystem/File.h"
 #include "Ganymede/Log/Log.h"
 #include "GL/glew.h"
 #include "glm/glm.hpp"
-#include "OGLBindingHelper.h"
-#include "RenderTarget.h"
 #include "SSBO.h"
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
@@ -15,98 +12,43 @@
 
 namespace Ganymede
 {
-    namespace ShaderBinary_Private
+    bool ShaderCompiler::Compile(const std::string& filePath, std::vector<ShaderBinary::Binary>& binaryDataOut)
     {
-        static unsigned int CompileShader(unsigned int type, const std::string& source)
-        {
-            GLCall(unsigned int id = glCreateShader(type));
-            const char* src = source.c_str();
-            GLCall(glShaderSource(id, 1, &src, nullptr));
-            GLCall(glCompileShader(id));
+        ProgramSource source = ParseShader(filePath);
+        const bool compilationSuccess = CompileProgram(source, binaryDataOut);
 
-            int result;
-            GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
-            if (result == GL_FALSE)
-            {
-                int length;
-                GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
-                char* message = (char*)alloca(length * sizeof(char));
-                GLCall(glGetShaderInfoLog(id, length, &length, message));
+        GM_CORE_ASSERT(compilationSuccess, "Shader compilation failed");
 
-                std::string shaderTypeString;
-                if (type == GL_VERTEX_SHADER)
-                {
-                    shaderTypeString = "vertex";
-                }
-                else if (type == GL_FRAGMENT_SHADER)
-                {
-                    shaderTypeString = "fragment";
-                }
-                else if (type == GL_GEOMETRY_SHADER)
-                {
-                    shaderTypeString = "geometry";
-                }
-                else if (type == GL_COMPUTE_SHADER)
-                {
-                    shaderTypeString = "compute";
-                }
-                std::cout << "Failed to compile " << shaderTypeString << "shader!" << std::endl;
-                std::cout << message << std::endl;
-                GLCall(glDeleteShader(id));
-
-                return 0;
-            }
-
-            return id;
-        }
+        return compilationSuccess;
     }
 
-    ShaderBinary::ShaderBinary(const std::string& filepath) : m_FilePath(filepath)
-    {
-        if (File::EndsWith({ filepath }, ".shader"))
-        {
-            // Is source file
-            ProgramSource source = ParseShader(m_FilePath);
-            CompileProgram(source);
-        }
-        else if (File::EndsWith({ filepath }, ".bin"))
-        {
-            // Is binary file
-            GM_CORE_ASSERT(false, "TODO: Implement binary loading");
-        }
-        else
-        {
-            GM_CORE_ASSERT(false, "Unknown file type");
-        }
-    }
-
-    ShaderBinary::ProgramSource ShaderBinary::ParseShader(const std::string& filepath)
+    ShaderCompiler::ProgramSource ShaderCompiler::ParseShader(const std::string& filepath)
     {
         std::ifstream stream(filepath);
         GM_CORE_ASSERT(stream.good(), "Couldn't load shader source from path.");
 
         std::string line;
-        std::stringstream ss[static_cast<int>(ShaderType::_COUNT)];
-        ShaderType type = ShaderType::NONE;
+        std::stringstream ss[static_cast<int>(ShaderBinary::ShaderType::_COUNT)];
+        ShaderBinary::ShaderType type = ShaderBinary::ShaderType::NONE;
         while (getline(stream, line))
         {
             if (line.find("#shader") != std::string::npos)
             {
                 if (line.find("compute") != std::string::npos)
                 {
-                    type = ShaderType::COMPUTE;
+                    type = ShaderBinary::ShaderType::COMPUTE;
                 }
                 else if (line.find("vertex") != std::string::npos)
                 {
-                    type = ShaderType::VERTEX;
+                    type = ShaderBinary::ShaderType::VERTEX;
                 }
                 else if (line.find("fragment") != std::string::npos)
                 {
-                    type = ShaderType::FRAGMENT;
+                    type = ShaderBinary::ShaderType::FRAGMENT;
                 }
                 else if (line.find("geometry") != std::string::npos)
                 {
-                    type = ShaderType::GEOMETRY;
+                    type = ShaderBinary::ShaderType::GEOMETRY;
                 }
             }
             else
@@ -126,7 +68,7 @@ namespace Ganymede
         return { ss[0].str(), ss[1].str(), ss[2].str(), ss[3].str() };
     }
 
-    void ShaderBinary::ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut)
+    void ShaderCompiler::ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut)
     {
         // Parse #include line to find given file and create relative file path
         int selectionStart = line.find("\"");
@@ -161,7 +103,7 @@ namespace Ganymede
         }
     }
 
-    void ShaderBinary::CompileProgram(const ProgramSource& programSource)
+    bool ShaderCompiler::CompileProgram(const ProgramSource& programSource, std::vector<ShaderBinary::Binary>& binaryDataOut)
     {
         const bool hasCS = programSource.ComputeSource.size() > 0;
         const bool hasVS = programSource.VertexSource.size() > 0;
@@ -172,7 +114,7 @@ namespace Ganymede
         {
             // All shaders except compute require a vertex shader
             GM_CORE_ASSERT(false, "No vertex shader found!");
-            return;
+            return false;
         }
 
         unsigned int program = glCreateProgram();
@@ -183,37 +125,45 @@ namespace Ganymede
 
         if (hasCS)
         {
-            cs = ShaderBinary_Private::CompileShader(GL_COMPUTE_SHADER, programSource.ComputeSource);
+            cs = CompileShaderShaderStage(GL_COMPUTE_SHADER, programSource.ComputeSource);
             GLCall(glAttachShader(program, cs));
         }
 
         if (hasVS)
         {
-            vs = ShaderBinary_Private::CompileShader(GL_VERTEX_SHADER, programSource.VertexSource);
+            vs = CompileShaderShaderStage(GL_VERTEX_SHADER, programSource.VertexSource);
             GLCall(glAttachShader(program, vs));
         }
 
         if (hasFS)
         {
-            fs = ShaderBinary_Private::CompileShader(GL_FRAGMENT_SHADER, programSource.FragmentSource);
+            fs = CompileShaderShaderStage(GL_FRAGMENT_SHADER, programSource.FragmentSource);
             GLCall(glAttachShader(program, fs));
         }
 
         if (hasGS)
         {
-            gs = ShaderBinary_Private::CompileShader(GL_GEOMETRY_SHADER, programSource.GeometrySource);
+            gs = CompileShaderShaderStage(GL_GEOMETRY_SHADER, programSource.GeometrySource);
             GLCall(glAttachShader(program, gs));
         }
 
         glProgramParameteri(program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
 
-        GLCall(glLinkProgram(program));
-        GLCall(glValidateProgram(program));
+        glLinkProgram(program);
+        glValidateProgram(program);
+
+        GLint linked = GL_FALSE;
+        glGetProgramiv(program, GL_LINK_STATUS, &linked);
+        if (linked != GL_TRUE)
+        {
+            GM_CORE_ASSERT(linked == GL_TRUE, "Program not properly created/linked.");
+            return false;
+        }
 
         int binaryLength = 0;
         glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, &binaryLength);
 
-        Binary& binary = m_BinaryContainer.emplace_back();
+        ShaderBinary::Binary& binary = binaryDataOut.emplace_back();
         binary.m_Data.resize(binaryLength);
 
         // Binary und Format auslesen
@@ -243,5 +193,50 @@ namespace Ganymede
         {
             GLCall(glDeleteShader(gs));
         }
+
+        return true;
+    }
+
+    unsigned int ShaderCompiler:: CompileShaderShaderStage(unsigned int type, const std::string& source)
+    {
+        GLCall(unsigned int id = glCreateShader(type));
+        const char* src = source.c_str();
+        GLCall(glShaderSource(id, 1, &src, nullptr));
+        GLCall(glCompileShader(id));
+
+        int result;
+        GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
+        if (result == GL_FALSE)
+        {
+            int length;
+            GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
+            char* message = (char*)alloca(length * sizeof(char));
+            GLCall(glGetShaderInfoLog(id, length, &length, message));
+
+            std::string shaderTypeString;
+            if (type == GL_VERTEX_SHADER)
+            {
+                shaderTypeString = "vertex";
+            }
+            else if (type == GL_FRAGMENT_SHADER)
+            {
+                shaderTypeString = "fragment";
+            }
+            else if (type == GL_GEOMETRY_SHADER)
+            {
+                shaderTypeString = "geometry";
+            }
+            else if (type == GL_COMPUTE_SHADER)
+            {
+                shaderTypeString = "compute";
+            }
+            std::cout << "Failed to compile " << shaderTypeString << "shader!" << std::endl;
+            std::cout << message << std::endl;
+            GLCall(glDeleteShader(id));
+
+            return 0;
+        }
+
+        return id;
     }
 }

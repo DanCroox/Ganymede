@@ -98,7 +98,7 @@ namespace Ganymede
 		CubeMapArrayRenderTarget* CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		VertexObject* CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices);
 		SSBO* CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize);
-		Shader* LoadShader(const std::string& name, const ShaderBinary& binary);
+		Shader* LoadShader(const std::string& name, const std::string& shaderFile);
 		
 		template <typename T>
 		DataBuffer<T>* CreateDataBuffer(const std::string& name, typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType)

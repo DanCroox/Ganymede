@@ -9,7 +9,6 @@
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/World/World.h"
 #include "glm/glm.hpp"
-#include "GL/glew.h"
 
 namespace Ganymede
 {
@@ -53,7 +52,7 @@ namespace Ganymede
 			}
 		}
 
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
+		m_EntityDataSSBO->Barrier();
+		m_AnimationDataSSBO->Barrier();
 	}
 }
