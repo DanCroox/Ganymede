@@ -1,4 +1,5 @@
-#include "DataBuffer.h"
+#include "Ganymede/Graphics/DataBuffer.h"
+
 #include "GL/glew.h"
 
 namespace Ganymede
@@ -17,7 +18,7 @@ namespace Ganymede
             }
         }
     }
-    
+
     unsigned int DataBufferNativeFunctions::GenerateBuffer()
     {
         unsigned int renderID;

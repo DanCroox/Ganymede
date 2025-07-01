@@ -1,6 +1,7 @@
-#include "VertexObject.h"
+#include "Ganymede/Graphics/VertexObject.h"
 
-#include "gl/glew.h"
+#include "OGLContext.h"
+#include <GL/glew.h>
 
 namespace Ganymede
 {
@@ -123,16 +124,16 @@ namespace Ganymede
 		m_CurrentVertexAttribPointer(0)
 	{
 		glGenVertexArrays(1, &m_RenderID);
-		OGLContext::BindVertexArrayObject(m_RenderID);
+		OGLContext::BindVertexArrayObject(*this);
 		m_IndexBufferPtr = std::make_unique<VertexObjectIndexBuffer>(indicesData, numIndices);
 		m_IndexBufferPtr->Bind();
-		OGLContext::BindVertexArrayObject(0);
+		OGLContext::UnbindVertexArrayObject();
 		m_IndexBufferPtr->UnBind();
 	}
 
 	VertexObject::~VertexObject()
 	{
-		OGLContext::BindVertexArrayObject(0);
+		OGLContext::UnbindVertexArrayObject();
 		glDeleteVertexArrays(1, &m_RenderID);
 	}
 }

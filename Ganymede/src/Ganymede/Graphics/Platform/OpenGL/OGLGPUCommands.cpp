@@ -1,18 +1,28 @@
-#include "GPUCommands.h"
+#include "Ganymede/Graphics/GPUCommands.h"
 
-#include "RenderTarget.h"
-#include "Shader.h"
+#include "Ganymede/Graphics/RenderTarget.h"
+#include "Ganymede/Graphics/Shader.h"
+#include "Ganymede/Graphics/VertexObject.h"
 #include "OGLContext.h"
-
-#include "GL/glew.h"
+#include <GL/glew.h>
 
 namespace Ganymede
 {
 	namespace GPUCommands
 	{
+		void Rendering::BindShader(const Shader& shader)
+		{
+			OGLContext::BindShader(shader);
+		}
+		
+		void Rendering::BindVertexObject(const VertexObject& vo)
+		{
+			OGLContext::BindVertexArrayObject(vo);
+		}
+
 		void Compute::Dispatch(Shader& shader, unsigned int numWgX, unsigned int numWgY, unsigned int numWgZ)
 		{
-			OGLContext::BindShader(shader.GetRendererID());
+			OGLContext::BindShader(shader);
 			glDispatchCompute(numWgX, numWgY, numWgZ);
 		}
 

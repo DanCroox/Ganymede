@@ -1,8 +1,8 @@
-#include "FrameBuffer.h"
+#include "Ganymede/Graphics/FrameBuffer.h"
 
-#include "RenderTarget.h"
-#include "OGLContext.h"
+#include "Ganymede/Graphics/RenderTarget.h"
 #include "Ganymede/Log/Log.h"
+#include "OGLContext.h"
 #include <GL/glew.h>
 
 namespace Ganymede
@@ -49,7 +49,7 @@ namespace Ganymede
 		}
 
 		static void BindFrameBufferTexture(FrameBuffer::AttachmentType attachmentType, const RenderTarget& renderTarget)
-			{
+		{
 			// Could be a faster approach to dynamic casts but sicne setting framebuffer should (hopefully) never used in per-frame operations
 			// speed should not matter too much here.
 			if (dynamic_cast<const SinglesampleRenderTarget*>(&renderTarget) != nullptr)
@@ -87,7 +87,7 @@ namespace Ganymede
 		glGenFramebuffers(1, &m_RenderID);
 		GM_CORE_ASSERT(m_RenderID != 0, "Couldn't create framebuffer.");
 	}
-	
+
 	FrameBuffer::~FrameBuffer()
 	{
 		OGLContext::UnbindFrameBuffer();

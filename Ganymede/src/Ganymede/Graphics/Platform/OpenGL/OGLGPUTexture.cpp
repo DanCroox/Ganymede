@@ -1,7 +1,7 @@
-#include "GPUTexture.h"
+#include "Ganymede/Graphics/GPUTexture.h"
 
-#include "Texture.h"
-#include "GL/glew.h"
+#include "Ganymede/Graphics/Texture.h"
+#include <GL/glew.h>
 
 namespace Ganymede
 {
@@ -54,7 +54,7 @@ namespace Ganymede
 		{
 			GM_CORE_ASSERT(false, "Unsupported number of channels in texture");
 		}
-		
+
 		glTexImage2D(GL_TEXTURE_2D, 0, internalType, texture.GetWidth(), texture.GetHeight(), 0, type, dataFormat, texture.GetBytes().data());
 
 		// Enable mipmapping

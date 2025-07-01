@@ -1,13 +1,13 @@
-#include "GPUDebugHandler.h"
+#include "Ganymede/Graphics/GPUDebugHandler.h"
 
-#include "gl/glew.h"
+#include <GL/glew.h>
 
 namespace Ganymede
 {
     void glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity,
         GLsizei length, const GLchar* message, const void* userParam) {
         if (id == 131185) return;
-        if(severity != GL_DEBUG_SEVERITY_HIGH) return;
+        if (severity != GL_DEBUG_SEVERITY_HIGH) return;
 
         std::cerr << "---- OpenGL Debug Message ----\n";
         std::cerr << "Nachricht: " << message << "\n";
@@ -46,33 +46,33 @@ namespace Ganymede
 
     bool GPUDebugHandler::m_IsEnabled = false;
 
-	void GPUDebugHandler::Enable()
-	{
+    void GPUDebugHandler::Enable()
+    {
         if (m_IsEnabled)
         {
             GM_CORE_ASSERT(false, "Already enabled.");
             return;
         }
 
-		glDebugMessageCallback(glDebugOutput, nullptr);
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(glDebugOutput, nullptr);
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
         m_IsEnabled = true;
-	}
+    }
 
-	void GPUDebugHandler::Disable()
-	{
+    void GPUDebugHandler::Disable()
+    {
         if (!m_IsEnabled)
         {
             GM_CORE_ASSERT(false, "Already disabled.");
             return;
         }
 
-		glDisable(GL_DEBUG_OUTPUT);
-		glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDisable(GL_DEBUG_OUTPUT);
+        glDisable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
         glDebugMessageCallback(nullptr, nullptr);
 
         m_IsEnabled = false;
-	}
+    }
 }

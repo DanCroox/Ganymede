@@ -1,6 +1,7 @@
 #include "RenderContext.h"
 
 #include "Ganymede/Data/StaticData.h"
+#include "Ganymede/Graphics/GPUCommands.h"
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
@@ -160,7 +161,7 @@ namespace Ganymede
                 ++nextTextureSlot;
             }
 
-            OGLContext::BindShader(shader.GetRendererID());
+            GPUCommands::Rendering::BindShader(shader);
         }
     }
 

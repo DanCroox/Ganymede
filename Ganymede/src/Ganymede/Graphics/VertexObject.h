@@ -2,9 +2,9 @@
 
 #include "Ganymede/Core/Core.h"
 
-#include "VertexDataTypes.h"
-#include "OGLContext.h"
 #include "DataBuffer.h"
+#include "GPUCommands.h"
+#include "VertexDataTypes.h"
 
 namespace Ganymede
 {
@@ -65,8 +65,7 @@ namespace Ganymede
 		void LinkBuffer(DataBuffer<T>& dataBuffer, bool isMultiInstanceDataBuffer = false)
 		{
 			const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBuffer.GetVertexDataPrimitiveTypeInfo();
-
-			OGLContext::BindVertexArrayObject(m_RenderID);
+			GPUCommands::Rendering::BindVertexObject(*this);
 			dataBuffer.Bind();
 
 			for (const auto& typeInfo : typeInfos)
@@ -84,8 +83,7 @@ namespace Ganymede
 		void LinkAndOwnBuffer(std::unique_ptr<T> dataBufferPtr, bool isMultiInstanceDataBuffer = false)
 		{
 			const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBufferPtr->GetVertexDataPrimitiveTypeInfo();
-
-			OGLContext::BindVertexArrayObject(m_RenderID);
+			GPUCommands::Rendering::BindVertexObject(*this);
 			dataBufferPtr->Bind();
 
 			for (const auto& typeInfo : typeInfos)
@@ -103,7 +101,7 @@ namespace Ganymede
 	private:
 		void AddVertexAttribPointer(unsigned int numComponents, VertexDataPrimitiveType primitiveType, unsigned int stride, unsigned int byteOffset, unsigned int divisor);
 
-		unsigned int m_RenderID;
+		unsigned int m_RenderID = 0;
 		unsigned int m_CurrentVertexAttribPointer;
 		std::unique_ptr<VertexObjectIndexBuffer> m_IndexBufferPtr;
 		std::vector<std::unique_ptr<DataBufferBase>> m_LinkedBuffers;

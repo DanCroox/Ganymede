@@ -1,8 +1,7 @@
-#include "RenderTarget.h"
+#include "Ganymede/Graphics/RenderTarget.h"
 
 #include "OGLContext.h"
-
-#include "GL/glew.h"
+#include <GL/glew.h>
 
 namespace Ganymede
 {

@@ -1,6 +1,6 @@
-#include "SSBO.h"
-#include "OGLContext.h"
+#include "Ganymede/Graphics/SSBO.h"
 
+#include "OGLContext.h"
 #include <GL/glew.h>
 
 namespace Ganymede

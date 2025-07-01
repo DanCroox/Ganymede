@@ -6,7 +6,9 @@
 namespace Ganymede
 {
 	class FrameBuffer;
+	class Shader;
 	class SSBO;
+	class VertexObject;
 
 	namespace RenderTargetTypes
 	{
@@ -28,9 +30,11 @@ namespace Ganymede
 
 		static void BindFrameBuffer(const FrameBuffer& frameBuffer);
 		static void UnbindFrameBuffer();
-		static void BindShader(unsigned int renderID);
-		static void BindVertexArrayObject(unsigned int renderID);
+		static void BindShader(const Shader& shader);
+		static void BindVertexArrayObject(const VertexObject& vo);
 		static void BindIndirectDrawBuffer(SSBO& buffer);
+
+		static void UnbindVertexArrayObject();
 
 		static int ToNativeInternalFormat(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision);
 		static int ToNativeDataType(RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision);

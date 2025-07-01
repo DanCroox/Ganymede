@@ -5,9 +5,16 @@ namespace Ganymede
 {
 	class RenderTarget;
 	class Shader;
+	class VertexObject;
 
 	namespace GPUCommands
 	{
+		namespace Rendering
+		{
+			void BindShader(const Shader& shader);
+			void BindVertexObject(const VertexObject& vo);
+		}
+
 		namespace Compute
 		{
 			GANYMEDE_API void Dispatch(Shader& shader, unsigned int numWgX, unsigned int numWgY, unsigned int numWgZ);

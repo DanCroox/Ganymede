@@ -1,9 +1,10 @@
 #include "OGLContext.h"
 
-#include "FrameBuffer.h"
-#include "gl/glew.h"
-#include "RenderTarget.h"
-#include "SSBO.h"
+#include "Ganymede/Graphics/FrameBuffer.h"
+#include "Ganymede/Graphics/RenderTarget.h"
+#include "Ganymede/Graphics/SSBO.h"
+#include "Ganymede/Graphics/VertexObject.h"
+#include <GL/glew.h>
 
 namespace Ganymede
 {
@@ -43,26 +44,28 @@ namespace Ganymede
 		m_BoundFrameBuffer = 0;
 	}
 
-	void OGLContext::BindShader(unsigned int renderID)
+	void OGLContext::BindShader(const Shader& shader)
 	{
-		if (renderID == m_BoundShader)
+		const unsigned int rendererID = shader.GetRendererID();
+		if (rendererID == m_BoundShader)
 		{
 			return;
 		}
 
-		glUseProgram(renderID);
-		m_BoundShader = renderID;
+		glUseProgram(rendererID);
+		m_BoundShader = rendererID;
 	}
 
-	void OGLContext::BindVertexArrayObject(unsigned int renderID)
+	void OGLContext::BindVertexArrayObject(const VertexObject& vo)
 	{
-		if (renderID == m_BoundVertexArrayObject)
+		const unsigned int rendererID = vo.GetRenderID();
+		if (rendererID == m_BoundVertexArrayObject)
 		{
 			return;
 		}
 
-		glBindVertexArray(renderID);
-		m_BoundVertexArrayObject = renderID;
+		glBindVertexArray(rendererID);
+		m_BoundVertexArrayObject = rendererID;
 	}
 
 	void OGLContext::BindIndirectDrawBuffer(SSBO& buffer)
@@ -76,6 +79,17 @@ namespace Ganymede
 
 		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, bufferRenderID);
 		m_BoundIndirectDrawBuffer = bufferRenderID;
+	}
+
+	void OGLContext::UnbindVertexArrayObject()
+	{
+		if (m_BoundVertexArrayObject == 0)
+		{
+			return;
+		}
+
+		glBindVertexArray(0);
+		m_BoundVertexArrayObject = 0;
 	}
 
 	int OGLContext::ToNativeInternalFormat(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision)

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Ganymede/Core/Core.h"
-#include "OGLContext.h"
 #include "VertexDataTypes.h"
 
 namespace Ganymede
