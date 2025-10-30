@@ -27,7 +27,10 @@ namespace Ganymede
 	class GANYMEDE_API DataBufferBase
 	{
 	public:
-		virtual ~DataBufferBase() { DataBufferNativeFunctions::DeleteBuffer(m_RenderID); }
+		virtual ~DataBufferBase()
+		{
+			DataBufferNativeFunctions::DeleteBuffer(m_RenderID);
+		}
 
 		void Bind()
 		{

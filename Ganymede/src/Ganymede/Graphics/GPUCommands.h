@@ -1,5 +1,6 @@
 #pragma once
 #include "Ganymede/Core/Core.h"
+#include "Ganymede/Graphics/FrameBuffer.h"
 
 namespace Ganymede
 {
@@ -32,6 +33,11 @@ namespace Ganymede
 				unsigned int extendY,
 				unsigned int extendDepth,
 				const void* pixelDataBytes);
+		}
+
+		namespace FrameBufferCommands
+		{
+			void Blit(const FrameBuffer::BlitFrameBufferConfig& blitConfig);
 		}
 	};
 }

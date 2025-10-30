@@ -1,16 +1,17 @@
 #include "GeometryRenderPass.h"
 
 #include "Ganymede/Common/Helpers.h"
-#include "Ganymede/ECS/Components/GCRenderObject.h"
+#include "Ganymede/Data/StaticData.h"
 #include "Ganymede/ECS/Components/GCGPUMeshData.h"
+#include "Ganymede/ECS/Components/GCRenderObject.h"
 #include "Ganymede/Graphics/FrameBuffer.h"
+#include "Ganymede/Graphics/GPUCommands.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/RenderTarget.h"
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Graphics/VertexDataTypes.h"
 #include "Ganymede/Graphics/VertexObject.h"
 #include "Ganymede/Player/FPSCamera.h"
-#include "Ganymede/Data/StaticData.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
 
@@ -85,6 +86,6 @@ namespace Ganymede
 			renderer.DrawIndirect(voPtr, *ssbo_IndirectDrawCmds, renderInfo.m_IndirectCommandIndex, *m_FrameBufferMS, material, true);
 		}
 
-		FrameBuffer::Blit(m_MultiToSingleSampleBlitFBConfig);
+		GPUCommands::FrameBufferCommands::Blit(m_MultiToSingleSampleBlitFBConfig);
 	}
 }

@@ -5,10 +5,10 @@
 
 namespace Ganymede
 {
-	class FrameBuffer;
+	class OGLFrameBuffer;
+	class OGLSSBO;
+	class OGLVertexObject;
 	class Shader;
-	class SSBO;
-	class VertexObject;
 
 	namespace RenderTargetTypes
 	{
@@ -28,11 +28,11 @@ namespace Ganymede
 			Draw
 		};
 
-		static void BindFrameBuffer(const FrameBuffer& frameBuffer);
+		static void BindFrameBuffer(const OGLFrameBuffer& frameBuffer);
 		static void UnbindFrameBuffer();
 		static void BindShader(const Shader& shader);
-		static void BindVertexArrayObject(const VertexObject& vo);
-		static void BindIndirectDrawBuffer(SSBO& buffer);
+		static void BindVertexArrayObject(const OGLVertexObject& vo);
+		static void BindIndirectDrawBuffer(OGLSSBO& buffer);
 
 		static void UnbindVertexArrayObject();
 

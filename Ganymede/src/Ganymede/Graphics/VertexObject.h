@@ -8,38 +8,19 @@
 
 namespace Ganymede
 {
-	class GANYMEDE_API VertexObjectIndexBuffer
-	{
-	public:
-		VertexObjectIndexBuffer(const unsigned int* indicesData, unsigned int numIndices);
-		~VertexObjectIndexBuffer();
-
-		void Bind();
-		void UnBind();
-
-		inline unsigned int GetNumIndices() const { return m_NumIndices; }
-
-	private:
-		unsigned int m_RenderID = 0;
-		unsigned int m_NumIndices;
-	};
-
 	class GANYMEDE_API VertexObject
 	{
 	public:
 		VertexObject() = default;
-		VertexObject(const unsigned int* indicesData, unsigned int numIndices);
-		~VertexObject();
+		VertexObject(const unsigned int* indicesData, unsigned int numIndices) {};
+		virtual ~VertexObject() {};
 
 		VertexObject(const VertexObject&) = delete;
 		VertexObject& operator=(const VertexObject&) = delete;
 
 		VertexObject(VertexObject&& other) noexcept :
-			m_RenderID(other.m_RenderID),
-			m_CurrentVertexAttribPointer(other.m_CurrentVertexAttribPointer),
-			m_IndexBufferPtr(std::move(other.m_IndexBufferPtr))
+			m_CurrentVertexAttribPointer(other.m_CurrentVertexAttribPointer)
 		{
-			other.m_RenderID = 0;
 			other.m_CurrentVertexAttribPointer = 0;
 		}
 
@@ -47,19 +28,14 @@ namespace Ganymede
 		{
 			if (this != &other)
 			{
-				m_RenderID = other.m_RenderID;
 				m_CurrentVertexAttribPointer = other.m_CurrentVertexAttribPointer;
-				m_IndexBufferPtr = std::move(other.m_IndexBufferPtr);
-
-				other.m_RenderID = 0;
 				other.m_CurrentVertexAttribPointer = 0;
 			}
 			return *this;
 		}
 
-		inline unsigned int GetRenderID() const { return m_RenderID; }
-
-		inline bool IsValid() const { return m_RenderID != 0; }
+		virtual unsigned int GetRenderID() const = 0;
+		virtual bool IsValid() const = 0;
 
 		template <typename T>
 		void LinkBuffer(DataBuffer<T>& dataBuffer, bool isMultiInstanceDataBuffer = false)
@@ -96,14 +72,10 @@ namespace Ganymede
 			m_LinkedBuffers.push_back(std::move(dataBufferPtr));
 		}
 
-		inline const VertexObjectIndexBuffer& GetVertexObjectIndexBuffer() const { return *m_IndexBufferPtr; }
+	protected:
+		virtual void AddVertexAttribPointer(unsigned int numComponents, VertexDataPrimitiveType primitiveType, unsigned int stride, unsigned int byteOffset, unsigned int divisor) = 0;
 
-	private:
-		void AddVertexAttribPointer(unsigned int numComponents, VertexDataPrimitiveType primitiveType, unsigned int stride, unsigned int byteOffset, unsigned int divisor);
-
-		unsigned int m_RenderID = 0;
-		unsigned int m_CurrentVertexAttribPointer;
-		std::unique_ptr<VertexObjectIndexBuffer> m_IndexBufferPtr;
+		unsigned int m_CurrentVertexAttribPointer = 0;
 		std::vector<std::unique_ptr<DataBufferBase>> m_LinkedBuffers;
 	};
 }

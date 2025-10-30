@@ -1,4 +1,4 @@
-#include "Ganymede/Graphics/VertexObject.h"
+#include "Ganymede/Graphics/Platform/OpenGL/OGLVertexObject.h"
 
 #include "OGLContext.h"
 #include <GL/glew.h>
@@ -59,7 +59,7 @@ namespace Ganymede
 		}
 	}
 
-	VertexObjectIndexBuffer::VertexObjectIndexBuffer(const unsigned int* indicesData, unsigned int numIndices) :
+	OGLVertexObjectIndexBuffer::OGLVertexObjectIndexBuffer(const unsigned int* indicesData, unsigned int numIndices) :
 		m_NumIndices(numIndices)
 	{
 		glGenBuffers(1, &m_RenderID);
@@ -69,7 +69,7 @@ namespace Ganymede
 		UnBind();
 	}
 
-	VertexObjectIndexBuffer::~VertexObjectIndexBuffer()
+	OGLVertexObjectIndexBuffer::~OGLVertexObjectIndexBuffer()
 	{
 		if (m_RenderID != 0)
 		{
@@ -77,17 +77,17 @@ namespace Ganymede
 		}
 	}
 
-	void VertexObjectIndexBuffer::Bind()
+	void OGLVertexObjectIndexBuffer::Bind()
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID);
 	}
 
-	void VertexObjectIndexBuffer::UnBind()
+	void OGLVertexObjectIndexBuffer::UnBind()
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	void VertexObject::AddVertexAttribPointer(unsigned int numComponents, VertexDataPrimitiveType primitiveType, unsigned int stride, unsigned int byteOffset, unsigned int divisor)
+	void OGLVertexObject::AddVertexAttribPointer(unsigned int numComponents, VertexDataPrimitiveType primitiveType, unsigned int stride, unsigned int byteOffset, unsigned int divisor)
 	{
 		using namespace VertexObject_Private;
 
@@ -119,19 +119,18 @@ namespace Ganymede
 		}
 	}
 
-	VertexObject::VertexObject(const unsigned int* indicesData, unsigned int numIndices) :
-		m_RenderID(0),
-		m_CurrentVertexAttribPointer(0)
+	OGLVertexObject::OGLVertexObject(const unsigned int* indicesData, unsigned int numIndices) :
+		m_RenderID(0)
 	{
 		glGenVertexArrays(1, &m_RenderID);
 		OGLContext::BindVertexArrayObject(*this);
-		m_IndexBufferPtr = std::make_unique<VertexObjectIndexBuffer>(indicesData, numIndices);
+		m_IndexBufferPtr = std::make_unique<OGLVertexObjectIndexBuffer>(indicesData, numIndices);
 		m_IndexBufferPtr->Bind();
 		OGLContext::UnbindVertexArrayObject();
 		m_IndexBufferPtr->UnBind();
 	}
 
-	VertexObject::~VertexObject()
+	OGLVertexObject::~OGLVertexObject()
 	{
 		OGLContext::UnbindVertexArrayObject();
 		glDeleteVertexArrays(1, &m_RenderID);

@@ -4,7 +4,9 @@
 #include "Ganymede/Graphics/Material.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/Shader.h"
-#include "Ganymede/Graphics/SSBO.h"
+#include "OGLSSBO.h"
+#include "OGLFrameBuffer.h"
+#include "OGLVertexObject.h"
 #include "Ganymede/Graphics/VertexObject.h"
 #include "OGLContext.h"
 #include <GL/glew.h>
@@ -23,7 +25,7 @@ namespace Ganymede
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
 		OGLContext::BindShader(shader);
 
-		glDrawElementsInstanced(GL_TRIANGLES, vertexObject.GetVertexObjectIndexBuffer().GetNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
+		glDrawElementsInstanced(GL_TRIANGLES, static_cast<OGLVertexObject&>(vertexObject).GetVertexObjectIndexBuffer().GetNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
 	}
 
 	void Renderer::DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Material& material, bool doDepthTest)
@@ -31,7 +33,7 @@ namespace Ganymede
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
 
 		m_RenderContext.BindMaterial(material);
-		OGLContext::BindIndirectDrawBuffer(indirectCommandsBuffer);
+		OGLContext::BindIndirectDrawBuffer(static_cast<OGLSSBO&>(indirectCommandsBuffer));
 
 		const unsigned int byteOffset = commandOffset * 20;
 		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)byteOffset);
@@ -42,7 +44,7 @@ namespace Ganymede
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
 
 		OGLContext::BindShader(shader);
-		OGLContext::BindIndirectDrawBuffer(indirectCommandsBuffer);
+		OGLContext::BindIndirectDrawBuffer(static_cast<OGLSSBO&>(indirectCommandsBuffer));
 
 		const unsigned int byteOffset = commandOffset * 20;
 		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)byteOffset);
@@ -69,7 +71,7 @@ namespace Ganymede
 			return;
 		}
 
-		OGLContext::BindFrameBuffer(frameBuffer);
+		OGLContext::BindFrameBuffer(static_cast<const OGLFrameBuffer&>(frameBuffer));
 		glClear(flags);
 	}
 
@@ -77,8 +79,8 @@ namespace Ganymede
 	{
 		GM_CORE_ASSERT(m_ViewportDimension.x == 0 || m_ViewportDimension.y == 0, "Invalid viewport size (0x0 pixels).");
 
-		OGLContext::BindFrameBuffer(frameBuffer);
-		OGLContext::BindVertexArrayObject(vertexObject);
+		OGLContext::BindFrameBuffer(static_cast<const OGLFrameBuffer&>(frameBuffer));
+		OGLContext::BindVertexArrayObject(static_cast<const OGLVertexObject&>(vertexObject));
 
 		if (doDepthTest != m_DoDepthTesting)
 		{

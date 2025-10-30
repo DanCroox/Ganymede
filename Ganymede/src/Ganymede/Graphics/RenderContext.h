@@ -67,18 +67,10 @@ namespace Ganymede
 	class GANYMEDE_API RenderContext
 	{
 	public:
-		template <typename T>
-		struct RenderData
-		{
-			VertexObject m_VO;
-			Material* m_Material;
-			std::vector<T> m_Instances;
-		};
-
 		struct CachedVertexObject
 		{
 			float m_LastAccessTime;
-			VertexObject m_VertexObject;
+			std::unique_ptr<VertexObject> m_VertexObject;
 		};
 
 		RenderContext(const RenderContext&) = delete;
@@ -161,7 +153,6 @@ namespace Ganymede
 		void UnloadShader(const std::string& name);
 		void DeleteDataBuffer(const std::string& name);
 
-		std::vector<std::optional<VertexObject>> m_VertexObjectStorage;
 		RenderCommandQueue m_CubemapShadowMappingCommandQueue;
 		std::vector<std::int32_t> m_InstanceIDToGBufferInstanceDataIndexLookup;
 		std::vector<std::int32_t> m_InstanceIDToCubemapShadowMappingInstanceDataIndexLookup;
@@ -186,12 +177,12 @@ namespace Ganymede
 
 		Renderer m_Renderer;
 
-		std::unordered_map<std::string, FrameBuffer> m_FrameBuffers;
+		std::unordered_map<std::string, std::unique_ptr<FrameBuffer>> m_FrameBuffers;
 		std::unordered_map<std::string, SinglesampleRenderTarget> m_SingleSampleRenderTargets;
 		std::unordered_map<std::string, MultisampleRenderTarget> m_MultiSampleRenderTargets;
 		std::unordered_map<std::string, CubeMapArrayRenderTarget> m_CubeMapArrayRenderTargets;
-		std::unordered_map<std::string, VertexObject> m_VertexObjects;
-		std::unordered_map<std::string, SSBO> m_SSBOs;
+		std::unordered_map<std::string, std::unique_ptr<VertexObject>> m_VertexObjects;
+		std::unordered_map<std::string, std::unique_ptr<SSBO>> m_SSBOs;
 		std::unordered_map<std::string, Shader> m_Shaders;
 		std::unordered_map<std::string, std::pair<ClassID, void*>> m_DataBuffers;
 		

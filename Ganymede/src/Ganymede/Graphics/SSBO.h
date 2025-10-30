@@ -1,39 +1,30 @@
 #pragma once
 
-#include "Ganymede/Core/Core.h"
-
 namespace Ganymede
 {
-	class GANYMEDE_API SSBO
+	class SSBO
 	{
 	public:
-		SSBO(unsigned int bindingPointID, unsigned int bufferSize, bool autoResize);
-		~SSBO();
+		SSBO() = delete;
 
-		unsigned int GetBindingPointID() const { return m_BindingPointID; }
-		void Write(unsigned int offset, unsigned int byteCount, void* data);
+		SSBO(unsigned int bindingPointID, unsigned int bufferSize, bool autoResize) :
+		m_BindingPointID(bindingPointID),
+			m_BufferSize(bufferSize),
+			m_AutoResize(autoResize)
+		{}
 
-		void Read(unsigned int offset, unsigned int byteCount, void* dataOut);
+		virtual ~SSBO() = default;
 
-		inline bool IsValid() const { return m_RenderID != 0; }
+		virtual void Write(unsigned int offset, unsigned int byteCount, void* data) = 0;
+		virtual void Read(unsigned int offset, unsigned int byteCount, void* dataOut) = 0;
+		virtual bool IsValid() const = 0;
+		virtual void Barrier() = 0;
 
 		size_t GetSize() const { return m_BufferSize; }
 
-		void Barrier();
-
-		char* m_DirectAccessBuffer = nullptr;
-		unsigned int m_RenderID;
-	private:
-		void CreateBuffer(size_t bufferSize);
-		void MapBuffer();
-		void UnmapBuffer();
-		void DeleteBuffer();
-		void ResizeBuffer(size_t newSize);
-
-
-		size_t m_BufferSize;
+	protected:
 		unsigned int m_BindingPointID;
+		size_t m_BufferSize;
 		bool m_AutoResize;
-
 	};
 }

@@ -1,9 +1,9 @@
 #include "OGLContext.h"
 
-#include "Ganymede/Graphics/FrameBuffer.h"
+#include "OGLFrameBuffer.h"
 #include "Ganymede/Graphics/RenderTarget.h"
-#include "Ganymede/Graphics/SSBO.h"
-#include "Ganymede/Graphics/VertexObject.h"
+#include "OGLSSBO.h"
+#include "OGLVertexObject.h"
 #include <GL/glew.h>
 
 namespace Ganymede
@@ -14,7 +14,7 @@ namespace Ganymede
 	unsigned int OGLContext::m_BoundIndirectDrawBuffer = 0;
 	glm::u32vec2 OGLContext::m_CurrentViewportDimension = {0, 0};
 	
-	void OGLContext::BindFrameBuffer(const FrameBuffer& frameBuffer)
+	void OGLContext::BindFrameBuffer(const OGLFrameBuffer& frameBuffer)
 	{
 		const unsigned int renderID = frameBuffer.GetRenderID();
 		if (renderID == m_BoundFrameBuffer)
@@ -56,7 +56,7 @@ namespace Ganymede
 		m_BoundShader = rendererID;
 	}
 
-	void OGLContext::BindVertexArrayObject(const VertexObject& vo)
+	void OGLContext::BindVertexArrayObject(const OGLVertexObject& vo)
 	{
 		const unsigned int rendererID = vo.GetRenderID();
 		if (rendererID == m_BoundVertexArrayObject)
@@ -68,9 +68,9 @@ namespace Ganymede
 		m_BoundVertexArrayObject = rendererID;
 	}
 
-	void OGLContext::BindIndirectDrawBuffer(SSBO& buffer)
+	void OGLContext::BindIndirectDrawBuffer(OGLSSBO& buffer)
 	{
-		const unsigned int bufferRenderID = buffer.m_RenderID;
+		const unsigned int bufferRenderID = buffer.GetRenderID();
 
 		if (bufferRenderID == m_BoundIndirectDrawBuffer)
 		{

@@ -5,6 +5,7 @@
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
+#include "Platform/GraphicsFactory.h"
 #include "ShaderCompiler.h"
 #include "ShaderLoader.h"
 #include "Texture.h"
@@ -28,9 +29,9 @@ namespace Ganymede
 
     FrameBuffer* RenderContext::CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer)
     {
-        auto [it, inserted] = m_FrameBuffers.try_emplace(name, renderDimension, isHardwareBuffer);
+        auto [it, inserted] = m_FrameBuffers.try_emplace(name, GraphicsFactory::CreateFrameBuffer(renderDimension, isHardwareBuffer));
         GM_CORE_ASSERT(inserted, "Tried to create framebuffer which already existed. Using from cache.");
-        FrameBuffer* ptr = &it->second;
+        FrameBuffer* ptr = it->second.get();
         if (!ptr->IsValid())
         {
             m_FrameBuffers.erase(name);
@@ -84,9 +85,9 @@ namespace Ganymede
 
     VertexObject* RenderContext::CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices)
     {
-        auto [it, inserted] = m_VertexObjects.try_emplace(name, indicesData, numIndices);
+        auto [it, inserted] = m_VertexObjects.try_emplace(name, GraphicsFactory::CreateVertexObject(indicesData, numIndices));
         GM_CORE_ASSERT(inserted, "Tried to create VertexBbject which already existed. Using from cache.");
-        VertexObject* ptr = &it->second;
+        VertexObject* ptr = it->second.get();
         if (!ptr->IsValid())
         {
             m_VertexObjects.erase(name);
@@ -98,16 +99,11 @@ namespace Ganymede
 
     SSBO* RenderContext::CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize)
     {
-        auto [it, inserted] = m_SSBOs.try_emplace(name, bindingID, numBytes, autoResize);
+        auto [it, inserted] = m_SSBOs.try_emplace(name, GraphicsFactory::CreateSSBO(bindingID, numBytes, autoResize));
         GM_CORE_ASSERT(inserted, "Tried to create ssbo which already existed. Using from cache.");
-        SSBO* ptr = &it->second;
-        if (!ptr->IsValid())
-        {
-            m_SSBOs.erase(name);
-            GM_CORE_ASSERT(false, "SSBO is invalid.");
-            return nullptr;
-        }
-        return ptr;
+        std::unique_ptr<SSBO>* ptr = &it->second;
+
+        return ptr->get();
     }
 
     Shader* RenderContext::LoadShader(const std::string& name, const std::string& shaderFile)
@@ -173,7 +169,7 @@ namespace Ganymede
             GM_CORE_ASSERT(false, "Framebuffer does not exist.");
             return nullptr;
         }
-        return &it->second;
+        return it->second.get();
     }
 
     SinglesampleRenderTarget* RenderContext::GetSingleSampleRenderTarget(const std::string& name)
@@ -217,7 +213,7 @@ namespace Ganymede
             GM_CORE_ASSERT(false, "VertexObject does not exist.");
             return nullptr;
         }
-        return &it->second;
+        return it->second.get();
     }
 
     SSBO* RenderContext::GetSSBO(const std::string& name)
@@ -228,7 +224,7 @@ namespace Ganymede
             GM_CORE_ASSERT(false, "SSBO does not exist.");
             return nullptr;
         }
-        return &it->second;
+        return it->second.get();
     }
 
     Shader* RenderContext::GetShader(const std::string& name)
@@ -303,19 +299,19 @@ namespace Ganymede
     const VertexObject& RenderContext::GetVO(MeshWorldObject::Mesh& mesh)
     {
         CachedVertexObject& cvo = m_VertexObjectCache[mesh.m_MeshID];
-        if (cvo.m_VertexObject.IsValid())
+        if (cvo.m_VertexObject.get() != nullptr)
         {
             cvo.m_LastAccessTime = GMTime::s_Time;
-            return cvo.m_VertexObject;
+            return *cvo.m_VertexObject.get();
         }
         else
         {
-            VertexObject vo(&mesh.m_VertexIndicies[0], mesh.m_VertexIndicies.size());
+            std::unique_ptr<VertexObject> voUPtr = GraphicsFactory::CreateVertexObject(&mesh.m_VertexIndicies[0], mesh.m_VertexIndicies.size());
             std::unique_ptr<DataBuffer<MeshVertexData>> bufferptr = std::make_unique<DataBuffer<MeshVertexData>>(&mesh.m_Vertices[0], mesh.m_Vertices.size(), DataBufferType::Static);
-            vo.LinkAndOwnBuffer(std::move(bufferptr));
+            voUPtr->LinkAndOwnBuffer(std::move(bufferptr));
             m_VertexObjectCache[mesh.m_MeshID].m_LastAccessTime = GMTime::s_Time;
-            m_VertexObjectCache[mesh.m_MeshID].m_VertexObject = std::move(vo);
-            return m_VertexObjectCache[mesh.m_MeshID].m_VertexObject;
+            m_VertexObjectCache[mesh.m_MeshID].m_VertexObject = std::move(voUPtr);
+            return *m_VertexObjectCache[mesh.m_MeshID].m_VertexObject.get();
         }
     }
 }

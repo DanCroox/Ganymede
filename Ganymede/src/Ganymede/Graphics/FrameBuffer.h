@@ -31,35 +31,15 @@ namespace Ganymede
 				Depth
 			};
 
-			FrameBuffer() = delete;
-			FrameBuffer(glm::u32vec2 renderDimension, bool isHardWareFrameBuffer);
-			~FrameBuffer();
-
-			unsigned int GetRenderID() const { return m_RenderID; }
-
-			void SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture);
-
-			void SetColorBufferClearColor(const glm::vec4& color) { m_ColorBufferClearColor = color; }
-			const glm::vec4& GetColorBufferClearColor() const { return m_ColorBufferClearColor; }
-
-			void SetDepthBufferClearColor(float color) { m_DepthBufferClearColor = color; }
-			float GetDepthBufferClearColor() const { return m_DepthBufferClearColor; }
-
-			void SetRenderDimension(glm::u32vec2 dimension) { m_RenderDimension = dimension; }
-			glm::u32vec2 GetRenderDimension() const { return m_RenderDimension; }
-
-			const std::unordered_map<AttachmentType, RenderTarget*>& GetFrameBufferAttachments() const { return m_FrameBufferAttachments; }
-
-			inline bool IsValid() const { return m_IsHardwareFrameBuffer || m_RenderID != 0; }
-
 			enum class BlitFilterType
 			{
 				Linear,
 				Nearest
 			};
 
-			struct BlitFrameBufferConfig
+			class BlitFrameBufferConfig
 			{
+			public:
 				struct BlitAttachementInfo
 				{
 					FrameBuffer& m_SourceFrameBuffer;
@@ -74,18 +54,20 @@ namespace Ganymede
 				std::vector<BlitAttachementInfo> m_AttachementsToBlit;
 			};
 
-			static void Blit(const BlitFrameBufferConfig& blitConfig);
+			FrameBuffer() = delete;
 
-		private:
-			void UpdateActiveDrawBufferAttachments();
+			FrameBuffer(glm::u32vec2 renderDimension, bool isHardWareFrameBuffer) {};
+			virtual ~FrameBuffer() = default;
 
-			bool m_IsHardwareFrameBuffer;
-			unsigned int m_RenderID;
+			virtual void SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture) = 0;
+			virtual void SetColorBufferClearColor(const glm::vec4& color) = 0;
+			virtual void SetDepthBufferClearColor(float color) = 0;
 
-			glm::u32vec2 m_RenderDimension;
+			virtual const std::unordered_map<AttachmentType, RenderTarget*>& GetFrameBufferAttachments() const = 0;
+			virtual glm::u32vec2 GetRenderDimension() const = 0;
+			virtual const glm::vec4& GetColorBufferClearColor() const = 0;
+			virtual float GetDepthBufferClearColor() const = 0;
 
-			std::unordered_map<AttachmentType, RenderTarget*> m_FrameBufferAttachments;
-			glm::vec4 m_ColorBufferClearColor;
-			float m_DepthBufferClearColor;
+			virtual bool IsValid() const = 0;
 	};
 }

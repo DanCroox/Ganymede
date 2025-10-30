@@ -1,29 +1,28 @@
-#include "Ganymede/Graphics/SSBO.h"
+#include "OGLSSBO.h"
 
 #include "OGLContext.h"
 #include <GL/glew.h>
 
 namespace Ganymede
 {
-	SSBO::SSBO(unsigned int bindingPointID, unsigned int bufferSize, bool autoResize) :
-		m_BindingPointID(bindingPointID),
-		m_AutoResize(autoResize)
+	OGLSSBO::OGLSSBO(unsigned int bindingPointID, unsigned int bufferSize, bool autoResize) :
+		SSBO(bindingPointID, bufferSize, autoResize)
 	{
 		CreateBuffer(bufferSize);
 		MapBuffer();
 	}
 
-	SSBO::~SSBO()
+	OGLSSBO::~OGLSSBO()
 	{
 		DeleteBuffer();
 	}
 
-	void SSBO::Barrier()
+	void OGLSSBO::Barrier()
 	{
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	}
 
-	void SSBO::CreateBuffer(size_t bufferSize)
+	void OGLSSBO::CreateBuffer(size_t bufferSize)
 	{
 		GLint ssboAlign = 0;
 		glGetIntegerv(GL_SHADER_STORAGE_BUFFER_OFFSET_ALIGNMENT, &ssboAlign);
@@ -45,7 +44,7 @@ namespace Ganymede
 	}
 
 
-	void SSBO::MapBuffer()
+	void OGLSSBO::MapBuffer()
 	{
 		GM_CORE_ASSERT(m_RenderID != 0, "Invalid handle.");
 		GM_CORE_ASSERT(m_DirectAccessBuffer == nullptr, "Buffer already mapped.");
@@ -60,7 +59,7 @@ namespace Ganymede
 		));
 	}
 
-	void SSBO::UnmapBuffer()
+	void OGLSSBO::UnmapBuffer()
 	{
 		GM_CORE_ASSERT(m_RenderID != 0, "Invalid handle.");
 		GM_CORE_ASSERT(m_DirectAccessBuffer != nullptr, "Buffer not mapped.");
@@ -74,7 +73,7 @@ namespace Ganymede
 		m_DirectAccessBuffer = nullptr;
 	}
 
-	void SSBO::DeleteBuffer()
+	void OGLSSBO::DeleteBuffer()
 	{
 		GM_CORE_ASSERT(m_RenderID != 0, "Invalid handle.");
 
@@ -82,7 +81,7 @@ namespace Ganymede
 		glDeleteBuffers(1, &m_RenderID);
 	}
 
-	void SSBO::ResizeBuffer(size_t newSize)
+	void OGLSSBO::ResizeBuffer(size_t newSize)
 	{
 		const unsigned int oldBufferRenderID = m_RenderID;
 		const size_t oldBufferSize = m_BufferSize;
@@ -93,7 +92,7 @@ namespace Ganymede
 		MapBuffer();
 	}
 
-	void SSBO::Write(unsigned int offset, unsigned int byteCount, void* data)
+	void OGLSSBO::Write(unsigned int offset, unsigned int byteCount, void* data)
 	{
 		const size_t numRequestedBytes = offset + byteCount;
 
@@ -108,7 +107,7 @@ namespace Ganymede
 		memcpy(m_DirectAccessBuffer + offset, data, byteCount);
 	}
 
-	void SSBO::Read(unsigned int offset, unsigned int byteCount, void* dataOut)
+	void OGLSSBO::Read(unsigned int offset, unsigned int byteCount, void* dataOut)
 	{
 		glGetNamedBufferSubData(m_RenderID, offset, byteCount, dataOut);
 	}
