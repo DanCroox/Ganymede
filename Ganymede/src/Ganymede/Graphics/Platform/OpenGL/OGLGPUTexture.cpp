@@ -1,15 +1,11 @@
-#include "Ganymede/Graphics/GPUTexture.h"
+#include "OGLGPUTexture.h"
 
 #include "Ganymede/Graphics/Texture.h"
 #include <GL/glew.h>
 
 namespace Ganymede
 {
-	GPUTexture::GPUTexture(const Texture& texture) :
-		m_Width(texture.GetWidth()),
-		m_Height(texture.GetHeight()),
-		m_ChannelCount(texture.GetNumChannels()),
-		m_BitDepth(texture.GetBitDepth())
+	OGLGPUTexture::OGLGPUTexture(const Texture& texture) : GPUTexture(texture)
 	{
 		glGenTextures(1, &m_RendererID);
 		glBindTexture(GL_TEXTURE_2D, m_RendererID);
@@ -73,31 +69,24 @@ namespace Ganymede
 		Unbind();
 	}
 
-	GPUTexture::~GPUTexture()
+	OGLGPUTexture::~OGLGPUTexture()
 	{
 		GLCall(glDeleteTextures(1, &m_RendererID));
 	}
-	int m_Width, m_Height, m_ChannelCount;
-	unsigned int m_RendererID;
-	GPUTexture::GPUTexture(GPUTexture&& other) noexcept
-		: m_RendererID(other.m_RendererID),
-		m_Width(other.m_Width),
-		m_Height(other.m_Height),
-		m_ChannelCount(other.m_ChannelCount),
-		m_BitDepth(other.m_BitDepth)
+
+	OGLGPUTexture::OGLGPUTexture(OGLGPUTexture&& other) noexcept
+		: GPUTexture(std::move(other)),
+		m_RendererID(other.m_RendererID)
 	{
 		other.m_RendererID = 0;
 	}
 
-	GPUTexture& GPUTexture::operator=(GPUTexture&& other) noexcept
+	OGLGPUTexture& OGLGPUTexture::operator=(OGLGPUTexture&& other) noexcept
 	{
 		if (this != &other)
 		{
+			GPUTexture::operator=(std::move(other));
 			m_RendererID = other.m_RendererID;
-			m_Width = other.m_Width;
-			m_Height = other.m_Height;
-			m_ChannelCount = other.m_ChannelCount;
-			m_BitDepth = other.m_BitDepth;
 
 			other.m_RendererID = 0;
 		}
@@ -105,15 +94,14 @@ namespace Ganymede
 		return *this;
 	}
 
-	void GPUTexture::Bind(unsigned int slot) const
+	void OGLGPUTexture::Bind(unsigned int slot) const
 	{
 		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(GL_TEXTURE_2D, m_RendererID);
 	}
 
-	void GPUTexture::Unbind() const
+	void OGLGPUTexture::Unbind() const
 	{
-
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }

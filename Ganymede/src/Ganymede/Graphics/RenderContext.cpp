@@ -111,13 +111,13 @@ namespace Ganymede
         auto it = m_Shaders.find(name);
         if (it != m_Shaders.end())
         {
-            return &it->second;
+            return it->second.get();
         }
 
         if (std::optional<ShaderBinary> shaderBinary = ShaderLoader::Load(shaderFile))
         {
-            auto [it2, created] = m_Shaders.try_emplace(shaderFile, shaderBinary.value());
-            return &it2->second;
+            auto [it2, created] = m_Shaders.try_emplace(shaderFile, GraphicsFactory::CreateShader(shaderBinary.value()));
+            return it2->second.get();
         }
 
         GM_CORE_ASSERT(false, "Couldnt load shader");
@@ -147,12 +147,12 @@ namespace Ganymede
             else if (std::holds_alternative<Handle<Texture>>(propertyValue))
             {
                 const Handle<Texture>& handle = std::get<Handle<Texture>>(propertyValue);
-                std::optional<GPUTexture>& gpuTexture = m_TextureObjectCache[handle.GetID()];
-                if (!gpuTexture.has_value())
+                std::unique_ptr<GPUTexture>& gpuTexture = m_TextureObjectCache[handle.GetID()];
+                if (gpuTexture == nullptr)
                 {
-                    m_TextureObjectCache[handle.GetID()] = { handle.GetData() };
+                    m_TextureObjectCache[handle.GetID()] = GraphicsFactory::CreateGPUTexture(handle.GetData());
                 }
-                gpuTexture.value().Bind(nextTextureSlot);
+                gpuTexture->Bind(nextTextureSlot);
                 shader.SetUniform1i(propertyName, nextTextureSlot);
                 ++nextTextureSlot;
             }
@@ -235,7 +235,7 @@ namespace Ganymede
             GM_CORE_ASSERT(false, "Shader does not exist.");
             return nullptr;
         }
-        return &it->second;
+        return it->second.get();
     }
 
     void RenderContext::DeleteFrameBuffer(const std::string& name)

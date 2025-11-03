@@ -6,9 +6,9 @@
 namespace Ganymede
 {
 	class OGLFrameBuffer;
+	class OGLShader;
 	class OGLSSBO;
 	class OGLVertexObject;
-	class Shader;
 
 	namespace RenderTargetTypes
 	{
@@ -30,7 +30,7 @@ namespace Ganymede
 
 		static void BindFrameBuffer(const OGLFrameBuffer& frameBuffer);
 		static void UnbindFrameBuffer();
-		static void BindShader(const Shader& shader);
+		static void BindShader(const OGLShader& shader);
 		static void BindVertexArrayObject(const OGLVertexObject& vo);
 		static void BindIndirectDrawBuffer(OGLSSBO& buffer);
 

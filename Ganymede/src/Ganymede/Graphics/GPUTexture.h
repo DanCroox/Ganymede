@@ -1,31 +1,36 @@
 #pragma once
 #include "Ganymede/Core/Core.h"
-#include "Ganymede/Data/Handle.h"
 
 namespace Ganymede
 {
-	class Texture;
+    class Texture;
 
-	class GANYMEDE_API GPUTexture
-	{
-	public:
-		GPUTexture(const Texture& textureHandle);
-		~GPUTexture();
+    class GANYMEDE_API GPUTexture
+    {
+    public:
+        virtual ~GPUTexture() = default;
 
-		GPUTexture(const GPUTexture&) = delete;
-		GPUTexture& operator=(const GPUTexture&) = delete;
+        virtual void Bind(unsigned int slot = 0) const = 0;
+        virtual void Unbind() const = 0;
 
-		GPUTexture& operator=(GPUTexture&& other) noexcept;
-		GPUTexture(GPUTexture&& other) noexcept;
+        unsigned int GetWidth() const { return m_Width; };
+        unsigned int GetHeight() const { return m_Height; };
+        unsigned int GetChannelCount() const { return m_ChannelCount; };
+        unsigned int GetBitDepth() const { return m_BitDepth; };
 
-		void Bind(unsigned int slot = 0) const;
-		void Unbind() const;
+    protected:
+        GPUTexture() = delete;
+        explicit GPUTexture(const Texture& texture);
 
-	private:
-		unsigned int m_Width;
-		unsigned int m_Height;
-		unsigned int m_ChannelCount;
-		unsigned int m_BitDepth;
-		unsigned int m_RendererID;
-	};
+        GPUTexture(const GPUTexture&) = delete;
+        GPUTexture& operator=(const GPUTexture&) = delete;
+
+        GPUTexture(GPUTexture&& other) noexcept;
+        GPUTexture& operator=(GPUTexture&& other) noexcept;
+
+        unsigned int m_Width = 0;
+        unsigned int m_Height = 0;
+        unsigned int m_ChannelCount = 0;
+        unsigned int m_BitDepth = 0;
+    };
 }

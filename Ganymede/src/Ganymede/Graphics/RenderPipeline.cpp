@@ -1,9 +1,10 @@
 #include "RenderPipeline.h"
 
 #include "Ganymede/Player/FPSCamera.h"
+#include "Ganymede/Graphics/Platform/GraphicsFactory.h"
+#include "Ganymede/Common/Helpers.h"
 #include "GPUDebugHandler.h"
 #include "RenderContext.h"
-#include "Ganymede/Common/Helpers.h"
 
 namespace Ganymede
 {
@@ -15,7 +16,7 @@ namespace Ganymede
 	RenderPipeline::~RenderPipeline()
 	{
 #ifndef GM_RETAIL
-		GPUDebugHandler::Disable();
+		m_GPUDebugHandler->Disable();
 #endif // GM_RETAIL
 	}
 
@@ -37,7 +38,8 @@ namespace Ganymede
 		}
 
 #ifndef GM_RETAIL
-		GPUDebugHandler::Enable();
+		m_GPUDebugHandler = GraphicsFactory::CreateGPUDebugHandler();
+		m_GPUDebugHandler->Enable();
 #endif // GM_RETAIL
 
 		m_IsInitialized = true;

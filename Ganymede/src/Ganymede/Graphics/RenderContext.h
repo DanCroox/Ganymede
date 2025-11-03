@@ -183,11 +183,11 @@ namespace Ganymede
 		std::unordered_map<std::string, CubeMapArrayRenderTarget> m_CubeMapArrayRenderTargets;
 		std::unordered_map<std::string, std::unique_ptr<VertexObject>> m_VertexObjects;
 		std::unordered_map<std::string, std::unique_ptr<SSBO>> m_SSBOs;
-		std::unordered_map<std::string, Shader> m_Shaders;
+		std::unordered_map<std::string, std::unique_ptr<Shader>> m_Shaders;
 		std::unordered_map<std::string, std::pair<ClassID, void*>> m_DataBuffers;
 		
 		std::vector<CachedVertexObject> m_VertexObjectCache;
-		std::vector<std::optional<GPUTexture>> m_TextureObjectCache;
+		std::vector<std::unique_ptr<GPUTexture>> m_TextureObjectCache;
 
 		std::vector<VisibleEntity> m_VisibleEntities;
 

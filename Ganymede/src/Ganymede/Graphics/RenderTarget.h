@@ -79,7 +79,6 @@ namespace Ganymede
 	public:
 		using Super = RenderTarget;
 		
-		SinglesampleRenderTarget() = delete;
 		SinglesampleRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 
 		void Bind() override;
@@ -91,7 +90,6 @@ namespace Ganymede
 	public:
 		using Super = RenderTarget;
 		
-		MultisampleRenderTarget() = delete;
 		MultisampleRenderTarget(unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 
 		void Bind() override;
@@ -106,7 +104,6 @@ namespace Ganymede
 	public:
 		using Super = RenderTarget;
 
-		CubeMapArrayRenderTarget() = delete;
 		CubeMapArrayRenderTarget(unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 
 		void Bind() override;

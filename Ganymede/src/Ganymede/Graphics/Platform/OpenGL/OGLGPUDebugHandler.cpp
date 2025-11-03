@@ -1,4 +1,4 @@
-#include "Ganymede/Graphics/GPUDebugHandler.h"
+#include "Ganymede/Graphics/Platform/OpenGL/OGLGPUDebugHandler.h"
 
 #include <GL/glew.h>
 
@@ -44,9 +44,7 @@ namespace Ganymede
         __debugbreak();
     }
 
-    bool GPUDebugHandler::m_IsEnabled = false;
-
-    void GPUDebugHandler::Enable()
+    void OGLGPUDebugHandler::Enable()
     {
         if (m_IsEnabled)
         {
@@ -61,7 +59,7 @@ namespace Ganymede
         m_IsEnabled = true;
     }
 
-    void GPUDebugHandler::Disable()
+    void OGLGPUDebugHandler::Disable()
     {
         if (!m_IsEnabled)
         {

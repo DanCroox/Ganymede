@@ -6,6 +6,10 @@
 
 namespace Ganymede
 {
+#ifndef GM_RETAIL
+	class GPUDebugHandler;
+#endif //GM_RETAIL
+
 	class RenderContext;
 
 	class GANYMEDE_API RenderPipeline
@@ -34,6 +38,10 @@ namespace Ganymede
 		}
 
 	private:
+#ifndef GM_RETAIL
+		std::unique_ptr<GPUDebugHandler> m_GPUDebugHandler;
+#endif //GM_RETAIL
+
 		bool m_IsInitialized;
 		RenderContext& m_RenderContext;
 		std::vector<std::unique_ptr<RenderPass2>> m_RenderPasses;

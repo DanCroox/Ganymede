@@ -4,6 +4,7 @@
 #include "Ganymede/Graphics/Material.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/Shader.h"
+#include "OGLShader.h"
 #include "OGLSSBO.h"
 #include "OGLFrameBuffer.h"
 #include "OGLVertexObject.h"
@@ -17,13 +18,12 @@ namespace Ganymede
 		m_ViewportDimension({ 0, 0 }),
 		m_DoDepthTesting(glIsEnabled(GL_DEPTH_TEST) == GL_TRUE),
 		m_RenderContext(renderContext)
-	{
-	}
+	{}
 
 	void Renderer::DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, Shader& shader, bool doDepthTest)
 	{
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
-		OGLContext::BindShader(shader);
+		OGLContext::BindShader(static_cast<const OGLShader&>(shader));
 
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<OGLVertexObject&>(vertexObject).GetVertexObjectIndexBuffer().GetNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
 	}
@@ -43,7 +43,7 @@ namespace Ganymede
 	{
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
 
-		OGLContext::BindShader(shader);
+		OGLContext::BindShader(static_cast<const OGLShader&>(shader));
 		OGLContext::BindIndirectDrawBuffer(static_cast<OGLSSBO&>(indirectCommandsBuffer));
 
 		const unsigned int byteOffset = commandOffset * 20;

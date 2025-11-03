@@ -2,9 +2,9 @@
 
 #include "Ganymede/Graphics/Platform/OpenGL/OGLFrameBuffer.h"
 #include "Ganymede/Graphics/RenderTarget.h"
-#include "Ganymede/Graphics/Shader.h"
 #include "Ganymede/Graphics/VertexObject.h"
 #include "OGLContext.h"
+#include "OGLShader.h"
 #include "OGLVertexObject.h"
 #include <GL/glew.h>
 
@@ -14,7 +14,7 @@ namespace Ganymede
 	{
 		void Rendering::BindShader(const Shader& shader)
 		{
-			OGLContext::BindShader(shader);
+			OGLContext::BindShader(static_cast<const OGLShader&>(shader));
 		}
 		
 		void Rendering::BindVertexObject(const VertexObject& vo)
@@ -24,7 +24,7 @@ namespace Ganymede
 
 		void Compute::Dispatch(Shader& shader, unsigned int numWgX, unsigned int numWgY, unsigned int numWgZ)
 		{
-			OGLContext::BindShader(shader);
+			OGLContext::BindShader(static_cast<OGLShader&>(shader));
 			glDispatchCompute(numWgX, numWgY, numWgZ);
 		}
 

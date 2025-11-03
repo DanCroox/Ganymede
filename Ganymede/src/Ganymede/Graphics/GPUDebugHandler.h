@@ -7,12 +7,11 @@ namespace Ganymede
 	class GANYMEDE_API GPUDebugHandler
 	{
 	public:
-		static void Enable();
-		static void Disable();
-
-		static inline bool IsEnabled() { return m_IsEnabled; }
-
-	private:
-		static bool m_IsEnabled;
+		virtual void Enable() = 0;
+		virtual void Disable() = 0;
+		virtual bool IsEnabled() const = 0;
+	
+	protected:
+		GPUDebugHandler() = default;
 	};
 }

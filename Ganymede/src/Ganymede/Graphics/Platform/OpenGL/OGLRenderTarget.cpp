@@ -5,11 +5,6 @@
 
 namespace Ganymede
 {
-	namespace RenderTarget_Private
-	{
-
-	}
-
 	RenderTarget::RenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
 		m_ComponentType(componentType),
 		m_ChannelDataType(dataType),
