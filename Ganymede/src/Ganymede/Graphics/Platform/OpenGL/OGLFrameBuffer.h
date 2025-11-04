@@ -12,7 +12,7 @@ namespace Ganymede
 		OGLFrameBuffer() = delete;
 
 		OGLFrameBuffer(glm::u32vec2 renderDimension, bool isHardWareFrameBuffer);
-		~OGLFrameBuffer();
+		~OGLFrameBuffer() override;
 
 		void SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture) override;
 		void SetColorBufferClearColor(const glm::vec4& color) override { m_ColorBufferClearColor = color; }

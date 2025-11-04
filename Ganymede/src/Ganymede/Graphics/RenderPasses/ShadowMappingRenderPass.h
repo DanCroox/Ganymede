@@ -7,8 +7,8 @@
 
 namespace Ganymede
 {
-	class CubeMapArrayRenderTarget;
 	class FrameBuffer;
+	class RenderTarget;
 	class Shader;
 	class SSBO;
 
@@ -39,7 +39,7 @@ namespace Ganymede
 
 	private:
 		FrameBuffer* m_Framebuffer;
-		CubeMapArrayRenderTarget* m_ShadowMapsArray;
+		RenderTarget* m_ShadowMapsCubeArray;
 		SSBO* m_AnimationDataSSBO;
 		SSBO* m_PointlightDataSSBO;
 		Shader* m_ShadowMappingShader;

@@ -10,12 +10,11 @@ namespace Ganymede
         explicit OGLGPUTexture(const Texture& texHandle);
         ~OGLGPUTexture() override;
 
-        virtual void Bind(unsigned int slot = 0) const override;
-        virtual void Unbind() const override;
-
-    protected:
         OGLGPUTexture(OGLGPUTexture&&) noexcept;
         OGLGPUTexture& operator=(OGLGPUTexture&&) noexcept;
+
+        void Bind(unsigned int slot = 0) const override;
+        void Unbind() const override;
 
     private:
         unsigned int m_RendererID = 0;

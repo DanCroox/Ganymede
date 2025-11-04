@@ -8,7 +8,7 @@
 namespace Ganymede
 {
 	class FrameBuffer;
-	class SinglesampleRenderTarget;
+	class RenderTarget;
 	class SSBO;
 	class Shader;
 	class VertexObject;
@@ -28,7 +28,7 @@ namespace Ganymede
 		};
 
 		FrameBuffer* m_FrameBuffer;
-		SinglesampleRenderTarget* m_LightingRT;
+		RenderTarget* m_LightingRT;
 		SSBO* m_PointLightSortedToCamDistanceSSBO;
 		Shader* m_LightingShader;
 		VertexObject* m_ScreenVO;

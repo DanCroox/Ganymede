@@ -47,66 +47,33 @@ namespace Ganymede
 	class GANYMEDE_API RenderTarget
 	{
 	public:
-		RenderTarget() = delete;
-		RenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
-		virtual ~RenderTarget();
+		RenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
+			m_ComponentType(componentType),
+			m_ChannelDataType(dataType),
+			m_ChannelPrecision(precision),
+			m_Size(size) {};
 
-		virtual void Bind();
-		virtual void UnBind();
+		virtual ~RenderTarget() = default;
 
-		void SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value);
-
-		inline unsigned int GetRenderID() const { return m_RenderID; }
-
-		inline bool IsValid() const { return m_RenderID != 0; }
+		virtual void SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value) = 0;
+		virtual bool IsValid() const = 0;
 
 		RenderTargetTypes::ComponentType GetComponentType() const { return m_ComponentType; }
 		RenderTargetTypes::ChannelDataType GetChannelDataType() const { return m_ChannelDataType; }
 		RenderTargetTypes::ChannelPrecision GetChannelPrecision() const { return m_ChannelPrecision; }
 
 	protected:
-		unsigned int m_RenderID = 0;
+		RenderTarget() = delete;
 
-	private:
+		RenderTarget(const RenderTarget&) = delete;
+		RenderTarget& operator=(const RenderTarget&) = delete;
+
+		RenderTarget(RenderTarget&&) noexcept;
+		RenderTarget& operator=(RenderTarget&&) noexcept;
+
 		glm::uvec2 m_Size;
 		RenderTargetTypes::ComponentType m_ComponentType = RenderTargetTypes::ComponentType::RGBA;
 		RenderTargetTypes::ChannelDataType m_ChannelDataType = RenderTargetTypes::ChannelDataType::UInt;
 		RenderTargetTypes::ChannelPrecision m_ChannelPrecision = RenderTargetTypes::ChannelPrecision::B8;
-	};
-
-	class SinglesampleRenderTarget : public RenderTarget
-	{
-	public:
-		using Super = RenderTarget;
-		
-		SinglesampleRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
-
-		void Bind() override;
-		void UnBind() override;
-	};
-
-	class MultisampleRenderTarget : public RenderTarget
-	{
-	public:
-		using Super = RenderTarget;
-		
-		MultisampleRenderTarget(unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
-
-		void Bind() override;
-		void UnBind() override;
-
-	private:
-		unsigned int m_SampleCount = 1;
-	};
-
-	class CubeMapArrayRenderTarget : public RenderTarget
-	{
-	public:
-		using Super = RenderTarget;
-
-		CubeMapArrayRenderTarget(unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
-
-		void Bind() override;
-		void UnBind() override;
 	};
 }

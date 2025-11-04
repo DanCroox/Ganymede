@@ -1,4 +1,4 @@
-#include "Ganymede/Graphics/Renderer.h"
+#include "OGLRenderer.h"
 
 #include "Ganymede/Graphics/FrameBuffer.h"
 #include "Ganymede/Graphics/Material.h"
@@ -14,13 +14,14 @@
 
 namespace Ganymede
 {
-	Renderer::Renderer(RenderContext& renderContext) :
+	OGLRenderer::OGLRenderer(RenderContext& renderContext) :
+		Renderer(renderContext),
 		m_ViewportDimension({ 0, 0 }),
 		m_DoDepthTesting(glIsEnabled(GL_DEPTH_TEST) == GL_TRUE),
 		m_RenderContext(renderContext)
 	{}
 
-	void Renderer::DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, Shader& shader, bool doDepthTest)
+	void OGLRenderer::DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, Shader& shader, bool doDepthTest)
 	{
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
 		OGLContext::BindShader(static_cast<const OGLShader&>(shader));
@@ -28,7 +29,18 @@ namespace Ganymede
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<OGLVertexObject&>(vertexObject).GetVertexObjectIndexBuffer().GetNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
 	}
 
-	void Renderer::DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Material& material, bool doDepthTest)
+	void OGLRenderer::DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Shader& shader, bool doDepthTest)
+	{
+		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
+
+		OGLContext::BindShader(static_cast<const OGLShader&>(shader));
+		OGLContext::BindIndirectDrawBuffer(static_cast<OGLSSBO&>(indirectCommandsBuffer));
+
+		const unsigned int byteOffset = commandOffset * 20;
+		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)byteOffset);
+	}
+
+	void OGLRenderer::DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Material& material, bool doDepthTest)
 	{
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
 
@@ -39,18 +51,7 @@ namespace Ganymede
 		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)byteOffset);
 	}
 
-	void Renderer::DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Shader& shader, bool doDepthTest)
-	{
-		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
-
-		OGLContext::BindShader(static_cast<const OGLShader&>(shader));
-		OGLContext::BindIndirectDrawBuffer(static_cast<OGLSSBO&>(indirectCommandsBuffer));
-
-		const unsigned int byteOffset = commandOffset * 20;
-		glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (const void*)byteOffset);
-	}
-
-	void Renderer::ClearFrameBuffer(FrameBuffer& frameBuffer, bool clearColor, bool clearDepth)
+	void OGLRenderer::ClearFrameBuffer(FrameBuffer& frameBuffer, bool clearColor, bool clearDepth)
 	{
 		unsigned int flags = 0;
 		if (clearColor)
@@ -75,7 +76,7 @@ namespace Ganymede
 		glClear(flags);
 	}
 
-	void Renderer::PrepareDraw(const VertexObject& vertexObject, FrameBuffer& frameBuffer, bool doDepthTest)
+	void OGLRenderer::PrepareDraw(const VertexObject& vertexObject, FrameBuffer& frameBuffer, bool doDepthTest)
 	{
 		GM_CORE_ASSERT(m_ViewportDimension.x == 0 || m_ViewportDimension.y == 0, "Invalid viewport size (0x0 pixels).");
 

@@ -1,15 +1,12 @@
-#include "Ganymede/Graphics/RenderTarget.h"
+#include "OGLRenderTarget.h"
 
 #include "OGLContext.h"
 #include <GL/glew.h>
 
 namespace Ganymede
 {
-	RenderTarget::RenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
-		m_ComponentType(componentType),
-		m_ChannelDataType(dataType),
-		m_ChannelPrecision(precision),
-		m_Size(size)
+	OGLRenderTarget::OGLRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
+		RenderTarget(componentType, dataType, precision, size)
 	{
 		GM_CORE_ASSERT(size.x > 0 && size.y > 0, "Size needs to be at least 1x1 pixels.");
 
@@ -17,29 +14,49 @@ namespace Ganymede
 		GM_CORE_ASSERT(m_RenderID > 0, "Couldn't create texture.");
 	}
 
-	RenderTarget::~RenderTarget()
+	OGLRenderTarget::~OGLRenderTarget()
 	{
 		glDeleteTextures(1, &m_RenderID);
 	}
 
-	void RenderTarget::Bind()
+	OGLRenderTarget::OGLRenderTarget(OGLRenderTarget&& other) noexcept
+		: RenderTarget(std::move(other)),
+		m_RenderID(other.m_RenderID)
+	{
+		other.m_RenderID = 0;
+	}
+
+	OGLRenderTarget& OGLRenderTarget::operator=(OGLRenderTarget&& other) noexcept
+	{
+		if (this != &other)
+		{
+			RenderTarget::operator=(std::move(other));
+			m_RenderID = other.m_RenderID;
+
+			other.m_RenderID = 0;
+		}
+
+		return *this;
+	}
+
+	void OGLRenderTarget::Bind()
 	{
 		glBindTexture(GL_TEXTURE_2D, m_RenderID);
 	}
 
-	void RenderTarget::UnBind()
+	void OGLRenderTarget::UnBind()
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void RenderTarget::SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value)
+	void OGLRenderTarget::SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value)
 	{
 		Bind();
 		glTexParameteri(GL_TEXTURE_2D, OGLContext::ToNativeParameterKey(key), OGLContext::ToNativeParameterValue(value));
 		UnBind();
 	}
 
-	SinglesampleRenderTarget::SinglesampleRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
+	OGLSinglesampleRenderTarget::OGLSinglesampleRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
 		Super(componentType, dataType, precision, size)
 	{
 		Bind();
@@ -49,17 +66,17 @@ namespace Ganymede
 		UnBind();
 	}
 
-	void SinglesampleRenderTarget::Bind()
+	void OGLSinglesampleRenderTarget::Bind()
 	{
 		glBindTexture(GL_TEXTURE_2D, m_RenderID);
 	}
 
-	void SinglesampleRenderTarget::UnBind()
+	void OGLSinglesampleRenderTarget::UnBind()
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	MultisampleRenderTarget::MultisampleRenderTarget(unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
+	OGLMultisampleRenderTarget::OGLMultisampleRenderTarget(unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
 		Super(componentType, dataType, precision, size),
 		m_SampleCount(sampleCount)
 	{
@@ -70,17 +87,17 @@ namespace Ganymede
 		UnBind();
 	}
 
-	void MultisampleRenderTarget::Bind()
+	void OGLMultisampleRenderTarget::Bind()
 	{
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_RenderID);
 	}
 
-	void MultisampleRenderTarget::UnBind()
+	void OGLMultisampleRenderTarget::UnBind()
 	{
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 	}
 
-	CubeMapArrayRenderTarget::CubeMapArrayRenderTarget(unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
+	OGLCubeMapArrayRenderTarget::OGLCubeMapArrayRenderTarget(unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
 		Super(componentType, dataType, precision, size)
 	{
 		Bind();
@@ -93,12 +110,12 @@ namespace Ganymede
 		UnBind();
 	}
 
-	void CubeMapArrayRenderTarget::Bind()
+	void OGLCubeMapArrayRenderTarget::Bind()
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, m_RenderID);
 	}
 
-	void CubeMapArrayRenderTarget::UnBind()
+	void OGLCubeMapArrayRenderTarget::UnBind()
 	{
 		glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
 	}

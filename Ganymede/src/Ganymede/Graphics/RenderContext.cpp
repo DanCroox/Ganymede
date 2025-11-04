@@ -15,7 +15,7 @@ namespace Ganymede
 {
     RenderContext::RenderContext(World& world) :
         m_World(world),
-        m_Renderer(*this)
+        m_Renderer(GraphicsFactory::CreateRenderer(*this))
     {
         m_VertexObjectCache.resize(1000000);
         m_RenderViews.resize(10000);
@@ -25,6 +25,11 @@ namespace Ganymede
     World& RenderContext::GetWorld()
     {
         return m_World;
+    }
+
+    Renderer& RenderContext::GetRenderer()
+    {
+        return *m_Renderer.get();
     }
 
     FrameBuffer* RenderContext::CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer)
@@ -41,12 +46,12 @@ namespace Ganymede
         return ptr;
     }
 
-    SinglesampleRenderTarget* RenderContext::CreateSingleSampleRenderTarget(const std::string& name, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
+    RenderTarget* RenderContext::CreateSingleSampleRenderTarget(const std::string& name, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
     {
-        auto [it, inserted] = m_SingleSampleRenderTargets.try_emplace(name, componentType, dataType, precision, size);
+        auto [it, inserted] = m_SingleSampleRenderTargets.try_emplace(name, GraphicsFactory::CreateSingleSampleRenderTarget(componentType, dataType, precision, size));
         GM_CORE_ASSERT(inserted, "Tried to create single sample render target which already existed. Using from cache.");
-        SinglesampleRenderTarget* ptr = &it->second;
-        if (!ptr->IsValid())
+        RenderTarget* ptr = it->second.get();
+        if (ptr == nullptr)
         {
             m_SingleSampleRenderTargets.erase(name);
             GM_CORE_ASSERT(false, "Single sample render target is invalid.");
@@ -55,12 +60,12 @@ namespace Ganymede
         return ptr;
     }
 
-    MultisampleRenderTarget* RenderContext::CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
+    RenderTarget* RenderContext::CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
     {
-        auto [it, inserted] = m_MultiSampleRenderTargets.try_emplace(name, sampleCount, componentType, dataType, precision, size);
+        auto [it, inserted] = m_MultiSampleRenderTargets.try_emplace(name, GraphicsFactory::CreateMultiSampleRenderTarget(sampleCount, componentType, dataType, precision, size));
         GM_CORE_ASSERT(inserted, "Tried to create multi sample render target which already existed. Using from cache.");
-        MultisampleRenderTarget* ptr = &it->second;
-        if (!ptr->IsValid())
+        RenderTarget* ptr = it->second.get();
+        if (ptr == nullptr)
         {
             m_MultiSampleRenderTargets.erase(name);
             GM_CORE_ASSERT(false, "Multi sample render target is invalid.");
@@ -69,12 +74,12 @@ namespace Ganymede
         return ptr;
     }
 
-    CubeMapArrayRenderTarget* RenderContext::CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
+    RenderTarget* RenderContext::CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
     {
-        auto [it, inserted] = m_CubeMapArrayRenderTargets.try_emplace(name, numTextures, componentType, dataType, precision, size);
+        auto [it, inserted] = m_CubeMapArrayRenderTargets.try_emplace(name, GraphicsFactory::CreateCubeMapArrayRenderTarget(numTextures, componentType, dataType, precision, size));
         GM_CORE_ASSERT(inserted, "Tried to create cube map array render target which already existed. Using from cache.");
-        CubeMapArrayRenderTarget* ptr = &it->second;
-        if (!ptr->IsValid())
+        RenderTarget* ptr = it->second.get();
+        if (ptr == nullptr)
         {
             m_CubeMapArrayRenderTargets.erase(name);
             GM_CORE_ASSERT(false, "Cube map array render target is invalid.");
@@ -172,7 +177,7 @@ namespace Ganymede
         return it->second.get();
     }
 
-    SinglesampleRenderTarget* RenderContext::GetSingleSampleRenderTarget(const std::string& name)
+    RenderTarget* RenderContext::GetSingleSampleRenderTarget(const std::string& name)
     {
         auto it = m_SingleSampleRenderTargets.find(name);
         if (it == m_SingleSampleRenderTargets.end())
@@ -180,10 +185,10 @@ namespace Ganymede
             GM_CORE_ASSERT(false, "Single sample render target does not exist.");
             return nullptr;
         }
-        return &it->second;
+        return it->second.get();
     }
 
-    MultisampleRenderTarget* RenderContext::GetMultiSampleRenderTarget(const std::string& name)
+    RenderTarget* RenderContext::GetMultiSampleRenderTarget(const std::string& name)
     {
         auto it = m_MultiSampleRenderTargets.find(name);
         if (it == m_MultiSampleRenderTargets.end())
@@ -191,10 +196,10 @@ namespace Ganymede
             GM_CORE_ASSERT(false, "Multi sample render target does not exist.");
             return nullptr;
         }
-        return &it->second;
+        return it->second.get();
     }
 
-    CubeMapArrayRenderTarget* RenderContext::GetCubeMapArrayRenderTarget(const std::string& name)
+    RenderTarget* RenderContext::GetCubeMapArrayRenderTarget(const std::string& name)
     {
         auto it = m_CubeMapArrayRenderTargets.find(name);
         if (it == m_CubeMapArrayRenderTargets.end())
@@ -202,7 +207,7 @@ namespace Ganymede
             GM_CORE_ASSERT(false, "Cube map array render target does not exist.");
             return nullptr;
         }
-        return &it->second;
+        return it->second.get();
     }
 
     VertexObject* RenderContext::GetVertexObject(const std::string& name)

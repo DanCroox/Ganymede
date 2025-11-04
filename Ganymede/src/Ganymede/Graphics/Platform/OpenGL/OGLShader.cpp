@@ -1,12 +1,12 @@
 #include "OGLShader.h"
 
-#include "Ganymede/Graphics/RenderTarget.h"
 #include "Ganymede/Graphics/ShaderBinary.h"
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Log/Log.h"
 #include "GL/glew.h"
 #include "glm/glm.hpp"
 #include "OGLContext.h"
+#include "OGLRenderTarget.h"
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
@@ -84,10 +84,10 @@ namespace Ganymede
 
         OGLContext::BindShader(*this);
         glActiveTexture(GL_TEXTURE0 + textureSlot);
-        texture.Bind();
+        static_cast<OGLRenderTarget&>(texture).Bind();
         SetUniform1i(textureName, textureSlot);
         glActiveTexture(GL_TEXTURE31); // This is our "neutral" texture slot. We dont use it in game.
-        texture.UnBind();
+        static_cast<OGLRenderTarget&>(texture).UnBind();
     }
 
     void OGLShader::SetUniform1i(const std::string& name, const int value) const

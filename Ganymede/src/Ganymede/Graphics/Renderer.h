@@ -2,8 +2,6 @@
 
 #include "Ganymede/Core/Core.h"
 
-#include "glm/glm.hpp"
-
 namespace Ganymede
 {
 	class FrameBuffer;
@@ -16,21 +14,15 @@ namespace Ganymede
 	class GANYMEDE_API Renderer
 	{
 	public:
-		Renderer() = delete;
-		Renderer(RenderContext& renderContext);
-		
 		~Renderer() = default;
 
-		void DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, Shader& shader, bool doDepthTest);
-		void DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Material& material, bool doDepthTest);
-		void DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Shader& shader, bool doDepthTest);
-		void ClearFrameBuffer(FrameBuffer& frameBuffer, bool clearColor, bool clearDepth);
+		virtual void DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, Shader& shader, bool doDepthTest) = 0;
+		virtual void DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Shader& shader, bool doDepthTest) = 0;
+		virtual void DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Material& material, bool doDepthTest) = 0;
+		virtual void ClearFrameBuffer(FrameBuffer& frameBuffer, bool clearColor, bool clearDepth) = 0;
 
-	private:
-		void PrepareDraw(const VertexObject& vertexObject, FrameBuffer& frameBuffer, bool doDepthTest);
-		
-		RenderContext& m_RenderContext;
-		glm::u32vec2 m_ViewportDimension;
-		bool m_DoDepthTesting;
+	protected:
+		Renderer() = delete;
+		Renderer(RenderContext& renderContext) {};
 	};
 }

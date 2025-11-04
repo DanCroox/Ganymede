@@ -1,9 +1,8 @@
 #include "Ganymede/Graphics/GPUCommands.h"
 
 #include "Ganymede/Graphics/Platform/OpenGL/OGLFrameBuffer.h"
-#include "Ganymede/Graphics/RenderTarget.h"
-#include "Ganymede/Graphics/VertexObject.h"
 #include "OGLContext.h"
+#include "OGLRenderTarget.h"
 #include "OGLShader.h"
 #include "OGLVertexObject.h"
 #include <GL/glew.h>
@@ -40,7 +39,7 @@ namespace Ganymede
 			const void* pixelDataBytes)
 		{
 			glClearTexSubImage(
-				renderTarget.GetRenderID(),
+				static_cast<OGLRenderTarget&>(renderTarget).GetRenderID(),
 				mipLayer,
 				destX, destY,
 				destDepth,

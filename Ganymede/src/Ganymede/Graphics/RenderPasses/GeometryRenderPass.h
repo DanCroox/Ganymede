@@ -29,20 +29,20 @@ namespace Ganymede
 		FrameBuffer* m_FrameBuffer;
 		FrameBuffer* m_FrameBufferMS;
 
-		MultisampleRenderTarget* m_PositionsRTMS;
-		MultisampleRenderTarget* m_NormalsRTMS;
-		MultisampleRenderTarget* m_AlbedoRTMS;
-		MultisampleRenderTarget* m_MetalRoughnessRTMS;
-		MultisampleRenderTarget* m_EmissionRTMS;
-		MultisampleRenderTarget* m_DepthRTMS;
-		MultisampleRenderTarget* m_ComplexFragmentMS;
+		RenderTarget* m_PositionsRTMS;
+		RenderTarget* m_NormalsRTMS;
+		RenderTarget* m_AlbedoRTMS;
+		RenderTarget* m_MetalRoughnessRTMS;
+		RenderTarget* m_EmissionRTMS;
+		RenderTarget* m_DepthRTMS;
+		RenderTarget* m_ComplexFragmentMS;
 
-		SinglesampleRenderTarget* m_PositionsRT;
-		SinglesampleRenderTarget* m_NormalsRT;
-		SinglesampleRenderTarget* m_AlbedoRT;
-		SinglesampleRenderTarget* m_MetalRoughnessRT;
-		SinglesampleRenderTarget* m_EmissionRT;
-		SinglesampleRenderTarget* m_DepthRT;
+		RenderTarget* m_PositionsRT;
+		RenderTarget* m_NormalsRT;
+		RenderTarget* m_AlbedoRT;
+		RenderTarget* m_MetalRoughnessRT;
+		RenderTarget* m_EmissionRT;
+		RenderTarget* m_DepthRT;
 
 		SSBO* ssbo_IndirectDrawCmds;
 

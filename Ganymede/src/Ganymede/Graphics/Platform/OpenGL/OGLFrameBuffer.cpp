@@ -1,31 +1,31 @@
 #include "OGLFrameBuffer.h"
 
-#include "Ganymede/Graphics/RenderTarget.h"
 #include "Ganymede/Log/Log.h"
 #include "OGLContext.h"
+#include "OGLRenderTarget.h"
 #include <GL/glew.h>
 
 namespace Ganymede
 {
 	namespace FrameBuffer_Private
 	{
-		static void BindFrameBufferTexture(FrameBuffer::AttachmentType attachmentType, const RenderTarget& renderTarget)
+		static void BindFrameBufferTexture(FrameBuffer::AttachmentType attachmentType, const OGLRenderTarget& renderTarget)
 		{
 			// Could be a faster approach to dynamic casts but sicne setting framebuffer should (hopefully) never used in per-frame operations
 			// speed should not matter too much here.
-			if (dynamic_cast<const SinglesampleRenderTarget*>(&renderTarget) != nullptr)
+			if (const OGLSinglesampleRenderTarget* oglRenderTarget = dynamic_cast<const OGLSinglesampleRenderTarget*>(&renderTarget))
 			{
-				glFramebufferTexture2D(GL_FRAMEBUFFER, OGLFrameBuffer::ToNativeAttachment(attachmentType), GL_TEXTURE_2D, renderTarget.GetRenderID(), 0);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, OGLFrameBuffer::ToNativeAttachment(attachmentType), GL_TEXTURE_2D, oglRenderTarget->GetRenderID(), 0);
 				return;
 			}
-			else if (dynamic_cast<const MultisampleRenderTarget*>(&renderTarget) != nullptr)
+			else if (const OGLMultisampleRenderTarget* oglRenderTarget = dynamic_cast<const OGLMultisampleRenderTarget*>(&renderTarget))
 			{
-				glFramebufferTexture2D(GL_FRAMEBUFFER, OGLFrameBuffer::ToNativeAttachment(attachmentType), GL_TEXTURE_2D_MULTISAMPLE, renderTarget.GetRenderID(), 0);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, OGLFrameBuffer::ToNativeAttachment(attachmentType), GL_TEXTURE_2D_MULTISAMPLE, oglRenderTarget->GetRenderID(), 0);
 				return;
 			}
-			else if (dynamic_cast<const CubeMapArrayRenderTarget*>(&renderTarget) != nullptr)
+			else if (const OGLCubeMapArrayRenderTarget* oglRenderTarget = dynamic_cast<const OGLCubeMapArrayRenderTarget*>(&renderTarget))
 			{
-				glFramebufferTexture(GL_FRAMEBUFFER, OGLFrameBuffer::ToNativeAttachment(attachmentType), renderTarget.GetRenderID(), 0);
+				glFramebufferTexture(GL_FRAMEBUFFER, OGLFrameBuffer::ToNativeAttachment(attachmentType), oglRenderTarget->GetRenderID(), 0);
 				return;
 			}
 
@@ -59,7 +59,7 @@ namespace Ganymede
 	void OGLFrameBuffer::SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture)
 	{
 		OGLContext::BindFrameBuffer(*this);
-		FrameBuffer_Private::BindFrameBufferTexture(attachmentType, frameBufferTexture);
+		FrameBuffer_Private::BindFrameBufferTexture(attachmentType, static_cast<OGLRenderTarget&>(frameBufferTexture));
 		m_FrameBufferAttachments[attachmentType] = &frameBufferTexture;
 		UpdateActiveDrawBufferAttachments();
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)

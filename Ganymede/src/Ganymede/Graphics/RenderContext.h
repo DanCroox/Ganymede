@@ -82,12 +82,12 @@ namespace Ganymede
 
 		World& GetWorld();
 
-		Renderer& GetRenderer() { return m_Renderer; };
+		Renderer& GetRenderer();
 
 		FrameBuffer* CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer);
-		SinglesampleRenderTarget* CreateSingleSampleRenderTarget(const std::string& name, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
-		MultisampleRenderTarget* CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
-		CubeMapArrayRenderTarget* CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
+		RenderTarget* CreateSingleSampleRenderTarget(const std::string& name, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
+		RenderTarget* CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
+		RenderTarget* CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		VertexObject* CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices);
 		SSBO* CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize);
 		Shader* LoadShader(const std::string& name, const std::string& shaderFile);
@@ -117,9 +117,9 @@ namespace Ganymede
 		void BindMaterial(const Material& material);
 
 		FrameBuffer* GetFrameBuffer(const std::string& name);
-		SinglesampleRenderTarget* GetSingleSampleRenderTarget(const std::string& name);
-		MultisampleRenderTarget* GetMultiSampleRenderTarget(const std::string& name);
-		CubeMapArrayRenderTarget* GetCubeMapArrayRenderTarget(const std::string& name);
+		RenderTarget* GetSingleSampleRenderTarget(const std::string& name);
+		RenderTarget* GetMultiSampleRenderTarget(const std::string& name);
+		RenderTarget* GetCubeMapArrayRenderTarget(const std::string& name);
 		VertexObject* GetVertexObject(const std::string& name);
 		SSBO* GetSSBO(const std::string& name);
 		Shader* GetShader(const std::string& name);
@@ -175,12 +175,12 @@ namespace Ganymede
 	private:
 		World& m_World;
 
-		Renderer m_Renderer;
+		std::unique_ptr<Renderer> m_Renderer;
 
 		std::unordered_map<std::string, std::unique_ptr<FrameBuffer>> m_FrameBuffers;
-		std::unordered_map<std::string, SinglesampleRenderTarget> m_SingleSampleRenderTargets;
-		std::unordered_map<std::string, MultisampleRenderTarget> m_MultiSampleRenderTargets;
-		std::unordered_map<std::string, CubeMapArrayRenderTarget> m_CubeMapArrayRenderTargets;
+		std::unordered_map<std::string, std::unique_ptr<RenderTarget>> m_SingleSampleRenderTargets;
+		std::unordered_map<std::string, std::unique_ptr<RenderTarget>> m_MultiSampleRenderTargets;
+		std::unordered_map<std::string, std::unique_ptr<RenderTarget>> m_CubeMapArrayRenderTargets;
 		std::unordered_map<std::string, std::unique_ptr<VertexObject>> m_VertexObjects;
 		std::unordered_map<std::string, std::unique_ptr<SSBO>> m_SSBOs;
 		std::unordered_map<std::string, std::unique_ptr<Shader>> m_Shaders;
