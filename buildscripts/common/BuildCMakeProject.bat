@@ -26,7 +26,7 @@ PUSHD "%BUILD_DIR%"
 
 :: Build binaries.
 ECHO "Build started ..."
-cmake --build . -j20 --config %BUILD_CONFIG%
+"C:\Program Files\CMake\bin\cmake.exe" --build . -j20 --config %BUILD_CONFIG%
 
 POPD
 
