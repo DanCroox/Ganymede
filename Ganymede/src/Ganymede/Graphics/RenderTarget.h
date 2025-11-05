@@ -47,12 +47,6 @@ namespace Ganymede
 	class GANYMEDE_API RenderTarget
 	{
 	public:
-		RenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
-			m_ComponentType(componentType),
-			m_ChannelDataType(dataType),
-			m_ChannelPrecision(precision),
-			m_Size(size) {};
-
 		virtual ~RenderTarget() = default;
 
 		virtual void SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value) = 0;
@@ -65,11 +59,17 @@ namespace Ganymede
 	protected:
 		RenderTarget() = delete;
 
+		RenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
+			m_ComponentType(componentType),
+			m_ChannelDataType(dataType),
+			m_ChannelPrecision(precision),
+			m_Size(size) {};
+
 		RenderTarget(const RenderTarget&) = delete;
 		RenderTarget& operator=(const RenderTarget&) = delete;
 
-		RenderTarget(RenderTarget&&) noexcept;
-		RenderTarget& operator=(RenderTarget&&) noexcept;
+		RenderTarget(RenderTarget&&) noexcept = default;
+		RenderTarget& operator=(RenderTarget&&) noexcept = default;
 
 		glm::uvec2 m_Size;
 		RenderTargetTypes::ComponentType m_ComponentType = RenderTargetTypes::ComponentType::RGBA;

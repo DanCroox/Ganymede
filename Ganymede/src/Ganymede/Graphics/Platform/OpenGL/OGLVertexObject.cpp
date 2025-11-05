@@ -77,6 +77,26 @@ namespace Ganymede
 		}
 	}
 
+	OGLVertexObjectIndexBuffer::OGLVertexObjectIndexBuffer(OGLVertexObjectIndexBuffer&& other) noexcept :
+		m_RenderID(other.m_RenderID),
+		m_NumIndices(other.m_NumIndices)
+	{
+		other.m_RenderID = 0;
+		other.m_NumIndices = 0;
+	}
+
+	OGLVertexObjectIndexBuffer& OGLVertexObjectIndexBuffer::operator=(OGLVertexObjectIndexBuffer&& other) noexcept
+	{
+		if (this != &other)
+		{
+			m_RenderID = other.m_RenderID;
+			m_NumIndices = other.m_NumIndices;
+			other.m_RenderID = 0;
+			other.m_NumIndices = 0;
+		}
+		return *this;
+	}
+
 	void OGLVertexObjectIndexBuffer::Bind()
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_RenderID);
@@ -85,6 +105,75 @@ namespace Ganymede
 	void OGLVertexObjectIndexBuffer::UnBind()
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
+
+	void OGLVertexObject::LinkBuffer(DataBufferBase& dataBuffer, bool isMultiInstanceDataBuffer)
+	{
+		const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBuffer.GetVertexDataPrimitiveTypeInfo();
+		GPUCommands::Rendering::BindVertexObject(*this);
+		dataBuffer.Bind();
+
+		for (const auto& typeInfo : typeInfos)
+		{
+			AddVertexAttribPointer(typeInfo.m_NumComponents, typeInfo.m_PrimitiveType, dataBuffer.GetElementSize(), typeInfo.m_ByteOffset, isMultiInstanceDataBuffer ? 1 : 0);
+		}
+
+		dataBuffer.UnBind();
+	}
+
+	void OGLVertexObject::LinkAndOwnBuffer(std::unique_ptr<DataBufferBase> dataBufferPtr, bool isMultiInstanceDataBuffer)
+	{
+		const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBufferPtr->GetVertexDataPrimitiveTypeInfo();
+		GPUCommands::Rendering::BindVertexObject(*this);
+		dataBufferPtr->Bind();
+
+		for (const auto& typeInfo : typeInfos)
+		{
+			AddVertexAttribPointer(typeInfo.m_NumComponents, typeInfo.m_PrimitiveType, dataBufferPtr->GetElementSize(), typeInfo.m_ByteOffset, isMultiInstanceDataBuffer ? 1 : 0);
+		}
+
+		dataBufferPtr->UnBind();
+
+		m_LinkedBuffers.push_back(std::move(dataBufferPtr));
+	}
+
+	OGLVertexObject::OGLVertexObject(const unsigned int* indicesData, unsigned int numIndices) :
+		VertexObject(indicesData, numIndices),
+		m_RenderID(0)
+	{
+		glGenVertexArrays(1, &m_RenderID);
+		OGLContext::BindVertexArrayObject(*this);
+		m_IndexBufferPtr = std::make_unique<OGLVertexObjectIndexBuffer>(indicesData, numIndices);
+		m_IndexBufferPtr->Bind();
+		OGLContext::UnbindVertexArrayObject();
+		m_IndexBufferPtr->UnBind();
+	}
+
+	OGLVertexObject::~OGLVertexObject()
+	{
+		OGLContext::UnbindVertexArrayObject();
+		glDeleteVertexArrays(1, &m_RenderID);
+	}
+
+	OGLVertexObject::OGLVertexObject(OGLVertexObject&& other) noexcept :
+		VertexObject(std::move(other)),
+		m_CurrentVertexAttribPointer(other.m_CurrentVertexAttribPointer),
+		m_IndexBufferPtr(std::move(other.m_IndexBufferPtr)),
+		m_RenderID(other.m_RenderID)
+	{
+		other.m_RenderID = 0;
+	}
+
+	OGLVertexObject& OGLVertexObject::operator=(OGLVertexObject&& other) noexcept
+	{
+		if (this != &other)
+		{
+			m_CurrentVertexAttribPointer = other.m_CurrentVertexAttribPointer;
+			m_IndexBufferPtr = std::move(other.m_IndexBufferPtr);
+			m_RenderID = other.m_RenderID;
+			other.m_RenderID = 0;
+		}
+		return *this;
 	}
 
 	void OGLVertexObject::AddVertexAttribPointer(unsigned int numComponents, VertexDataPrimitiveType primitiveType, unsigned int stride, unsigned int byteOffset, unsigned int divisor)
@@ -117,22 +206,5 @@ namespace Ganymede
 			++m_CurrentVertexAttribPointer;
 			byteOffset += (NumBytesOfPrimitiveType(primitiveType) * slicedComponentCount);
 		}
-	}
-
-	OGLVertexObject::OGLVertexObject(const unsigned int* indicesData, unsigned int numIndices) :
-		m_RenderID(0)
-	{
-		glGenVertexArrays(1, &m_RenderID);
-		OGLContext::BindVertexArrayObject(*this);
-		m_IndexBufferPtr = std::make_unique<OGLVertexObjectIndexBuffer>(indicesData, numIndices);
-		m_IndexBufferPtr->Bind();
-		OGLContext::UnbindVertexArrayObject();
-		m_IndexBufferPtr->UnBind();
-	}
-
-	OGLVertexObject::~OGLVertexObject()
-	{
-		OGLContext::UnbindVertexArrayObject();
-		glDeleteVertexArrays(1, &m_RenderID);
 	}
 }

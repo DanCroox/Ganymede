@@ -9,10 +9,11 @@ namespace Ganymede
 	class GANYMEDE_API OGLFrameBuffer : public FrameBuffer
 	{
 	public:
-		OGLFrameBuffer() = delete;
-
 		OGLFrameBuffer(glm::u32vec2 renderDimension, bool isHardWareFrameBuffer);
 		~OGLFrameBuffer() override;
+
+		OGLFrameBuffer(OGLFrameBuffer&& other) noexcept;
+		OGLFrameBuffer& operator=(OGLFrameBuffer&& other) noexcept;
 
 		void SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture) override;
 		void SetColorBufferClearColor(const glm::vec4& color) override { m_ColorBufferClearColor = color; }

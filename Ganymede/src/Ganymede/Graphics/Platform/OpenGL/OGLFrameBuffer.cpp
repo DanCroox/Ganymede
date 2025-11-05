@@ -56,6 +56,35 @@ namespace Ganymede
 		glDeleteFramebuffers(1, &m_RenderID);
 	}
 
+	OGLFrameBuffer::OGLFrameBuffer(OGLFrameBuffer&& other) noexcept :
+		FrameBuffer(std::move(other)),
+		m_IsHardwareFrameBuffer(other.m_IsHardwareFrameBuffer),
+		m_RenderID(other.m_RenderID),
+		m_RenderDimension(other.m_RenderDimension),
+		m_FrameBufferAttachments(std::move(other.m_FrameBufferAttachments)),
+		m_ColorBufferClearColor(other.m_ColorBufferClearColor),
+		m_DepthBufferClearColor(other.m_DepthBufferClearColor)
+	{
+		other.m_RenderID = 0;
+	}
+
+	OGLFrameBuffer& OGLFrameBuffer::operator=(OGLFrameBuffer&& other) noexcept
+	{
+		if (this != &other)
+		{
+			FrameBuffer::operator=(std::move(other));
+			m_IsHardwareFrameBuffer = other.m_IsHardwareFrameBuffer;
+			m_RenderID = other.m_RenderID;
+			m_RenderDimension = other.m_RenderDimension;
+			m_FrameBufferAttachments = std::move(other.m_FrameBufferAttachments);
+			m_ColorBufferClearColor = other.m_ColorBufferClearColor;
+			m_DepthBufferClearColor = other.m_DepthBufferClearColor;
+
+			m_RenderID = 0;
+		}
+		return *this;
+	}
+
 	void OGLFrameBuffer::SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture)
 	{
 		OGLContext::BindFrameBuffer(*this);

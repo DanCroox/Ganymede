@@ -17,6 +17,28 @@ namespace Ganymede
 		DeleteBuffer();
 	}
 
+	OGLSSBO::OGLSSBO(OGLSSBO&& other) noexcept :
+		SSBO(std::move(other)),
+		m_DirectAccessBuffer(other.m_DirectAccessBuffer),
+		m_RenderID(other.m_RenderID)
+	{
+		other.m_DirectAccessBuffer = 0;
+		other.m_RenderID = 0;
+	}
+
+	OGLSSBO& OGLSSBO::operator=(OGLSSBO&& other) noexcept
+	{
+		if (this != &other)
+		{
+			SSBO::operator=(std::move(other));
+			m_DirectAccessBuffer = other.m_DirectAccessBuffer;
+			m_RenderID = other.m_RenderID;
+			other.m_DirectAccessBuffer = 0;
+			other.m_RenderID = 0;
+		}
+		return *this;
+	}
+
 	void OGLSSBO::Barrier()
 	{
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

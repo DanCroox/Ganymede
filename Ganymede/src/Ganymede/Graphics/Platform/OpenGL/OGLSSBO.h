@@ -8,9 +8,11 @@ namespace Ganymede
 	class GANYMEDE_API OGLSSBO : public SSBO
 	{
 	public:
-		OGLSSBO() = delete;
 		OGLSSBO(unsigned int bindingPointID, unsigned int bufferSize, bool autoResize);
-		~OGLSSBO();
+		~OGLSSBO() override;
+
+		OGLSSBO(OGLSSBO&& other) noexcept;
+		OGLSSBO& operator=(OGLSSBO&& other) noexcept;
 
 		void Write(unsigned int offset, unsigned int byteCount, void* data) override;
 		void Read(unsigned int offset, unsigned int byteCount, void* dataOut) override;

@@ -28,8 +28,6 @@ namespace Ganymede
 	class OGLSinglesampleRenderTarget : public OGLRenderTarget
 	{
 	public:
-		using Super = OGLRenderTarget;
-
 		OGLSinglesampleRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 
 		void Bind() override;
@@ -39,22 +37,15 @@ namespace Ganymede
 	class OGLMultisampleRenderTarget : public OGLRenderTarget
 	{
 	public:
-		using Super = OGLRenderTarget;
-
 		OGLMultisampleRenderTarget(unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 
 		void Bind() override;
 		void UnBind() override;
-
-	private:
-		unsigned int m_SampleCount = 1;
 	};
 
 	class OGLCubeMapArrayRenderTarget : public OGLRenderTarget
 	{
 	public:
-		using Super = OGLRenderTarget;
-
 		OGLCubeMapArrayRenderTarget(unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 
 		void Bind() override;

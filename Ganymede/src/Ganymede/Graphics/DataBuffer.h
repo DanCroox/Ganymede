@@ -42,6 +42,9 @@ namespace Ganymede
 			DataBufferNativeFunctions::UnBindBuffer();
 		}
 
+		virtual const std::vector<VertexDataPrimitiveTypeInfo>& GetVertexDataPrimitiveTypeInfo() const = 0;
+		virtual unsigned int GetElementSize() const = 0;
+
 	protected:
 		unsigned int m_RenderID;
 	};
@@ -96,12 +99,12 @@ namespace Ganymede
 			DataBufferNativeFunctions::Write(m_RenderID, (const void*)&data[0], sizeof(typename T::VertexDataType) * numElements, sizeof(typename T::VertexDataType) * offset);
 		}
 
-		const std::vector<VertexDataPrimitiveTypeInfo>& GetVertexDataPrimitiveTypeInfo()
+		const std::vector<VertexDataPrimitiveTypeInfo>& GetVertexDataPrimitiveTypeInfo() const override
 		{
 			return T::GetVertexDataPrimitiveTypeInfo();
 		}
 
-		unsigned int GetElementSize() { return sizeof(typename T::VertexDataType); }
+		unsigned int GetElementSize() const override { return sizeof(typename T::VertexDataType); }
 
 	private:
 		DataBufferType m_BufferType;

@@ -57,7 +57,7 @@ namespace Ganymede
 	}
 
 	OGLSinglesampleRenderTarget::OGLSinglesampleRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
-		Super(componentType, dataType, precision, size)
+		OGLRenderTarget(componentType, dataType, precision, size)
 	{
 		Bind();
 		glTexImage2D(GL_TEXTURE_2D, 0, OGLContext::ToNativeInternalFormat(componentType, dataType, precision), size.x, size.y, 0, OGLContext::ToNativeChannelCount(componentType), OGLContext::ToNativeDataType(dataType, precision), NULL);
@@ -77,8 +77,7 @@ namespace Ganymede
 	}
 
 	OGLMultisampleRenderTarget::OGLMultisampleRenderTarget(unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
-		Super(componentType, dataType, precision, size),
-		m_SampleCount(sampleCount)
+		OGLRenderTarget(componentType, dataType, precision, size)
 	{
 		GM_CORE_ASSERT(sampleCount >= 2 && sampleCount <= 16, "Number of samples needs to be between 2 and 16.");
 
@@ -98,7 +97,7 @@ namespace Ganymede
 	}
 
 	OGLCubeMapArrayRenderTarget::OGLCubeMapArrayRenderTarget(unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size) :
-		Super(componentType, dataType, precision, size)
+		OGLRenderTarget(componentType, dataType, precision, size)
 	{
 		Bind();
 		glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, OGLContext::ToNativeInternalFormat(componentType, dataType, precision), size.x, size.y, numTextures, 0, OGLContext::ToNativeChannelCount(componentType), OGLContext::ToNativeDataType(dataType, precision), NULL);

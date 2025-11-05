@@ -1,5 +1,5 @@
 #pragma once
-#include "Ganymede/Core/Core.h"
+#include "Ganymede/Graphics/Texture.h"
 
 namespace Ganymede
 {
@@ -20,13 +20,18 @@ namespace Ganymede
 
     protected:
         GPUTexture() = delete;
-        explicit GPUTexture(const Texture& texture);
+        explicit GPUTexture(const Texture& texture) :
+            m_Width(texture.GetWidth()),
+            m_Height(texture.GetHeight()),
+            m_ChannelCount(texture.GetNumChannels()),
+            m_BitDepth(texture.GetBitDepth())
+        {};
 
         GPUTexture(const GPUTexture&) = delete;
         GPUTexture& operator=(const GPUTexture&) = delete;
 
-        GPUTexture(GPUTexture&& other) noexcept;
-        GPUTexture& operator=(GPUTexture&& other) noexcept;
+        GPUTexture(GPUTexture&& other) noexcept = default;
+        GPUTexture& operator=(GPUTexture&& other) noexcept = default;
 
         unsigned int m_Width = 0;
         unsigned int m_Height = 0;
