@@ -6,10 +6,8 @@
 #include "Ganymede/ECS/Components/GCMesh.h"
 #include "Ganymede/ECS/Components/GCRigidBody.h"
 #include "Ganymede/ECS/Components/GCTransform.h"
-#include "Ganymede/Graphics/DataBuffer.h"
-#include "Ganymede/Graphics/GPUCommands.h"
+#include "Ganymede/Graphics/ComputeShader.h"
 #include "Ganymede/Graphics/RenderContext.h"
-#include "Ganymede/Graphics/Shader.h"
 #include "Ganymede/Graphics/ShaderBinary.h"
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Graphics/VertexDataTypes.h"
@@ -33,8 +31,8 @@ namespace Ganymede
 		ssbo_RenderInfos = renderContext.CreateSSBO("RenderInfos", 25, sizeof(RenderMeshInstanceCommand) * 1000000, false);
 		ssbo_VisibleEntities = renderContext.CreateSSBO("EntityIDGPUInstanceDataMapping", 26, sizeof(VisibleEntity) * 1000000, false);
 
-		m_FindVisibleEntitiesCompute = renderContext.LoadShader("FindVisibleEntitiesComputeShader", { "res/shaders/Compute/FindVisibleEntitiesComputeShader.shader" });
-		m_GenerateIndirectDrawCommands = renderContext.LoadShader("GenerateIndirectDrawCommands", { "res/shaders/Compute/GenerateIndirectDrawCommands.shader" });
+		m_FindVisibleEntitiesCompute = renderContext.LoadComputeShader("FindVisibleEntitiesComputeShader", { "res/shaders/Compute/FindVisibleEntitiesComputeShader.shader" });
+		m_GenerateIndirectDrawCommands = renderContext.LoadComputeShader("GenerateIndirectDrawCommands", { "res/shaders/Compute/GenerateIndirectDrawCommands.shader" });
 
 		return true;
 	}
@@ -111,7 +109,7 @@ namespace Ganymede
 
 		const unsigned int numComputeThreads = 256;
 		// Find visible entities for all registered views
-		GPUCommands::Compute::Dispatch(*m_FindVisibleEntitiesCompute, (m_NumEntities + numComputeThreads - 1) / numComputeThreads, 1, 1);
+		m_FindVisibleEntitiesCompute->Dispatch((m_NumEntities + numComputeThreads - 1) / numComputeThreads, 1, 1);
 
 		ssbo_ComputePassCounters->Barrier();
 		ssbo_VisibleEntities->Barrier();
@@ -142,8 +140,8 @@ namespace Ganymede
 
 		ssbo_AppendBuffer->Barrier();
 
-		// Generate draw commands based on sorted instances
-		GPUCommands::Compute::Dispatch(*m_GenerateIndirectDrawCommands, (numAppends + numComputeThreads - 1) / numComputeThreads, 1, 1);
+		// Generate draw commands based on sorted instances#
+		m_GenerateIndirectDrawCommands->Dispatch((numAppends + numComputeThreads - 1) / numComputeThreads, 1, 1);
 
 		ssbo_AppendBuffer->Barrier();
 		ssbo_ComputePassCounters->Barrier();

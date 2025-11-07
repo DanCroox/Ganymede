@@ -97,6 +97,45 @@ namespace Ganymede
 		}
 	}
 
+	void OGLFrameBuffer::Blit(
+		FrameBuffer& m_SourceFrameBuffer,
+		FrameBuffer::AttachmentType m_SourceAttachement,
+		FrameBuffer::AttachmentType m_DestAttachement,
+		const glm::u32vec4& m_SourcePixelBounds,
+		const glm::u32vec4& m_DestPixelBounds,
+		BlitFilterType m_FilterType)
+	{
+		const unsigned int sourceFBId = static_cast<OGLFrameBuffer&>(m_SourceFrameBuffer).GetRenderID();
+		const unsigned int destFBId = GetRenderID();
+
+		unsigned int nativeBufferTypeBit = 0;
+		if (m_SourceAttachement == FrameBuffer::AttachmentType::Depth)
+		{
+			nativeBufferTypeBit = GL_DEPTH_BUFFER_BIT;
+		}
+		else
+		{
+			nativeBufferTypeBit = GL_COLOR_BUFFER_BIT;
+			glNamedFramebufferReadBuffer(sourceFBId, OGLFrameBuffer::ToNativeAttachment(m_SourceAttachement));
+			glNamedFramebufferDrawBuffer(destFBId, OGLFrameBuffer::ToNativeAttachment(m_DestAttachement));
+		}
+
+		glBlitNamedFramebuffer(
+			sourceFBId,
+			destFBId,
+			m_SourcePixelBounds.x,
+			m_SourcePixelBounds.y,
+			m_SourcePixelBounds.z,
+			m_SourcePixelBounds.a,
+			m_DestPixelBounds.x,
+			m_DestPixelBounds.y,
+			m_DestPixelBounds.z,
+			m_DestPixelBounds.a,
+			nativeBufferTypeBit,
+			OGLFrameBuffer::ToNativeBlitFilterType(m_FilterType)
+		);
+	}
+
 	unsigned int OGLFrameBuffer::ToNativeAttachment(FrameBuffer::AttachmentType attachmentType)
 	{
 		switch (attachmentType)

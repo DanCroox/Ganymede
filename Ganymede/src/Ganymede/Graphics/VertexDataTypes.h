@@ -47,25 +47,8 @@ namespace Ganymede
             return vertexAttributePosition;                                                                     \
         }                                                                                                       \
     };
-
-    VertexDataDefinition(MeshVertexData, MeshWorldObject::Mesh::Vertex,
-        M(m_Position, VertexDataPrimitiveType::Float, 3),
-        M(m_UV, VertexDataPrimitiveType::Float, 2),
-        M(m_Normal, VertexDataPrimitiveType::Float, 3),
-        M(m_Tangent, VertexDataPrimitiveType::Float, 3),
-        M(m_Bitangent, VertexDataPrimitiveType::Float, 3),
-        M(m_BoneIndex, VertexDataPrimitiveType::UInt, 4),
-        M(m_BoneWeight, VertexDataPrimitiveType::Float, 4));
-
-    VertexDataDefinition(Vec3VertexData, glm::vec3,
-        M(x, VertexDataPrimitiveType::Float, 3)
-    );
-
-    VertexDataDefinition(Vec2VertexData, glm::vec2,
-        M(x, VertexDataPrimitiveType::Float, 2)
-    );
-
-    VertexDataDefinition(UInt32VertexData, glm::u32vec1,
-        M(x, VertexDataPrimitiveType::UInt, 1)
-    );
+    
+    #define X(type, basetype, ...) VertexDataDefinition(type, basetype, __VA_ARGS__)
+    #include "VertexDataTypes.def"
+    #undef X
 }

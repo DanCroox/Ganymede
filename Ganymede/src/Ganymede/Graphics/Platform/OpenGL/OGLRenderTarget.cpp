@@ -49,6 +49,29 @@ namespace Ganymede
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
+	void OGLRenderTarget::Clear(
+		unsigned int mipLayer,
+		unsigned int destX,
+		unsigned int destY,
+		unsigned int destDepth,
+		unsigned int extendX,
+		unsigned int extendY,
+		unsigned int extendDepth,
+		const float* normalizedClearColor)
+	{
+		glClearTexSubImage(
+			static_cast<OGLRenderTarget*>(this)->GetRenderID(),
+			mipLayer,
+			destX, destY,
+			destDepth,
+			extendX, extendY,
+			extendDepth,
+			OGLContext::ToNativeChannelCount(GetComponentType()),
+			OGLContext::ToNativeDataType(GetChannelDataType(), GetChannelPrecision()),
+			(void*)normalizedClearColor
+		);
+	}
+
 	void OGLRenderTarget::SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value)
 	{
 		Bind();

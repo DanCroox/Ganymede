@@ -1,0 +1,22 @@
+// Type definitions for GPU data types. This is used to create proper vertex data mapping in a shader
+
+X(MeshVertexData, MeshWorldObject::Mesh::Vertex,
+	M(m_Position, VertexDataPrimitiveType::Float, 3),
+	M(m_UV, VertexDataPrimitiveType::Float, 2),
+	M(m_Normal, VertexDataPrimitiveType::Float, 3),
+	M(m_Tangent, VertexDataPrimitiveType::Float, 3),
+	M(m_Bitangent, VertexDataPrimitiveType::Float, 3),
+	M(m_BoneIndex, VertexDataPrimitiveType::UInt, 4),
+	M(m_BoneWeight, VertexDataPrimitiveType::Float, 4));
+
+X(Vec3VertexData, glm::vec3,
+	M(x, VertexDataPrimitiveType::Float, 3)
+);
+
+X(Vec2VertexData, glm::vec2,
+	M(x, VertexDataPrimitiveType::Float, 2)
+);
+
+X(UInt32VertexData, glm::u32vec1,
+	M(x, VertexDataPrimitiveType::UInt, 1)
+);

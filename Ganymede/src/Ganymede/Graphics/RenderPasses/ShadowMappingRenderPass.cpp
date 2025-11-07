@@ -4,10 +4,9 @@
 #include "Ganymede/ECS/Components/GCPointlight.h"
 #include "Ganymede/ECS/Components/GCTransform.h"
 #include "Ganymede/Graphics/FrameBuffer.h"
-#include "Ganymede/Graphics/GPUCommands.h"
+#include "Ganymede/Graphics/GraphicsShader.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/Renderer.h"
-#include "Ganymede/Graphics/Shader.h"
 #include "Ganymede/Graphics/ShaderBinary.h"
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Graphics/VertexDataTypes.h"
@@ -23,7 +22,7 @@ namespace Ganymede
 		m_Framebuffer = renderContext.CreateFrameBuffer("OmniDirectionalShadowMapping", { m_ShadowMapSize, m_ShadowMapSize }, false);
 		m_Framebuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Depth, *m_ShadowMapsCubeArray);
 
-		m_ShadowMappingShader = renderContext.LoadShader("OmniDirectionalShadowMappingShader", {"res/shaders/OmnidirectionalShadowMapInstances.shader"});
+		m_ShadowMappingShader = renderContext.LoadGraphicsShader("OmniDirectionalShadowMappingShader", {"res/shaders/OmnidirectionalShadowMapInstances.shader"});
 
 		ssbo_IndirectDrawCmds = renderContext.GetSSBO("IndirectDrawCommands");
 
@@ -42,8 +41,7 @@ namespace Ganymede
 			const int currentLightID = lightID++;
 			float depthClear = 1.0f;
 
-			GPUCommands::RenderTarget::ClearRenderTarget(
-				*m_ShadowMapsCubeArray,
+			m_ShadowMapsCubeArray->Clear(
 				0,
 				0,0,
 				currentLightID * 6,

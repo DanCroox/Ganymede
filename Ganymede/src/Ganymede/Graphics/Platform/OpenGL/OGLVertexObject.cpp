@@ -1,6 +1,7 @@
 #include "Ganymede/Graphics/Platform/OpenGL/OGLVertexObject.h"
 
 #include "OGLContext.h"
+#include "OGLDataBuffer.h"
 #include <GL/glew.h>
 
 namespace Ganymede
@@ -57,6 +58,12 @@ namespace Ganymede
 				return 0;
 			}
 		}
+
+		static OGLDataBufferManager& AsManager(DataBufferBase& dataBufferBase)
+		{
+			GM_CORE_ASSERT(dynamic_cast<OGLDataBufferManager*>(&dataBufferBase) != nullptr, "The DataBufferBase instance does not seem to implement the OGLDataBufferManager-interface.");
+			return dynamic_cast<OGLDataBufferManager&>(dataBufferBase);
+		}
 	}
 
 	OGLVertexObjectIndexBuffer::OGLVertexObjectIndexBuffer(const unsigned int* indicesData, unsigned int numIndices) :
@@ -110,29 +117,33 @@ namespace Ganymede
 	void OGLVertexObject::LinkBuffer(DataBufferBase& dataBuffer, bool isMultiInstanceDataBuffer)
 	{
 		const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBuffer.GetVertexDataPrimitiveTypeInfo();
-		GPUCommands::Rendering::BindVertexObject(*this);
-		dataBuffer.Bind();
+		OGLContext::BindVertexArrayObject(*this);
+
+		OGLDataBufferManager& dataBufferManager = VertexObject_Private::AsManager(dataBuffer);
+		dataBufferManager.Bind();
 
 		for (const auto& typeInfo : typeInfos)
 		{
 			AddVertexAttribPointer(typeInfo.m_NumComponents, typeInfo.m_PrimitiveType, dataBuffer.GetElementSize(), typeInfo.m_ByteOffset, isMultiInstanceDataBuffer ? 1 : 0);
 		}
 
-		dataBuffer.UnBind();
+		dataBufferManager.Unbind();
 	}
 
 	void OGLVertexObject::LinkAndOwnBuffer(std::unique_ptr<DataBufferBase> dataBufferPtr, bool isMultiInstanceDataBuffer)
 	{
 		const std::vector<VertexDataPrimitiveTypeInfo>& typeInfos = dataBufferPtr->GetVertexDataPrimitiveTypeInfo();
-		GPUCommands::Rendering::BindVertexObject(*this);
-		dataBufferPtr->Bind();
+		OGLContext::BindVertexArrayObject(*this);
+
+		OGLDataBufferManager& dataBufferManager = VertexObject_Private::AsManager(*dataBufferPtr.get());
+		dataBufferManager.Bind();
 
 		for (const auto& typeInfo : typeInfos)
 		{
 			AddVertexAttribPointer(typeInfo.m_NumComponents, typeInfo.m_PrimitiveType, dataBufferPtr->GetElementSize(), typeInfo.m_ByteOffset, isMultiInstanceDataBuffer ? 1 : 0);
 		}
 
-		dataBufferPtr->UnBind();
+		dataBufferManager.Unbind();
 
 		m_LinkedBuffers.push_back(std::move(dataBufferPtr));
 	}

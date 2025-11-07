@@ -8,9 +8,9 @@
 namespace Ganymede
 {
 	class FrameBuffer;
+	class GraphicsShader;
 	class RenderTarget;
 	class SSBO;
-	class Shader;
 	class VertexObject;
 
 	class GANYMEDE_API LightingRenderPass : public RenderPass2
@@ -30,7 +30,7 @@ namespace Ganymede
 		FrameBuffer* m_FrameBuffer;
 		RenderTarget* m_LightingRT;
 		SSBO* m_PointLightSortedToCamDistanceSSBO;
-		Shader* m_LightingShader;
+		GraphicsShader* m_LightingShader;
 		VertexObject* m_ScreenVO;
 		DataBuffer<Vec3VertexData>* m_ScreenVBPos;
 		DataBuffer<Vec2VertexData>* m_ScreenVBUV;

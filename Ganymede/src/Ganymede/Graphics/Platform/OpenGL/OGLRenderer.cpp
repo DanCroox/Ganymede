@@ -4,7 +4,7 @@
 #include "Ganymede/Graphics/Material.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/Shader.h"
-#include "OGLShader.h"
+#include "OGLGraphicsShader.h"
 #include "OGLSSBO.h"
 #include "OGLFrameBuffer.h"
 #include "OGLVertexObject.h"
@@ -21,19 +21,19 @@ namespace Ganymede
 		m_RenderContext(renderContext)
 	{}
 
-	void OGLRenderer::DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, Shader& shader, bool doDepthTest)
+	void OGLRenderer::DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, GraphicsShader& shader, bool doDepthTest)
 	{
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
-		OGLContext::BindShader(static_cast<const OGLShader&>(shader));
+		OGLContext::BindShader(static_cast<const OGLGraphicsShader&>(shader).GetRendererID());
 
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<OGLVertexObject&>(vertexObject).GetVertexObjectIndexBuffer().GetNumIndices(), GL_UNSIGNED_INT, 0, numInstances);
 	}
 
-	void OGLRenderer::DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Shader& shader, bool doDepthTest)
+	void OGLRenderer::DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const GraphicsShader& shader, bool doDepthTest)
 	{
 		PrepareDraw(vertexObject, frameBuffer, doDepthTest);
 
-		OGLContext::BindShader(static_cast<const OGLShader&>(shader));
+		OGLContext::BindShader(static_cast<const OGLGraphicsShader&>(shader).GetRendererID());
 		OGLContext::BindIndirectDrawBuffer(static_cast<OGLSSBO&>(indirectCommandsBuffer));
 
 		const unsigned int byteOffset = commandOffset * 20;

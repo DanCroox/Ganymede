@@ -11,8 +11,8 @@
 
 namespace Ganymede
 {
+	class ComputeShader;
 	class SSBO;
-	class Shader;
 
 	struct ComputePassCounters
 	{
@@ -81,7 +81,7 @@ namespace Ganymede
 
 		unsigned int m_NumEntities = 0;
 
-		Shader* m_FindVisibleEntitiesCompute;
-		Shader* m_GenerateIndirectDrawCommands;
+		ComputeShader* m_FindVisibleEntitiesCompute;
+		ComputeShader* m_GenerateIndirectDrawCommands;
 	};
 }

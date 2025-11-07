@@ -37,23 +37,6 @@ namespace Ganymede
 			Nearest
 		};
 
-		class BlitFrameBufferConfig
-		{
-		public:
-			struct BlitAttachementInfo
-			{
-				FrameBuffer& m_SourceFrameBuffer;
-				FrameBuffer& m_DestFrameBuffer;
-				FrameBuffer::AttachmentType m_SourceAttachement;
-				FrameBuffer::AttachmentType m_DestAttachement;
-				glm::u32vec4 m_SourcePixelBounds;
-				glm::u32vec4 m_DestPixelBounds;
-				BlitFilterType m_FilterType;
-			};
-
-			std::vector<BlitAttachementInfo> m_AttachementsToBlit;
-		};
-
 		virtual ~FrameBuffer() = default;
 
 		virtual void SetFrameBufferAttachment(AttachmentType attachmentType, RenderTarget& frameBufferTexture) = 0;
@@ -64,6 +47,14 @@ namespace Ganymede
 		virtual glm::u32vec2 GetRenderDimension() const = 0;
 		virtual const glm::vec4& GetColorBufferClearColor() const = 0;
 		virtual float GetDepthBufferClearColor() const = 0;
+
+		virtual void Blit(
+			FrameBuffer& m_SourceFrameBuffer,
+			FrameBuffer::AttachmentType m_SourceAttachement,
+			FrameBuffer::AttachmentType m_DestAttachement,
+			const glm::u32vec4& m_SourcePixelBounds,
+			const glm::u32vec4& m_DestPixelBounds,
+			BlitFilterType m_FilterType) = 0;
 
 		virtual bool IsValid() const = 0;
 

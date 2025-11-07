@@ -49,6 +49,16 @@ namespace Ganymede
 	public:
 		virtual ~RenderTarget() = default;
 
+		virtual void Clear(
+			unsigned int mipLayer,
+			unsigned int destX,
+			unsigned int destY,
+			unsigned int destDepth,
+			unsigned int extendX,
+			unsigned int extendY,
+			unsigned int extendDepth,
+			const float* pixelDataBytes) = 0;
+
 		virtual void SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value) = 0;
 		virtual bool IsValid() const = 0;
 

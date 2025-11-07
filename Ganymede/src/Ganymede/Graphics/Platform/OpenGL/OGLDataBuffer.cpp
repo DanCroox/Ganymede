@@ -1,4 +1,4 @@
-#include "Ganymede/Graphics/DataBuffer.h"
+#include "OGLDataBuffer.h"
 
 #include "GL/glew.h"
 
@@ -53,5 +53,22 @@ namespace Ganymede
     void DataBufferNativeFunctions::InitializeBufferData(unsigned int renderID, const void* data, unsigned int numBytes, DataBufferType bufferType)
     {
         glNamedBufferData(renderID, numBytes, data, DataBufferNativeFunctions_Private::ToNativeBufferType(bufferType));
+    }
+
+    OGLDataBufferManager::OGLDataBufferManager(OGLDataBufferManager&& other) noexcept :
+        m_RenderID(other.m_RenderID)
+    {
+        other.m_RenderID = 0;
+    }
+
+    OGLDataBufferManager& OGLDataBufferManager::operator=(OGLDataBufferManager&& other) noexcept
+    {
+        if (this != &other)
+        {
+            m_RenderID = other.m_RenderID;
+            other.m_RenderID = 0;
+        }
+
+        return *this;
     }
 }

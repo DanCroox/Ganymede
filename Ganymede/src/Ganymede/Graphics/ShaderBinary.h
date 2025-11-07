@@ -2,41 +2,32 @@
 #include "Ganymede/Core/Core.h"
 
 #include "Ganymede/Data/SerializerTraits.h"
+#include "Platform/GraphicsFactory.h"
 #include <string>
 #include <vector>
 
 namespace Ganymede
 {
-	class ShaderLoader;
+	namespace ShaderBinaryTypeBits
+	{
+		constexpr uint8_t COMPUTE = 1 << 0;
+		constexpr uint8_t VERTEX = 1 << 1;
+		constexpr uint8_t FRAGMENT = 1 << 2;
+		constexpr uint8_t GEOMETRY = 1 << 3;
+	}
 
 	class GANYMEDE_API ShaderBinary
 	{
 	public:
-		enum class ShaderType : int
-		{
-			NONE = -1,
-			COMPUTE,
-			VERTEX,
-			FRAGMENT,
-			GEOMETRY,
-
-			_COUNT
-		};
-
 		struct Binary
 		{
 			std::vector<unsigned char> m_Data;
 			unsigned int m_DataFormat = 0;
-			ShaderType m_BinaryType = ShaderType::NONE;
+			uint8_t m_ShaderTypeBits = 0;
 		};
 
-		const std::vector<Binary>& GetBinaryContainer() const { return m_BinaryContainer; }
-		const std::string& GetFilePath() const { return m_FilePath; }
-
-	private:
-		friend class ShaderLoader;
-
 		GM_SERIALIZABLE(ShaderBinary);
+
 		ShaderBinary() = default;
 
 		std::string m_FilePath;

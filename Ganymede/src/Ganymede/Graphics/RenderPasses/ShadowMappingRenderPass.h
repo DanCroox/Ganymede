@@ -8,8 +8,8 @@
 namespace Ganymede
 {
 	class FrameBuffer;
+	class GraphicsShader;
 	class RenderTarget;
-	class Shader;
 	class SSBO;
 
 	class GANYMEDE_API ShadowMappingRenderPass : public RenderPass2
@@ -28,12 +28,6 @@ namespace Ganymede
 			glm::uvec4 m_Attribs;
 		};
 
-		VertexDataDefinition(ShadowMappingInstanceVertexData, InstanceDataShadowMapping,
-			M(m_M, VertexDataPrimitiveType::Float, 16),
-			M(m_MVP, VertexDataPrimitiveType::Float, 16),
-			M(m_Attribs, VertexDataPrimitiveType::UInt, 4)
-		);
-
 		bool Initialize(RenderContext& renderContext) override;
 		void Execute(RenderContext& renderContext) override;
 
@@ -42,8 +36,8 @@ namespace Ganymede
 		RenderTarget* m_ShadowMapsCubeArray;
 		SSBO* m_AnimationDataSSBO;
 		SSBO* m_PointlightDataSSBO;
-		Shader* m_ShadowMappingShader;
-		DataBuffer<ShadowMappingInstanceVertexData>* m_InstanceDataBuffer;
+		GraphicsShader* m_ShadowMappingShader;
+		DataBufferBase* m_InstanceDataBuffer;
 		std::vector<glm::u32vec1> m_InterInstanceDataIndexBuffer;
 
 		SSBO* ssbo_IndirectDrawCmds;

@@ -2,7 +2,6 @@
 
 #include "Ganymede/Core/Core.h"
 
-#include "Ganymede/Graphics/DataBuffer.h"
 #include "Ganymede/Graphics/FrameBuffer.h"
 #include "Ganymede/Graphics/RenderPass.h"
 #include <memory>
@@ -45,7 +44,5 @@ namespace Ganymede
 		RenderTarget* m_DepthRT;
 
 		SSBO* ssbo_IndirectDrawCmds;
-
-		FrameBuffer::BlitFrameBufferConfig m_MultiToSingleSampleBlitFBConfig;
 	};
 }

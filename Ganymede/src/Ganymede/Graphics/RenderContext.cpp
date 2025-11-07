@@ -1,322 +1,354 @@
 #include "RenderContext.h"
 
 #include "Ganymede/Data/StaticData.h"
-#include "Ganymede/Graphics/GPUCommands.h"
 #include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
-#include "Platform/GraphicsFactory.h"
 #include "ShaderCompiler.h"
-#include "ShaderLoader.h"
 #include "Texture.h"
 #include <memory>
 
 namespace Ganymede
 {
-    RenderContext::RenderContext(World& world) :
-        m_World(world),
-        m_Renderer(GraphicsFactory::CreateRenderer(*this))
-    {
-        m_VertexObjectCache.resize(1000000);
-        m_RenderViews.resize(10000);
-        m_TextureObjectCache.resize(10000);
-    }
+	RenderContext::RenderContext(World& world) :
+		m_World(world),
+		m_Renderer(GraphicsFactory::CreateRenderer(*this))
+	{
+		m_VertexObjectCache.resize(1000000);
+		m_RenderViews.resize(10000);
+		m_TextureObjectCache.resize(10000);
+	}
 
-    World& RenderContext::GetWorld()
-    {
-        return m_World;
-    }
+	World& RenderContext::GetWorld()
+	{
+		return m_World;
+	}
 
-    Renderer& RenderContext::GetRenderer()
-    {
-        return *m_Renderer.get();
-    }
+	Renderer& RenderContext::GetRenderer()
+	{
+		return *m_Renderer.get();
+	}
 
-    FrameBuffer* RenderContext::CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer)
-    {
-        auto [it, inserted] = m_FrameBuffers.try_emplace(name, GraphicsFactory::CreateFrameBuffer(renderDimension, isHardwareBuffer));
-        GM_CORE_ASSERT(inserted, "Tried to create framebuffer which already existed. Using from cache.");
-        FrameBuffer* ptr = it->second.get();
-        if (!ptr->IsValid())
-        {
-            m_FrameBuffers.erase(name);
-            GM_CORE_ASSERT(false, "Framebuffer is invalid.");
-            return nullptr;
-        }
-        return ptr;
-    }
+	FrameBuffer* RenderContext::CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer)
+	{
+		auto [it, inserted] = m_FrameBuffers.try_emplace(name, GraphicsFactory::CreateFrameBuffer(renderDimension, isHardwareBuffer));
+		GM_CORE_ASSERT(inserted, "Tried to create framebuffer which already existed. Using from cache.");
+		FrameBuffer* ptr = it->second.get();
+		if (!ptr->IsValid())
+		{
+			m_FrameBuffers.erase(name);
+			GM_CORE_ASSERT(false, "Framebuffer is invalid.");
+			return nullptr;
+		}
+		return ptr;
+	}
 
-    RenderTarget* RenderContext::CreateSingleSampleRenderTarget(const std::string& name, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
-    {
-        auto [it, inserted] = m_SingleSampleRenderTargets.try_emplace(name, GraphicsFactory::CreateSingleSampleRenderTarget(componentType, dataType, precision, size));
-        GM_CORE_ASSERT(inserted, "Tried to create single sample render target which already existed. Using from cache.");
-        RenderTarget* ptr = it->second.get();
-        if (ptr == nullptr)
-        {
-            m_SingleSampleRenderTargets.erase(name);
-            GM_CORE_ASSERT(false, "Single sample render target is invalid.");
-            return nullptr;
-        }
-        return ptr;
-    }
+	RenderTarget* RenderContext::CreateSingleSampleRenderTarget(const std::string& name, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
+	{
+		auto [it, inserted] = m_SingleSampleRenderTargets.try_emplace(name, GraphicsFactory::CreateSingleSampleRenderTarget(componentType, dataType, precision, size));
+		GM_CORE_ASSERT(inserted, "Tried to create single sample render target which already existed. Using from cache.");
+		RenderTarget* ptr = it->second.get();
+		if (ptr == nullptr)
+		{
+			m_SingleSampleRenderTargets.erase(name);
+			GM_CORE_ASSERT(false, "Single sample render target is invalid.");
+			return nullptr;
+		}
+		return ptr;
+	}
 
-    RenderTarget* RenderContext::CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
-    {
-        auto [it, inserted] = m_MultiSampleRenderTargets.try_emplace(name, GraphicsFactory::CreateMultiSampleRenderTarget(sampleCount, componentType, dataType, precision, size));
-        GM_CORE_ASSERT(inserted, "Tried to create multi sample render target which already existed. Using from cache.");
-        RenderTarget* ptr = it->second.get();
-        if (ptr == nullptr)
-        {
-            m_MultiSampleRenderTargets.erase(name);
-            GM_CORE_ASSERT(false, "Multi sample render target is invalid.");
-            return nullptr;
-        }
-        return ptr;
-    }
+	RenderTarget* RenderContext::CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
+	{
+		auto [it, inserted] = m_MultiSampleRenderTargets.try_emplace(name, GraphicsFactory::CreateMultiSampleRenderTarget(sampleCount, componentType, dataType, precision, size));
+		GM_CORE_ASSERT(inserted, "Tried to create multi sample render target which already existed. Using from cache.");
+		RenderTarget* ptr = it->second.get();
+		if (ptr == nullptr)
+		{
+			m_MultiSampleRenderTargets.erase(name);
+			GM_CORE_ASSERT(false, "Multi sample render target is invalid.");
+			return nullptr;
+		}
+		return ptr;
+	}
 
-    RenderTarget* RenderContext::CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
-    {
-        auto [it, inserted] = m_CubeMapArrayRenderTargets.try_emplace(name, GraphicsFactory::CreateCubeMapArrayRenderTarget(numTextures, componentType, dataType, precision, size));
-        GM_CORE_ASSERT(inserted, "Tried to create cube map array render target which already existed. Using from cache.");
-        RenderTarget* ptr = it->second.get();
-        if (ptr == nullptr)
-        {
-            m_CubeMapArrayRenderTargets.erase(name);
-            GM_CORE_ASSERT(false, "Cube map array render target is invalid.");
-            return nullptr;
-        }
-        return ptr;
-    }
+	RenderTarget* RenderContext::CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
+	{
+		auto [it, inserted] = m_CubeMapArrayRenderTargets.try_emplace(name, GraphicsFactory::CreateCubeMapArrayRenderTarget(numTextures, componentType, dataType, precision, size));
+		GM_CORE_ASSERT(inserted, "Tried to create cube map array render target which already existed. Using from cache.");
+		RenderTarget* ptr = it->second.get();
+		if (ptr == nullptr)
+		{
+			m_CubeMapArrayRenderTargets.erase(name);
+			GM_CORE_ASSERT(false, "Cube map array render target is invalid.");
+			return nullptr;
+		}
+		return ptr;
+	}
 
-    VertexObject* RenderContext::CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices)
-    {
-        auto [it, inserted] = m_VertexObjects.try_emplace(name, GraphicsFactory::CreateVertexObject(indicesData, numIndices));
-        GM_CORE_ASSERT(inserted, "Tried to create VertexBbject which already existed. Using from cache.");
-        VertexObject* ptr = it->second.get();
-        if (!ptr->IsValid())
-        {
-            m_VertexObjects.erase(name);
-            GM_CORE_ASSERT(false, "VertexObject is invalid.");
-            return nullptr;
-        }
-        return ptr;
-    }
+	VertexObject* RenderContext::CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices)
+	{
+		auto [it, inserted] = m_VertexObjects.try_emplace(name, GraphicsFactory::CreateVertexObject(indicesData, numIndices));
+		GM_CORE_ASSERT(inserted, "Tried to create VertexBbject which already existed. Using from cache.");
+		VertexObject* ptr = it->second.get();
+		if (!ptr->IsValid())
+		{
+			m_VertexObjects.erase(name);
+			GM_CORE_ASSERT(false, "VertexObject is invalid.");
+			return nullptr;
+		}
+		return ptr;
+	}
 
-    SSBO* RenderContext::CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize)
-    {
-        auto [it, inserted] = m_SSBOs.try_emplace(name, GraphicsFactory::CreateSSBO(bindingID, numBytes, autoResize));
-        GM_CORE_ASSERT(inserted, "Tried to create ssbo which already existed. Using from cache.");
-        std::unique_ptr<SSBO>* ptr = &it->second;
+	SSBO* RenderContext::CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize)
+	{
+		auto [it, inserted] = m_SSBOs.try_emplace(name, GraphicsFactory::CreateSSBO(bindingID, numBytes, autoResize));
+		GM_CORE_ASSERT(inserted, "Tried to create ssbo which already existed. Using from cache.");
+		std::unique_ptr<SSBO>* ptr = &it->second;
 
-        return ptr->get();
-    }
+		return ptr->get();
+	}
 
-    Shader* RenderContext::LoadShader(const std::string& name, const std::string& shaderFile)
-    {
-        auto it = m_Shaders.find(name);
-        if (it != m_Shaders.end())
-        {
-            return it->second.get();
-        }
+	GraphicsShader* RenderContext::LoadGraphicsShader(const std::string& name, const std::string& shaderFile)
+	{
+		auto it = m_GraphicsShaders.find(name);
+		if (it != m_GraphicsShaders.end())
+		{
+			return it->second.get();
+		}
 
-        if (std::optional<ShaderBinary> shaderBinary = ShaderLoader::Load(shaderFile))
-        {
-            auto [it2, created] = m_Shaders.try_emplace(shaderFile, GraphicsFactory::CreateShader(shaderBinary.value()));
-            return it2->second.get();
-        }
+		if (std::optional<ShaderBinary> shaderBinary = GraphicsFactory::LoadShader(shaderFile))
+		{
+			auto [it2, created] = m_GraphicsShaders.try_emplace(shaderFile, GraphicsFactory::CreateGraphicsShader(shaderBinary.value()));
+			return it2->second.get();
+		}
 
-        GM_CORE_ASSERT(false, "Couldnt load shader");
-        return nullptr;
-    }
+		GM_CORE_ASSERT(false, "Couldnt load graphics shader");
+		return nullptr;
+	}
 
-    void RenderContext::BindMaterial(const Material& material)
-    {
-        const auto& propertiesMap = material.GetMaterialProperties();
+	ComputeShader* RenderContext::LoadComputeShader(const std::string& name, const std::string& shaderFile)
+	{
+		auto it = m_ComputeShaders.find(name);
+		if (it != m_ComputeShaders.end())
+		{
+			return it->second.get();
+		}
 
-        int nextTextureSlot = 0;
-        for (const auto& [propertyName, property] : propertiesMap)
-        {
-            const Material::MaterialPropertyData& propertyValue = property.m_Data;
+		if (std::optional<ShaderBinary> shaderBinary = GraphicsFactory::LoadShader(shaderFile))
+		{
+			auto [it2, created] = m_ComputeShaders.try_emplace(shaderFile, GraphicsFactory::CreateComputeShader(shaderBinary.value()));
+			return it2->second.get();
+		}
 
-            const ShaderBinary& shaderBinary = material.GetShaderBinary().GetData();
-            Shader& shader = *LoadShader(shaderBinary.GetFilePath(), shaderBinary.GetFilePath());
+		GM_CORE_ASSERT(false, "Couldnt load compute shader");
+		return nullptr;
+	}
 
-            if (std::holds_alternative<float>(propertyValue))
-            {
-                shader.SetUniform1f(propertyName.c_str(), std::get<float>(propertyValue));
-            }
-            else if (std::holds_alternative<glm::vec3>(propertyValue))
-            {
-                shader.SetUniform3f(propertyName.c_str(), std::get<glm::vec3>(propertyValue));
-            }
-            else if (std::holds_alternative<Handle<Texture>>(propertyValue))
-            {
-                const Handle<Texture>& handle = std::get<Handle<Texture>>(propertyValue);
-                std::unique_ptr<GPUTexture>& gpuTexture = m_TextureObjectCache[handle.GetID()];
-                if (gpuTexture == nullptr)
-                {
-                    m_TextureObjectCache[handle.GetID()] = GraphicsFactory::CreateGPUTexture(handle.GetData());
-                }
-                gpuTexture->Bind(nextTextureSlot);
-                shader.SetUniform1i(propertyName, nextTextureSlot);
-                ++nextTextureSlot;
-            }
+	void RenderContext::BindMaterial(const Material& material)
+	{
+		const auto& propertiesMap = material.GetMaterialProperties();
 
-            GPUCommands::Rendering::BindShader(shader);
-        }
-    }
+		int nextTextureSlot = 0;
+		for (const auto& [propertyName, property] : propertiesMap)
+		{
+			const Material::MaterialPropertyData& propertyValue = property.m_Data;
 
-    FrameBuffer* RenderContext::GetFrameBuffer(const std::string& name)
-    {
-        auto it = m_FrameBuffers.find(name);
-        if (it == m_FrameBuffers.end())
-        {
-            GM_CORE_ASSERT(false, "Framebuffer does not exist.");
-            return nullptr;
-        }
-        return it->second.get();
-    }
+			const ShaderBinary& shaderBinary = material.GetShaderBinary().GetData();
+			GraphicsShader& shader = *LoadGraphicsShader(shaderBinary.m_FilePath, shaderBinary.m_FilePath);
 
-    RenderTarget* RenderContext::GetSingleSampleRenderTarget(const std::string& name)
-    {
-        auto it = m_SingleSampleRenderTargets.find(name);
-        if (it == m_SingleSampleRenderTargets.end())
-        {
-            GM_CORE_ASSERT(false, "Single sample render target does not exist.");
-            return nullptr;
-        }
-        return it->second.get();
-    }
+			if (std::holds_alternative<float>(propertyValue))
+			{
+				shader.SetUniform1f(propertyName.c_str(), std::get<float>(propertyValue));
+			}
+			else if (std::holds_alternative<glm::vec3>(propertyValue))
+			{
+				shader.SetUniform3f(propertyName.c_str(), std::get<glm::vec3>(propertyValue));
+			}
+			else if (std::holds_alternative<Handle<Texture>>(propertyValue))
+			{
+				const Handle<Texture>& handle = std::get<Handle<Texture>>(propertyValue);
+				std::unique_ptr<GPUTexture>& gpuTexture = m_TextureObjectCache[handle.GetID()];
+				if (gpuTexture == nullptr)
+				{
+					m_TextureObjectCache[handle.GetID()] = GraphicsFactory::CreateGPUTexture(handle.GetData());
+				}
+				gpuTexture->Bind(nextTextureSlot);
+				shader.SetUniform1i(propertyName, nextTextureSlot);
+				++nextTextureSlot;
+			}
 
-    RenderTarget* RenderContext::GetMultiSampleRenderTarget(const std::string& name)
-    {
-        auto it = m_MultiSampleRenderTargets.find(name);
-        if (it == m_MultiSampleRenderTargets.end())
-        {
-            GM_CORE_ASSERT(false, "Multi sample render target does not exist.");
-            return nullptr;
-        }
-        return it->second.get();
-    }
+			shader.Bind();
+		}
+	}
 
-    RenderTarget* RenderContext::GetCubeMapArrayRenderTarget(const std::string& name)
-    {
-        auto it = m_CubeMapArrayRenderTargets.find(name);
-        if (it == m_CubeMapArrayRenderTargets.end())
-        {
-            GM_CORE_ASSERT(false, "Cube map array render target does not exist.");
-            return nullptr;
-        }
-        return it->second.get();
-    }
+	FrameBuffer* RenderContext::GetFrameBuffer(const std::string& name)
+	{
+		auto it = m_FrameBuffers.find(name);
+		if (it == m_FrameBuffers.end())
+		{
+			GM_CORE_ASSERT(false, "Framebuffer does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    VertexObject* RenderContext::GetVertexObject(const std::string& name)
-    {
-        auto it = m_VertexObjects.find(name);
-        if (it == m_VertexObjects.end())
-        {
-            GM_CORE_ASSERT(false, "VertexObject does not exist.");
-            return nullptr;
-        }
-        return it->second.get();
-    }
+	RenderTarget* RenderContext::GetSingleSampleRenderTarget(const std::string& name)
+	{
+		auto it = m_SingleSampleRenderTargets.find(name);
+		if (it == m_SingleSampleRenderTargets.end())
+		{
+			GM_CORE_ASSERT(false, "Single sample render target does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    SSBO* RenderContext::GetSSBO(const std::string& name)
-    {
-        auto it = m_SSBOs.find(name);
-        if (it == m_SSBOs.end())
-        {
-            GM_CORE_ASSERT(false, "SSBO does not exist.");
-            return nullptr;
-        }
-        return it->second.get();
-    }
+	RenderTarget* RenderContext::GetMultiSampleRenderTarget(const std::string& name)
+	{
+		auto it = m_MultiSampleRenderTargets.find(name);
+		if (it == m_MultiSampleRenderTargets.end())
+		{
+			GM_CORE_ASSERT(false, "Multi sample render target does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    Shader* RenderContext::GetShader(const std::string& name)
-    {
-        auto it = m_Shaders.find(name);
-        if (it == m_Shaders.end())
-        {
-            GM_CORE_ASSERT(false, "Shader does not exist.");
-            return nullptr;
-        }
-        return it->second.get();
-    }
+	RenderTarget* RenderContext::GetCubeMapArrayRenderTarget(const std::string& name)
+	{
+		auto it = m_CubeMapArrayRenderTargets.find(name);
+		if (it == m_CubeMapArrayRenderTargets.end())
+		{
+			GM_CORE_ASSERT(false, "Cube map array render target does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    void RenderContext::DeleteFrameBuffer(const std::string& name)
-    {
-        GM_CORE_ASSERT(m_FrameBuffers.count(name) > 1, "Tried to delete framebuffer which does not exist.");
-        m_FrameBuffers.erase(name);
-    }
+	VertexObject* RenderContext::GetVertexObject(const std::string& name)
+	{
+		auto it = m_VertexObjects.find(name);
+		if (it == m_VertexObjects.end())
+		{
+			GM_CORE_ASSERT(false, "VertexObject does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    void RenderContext::DeleteSingleSampleRenderTarget(const std::string& name)
-    {
-        GM_CORE_ASSERT(m_SingleSampleRenderTargets.count(name) > 1, "Tried to delete single sample rendertarget which does not exist.");
-        m_SingleSampleRenderTargets.erase(name);
-    }
+	SSBO* RenderContext::GetSSBO(const std::string& name)
+	{
+		auto it = m_SSBOs.find(name);
+		if (it == m_SSBOs.end())
+		{
+			GM_CORE_ASSERT(false, "SSBO does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    void RenderContext::DeleteMultiSampleRenderTarget(const std::string& name)
-    {
-        GM_CORE_ASSERT(m_MultiSampleRenderTargets.count(name) > 1, "Tried to delete multi sample rendertarget which does not exist.");
-        m_MultiSampleRenderTargets.erase(name);
-    }
+	GraphicsShader* RenderContext::GetGraphicsShader(const std::string& name)
+	{
+		auto it = m_GraphicsShaders.find(name);
+		if (it == m_GraphicsShaders.end())
+		{
+			GM_CORE_ASSERT(false, "Graphics shader does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    void RenderContext::DeleteCubeMapArrayRenderTarget(const std::string& name)
-    {
-        GM_CORE_ASSERT(m_CubeMapArrayRenderTargets.count(name) > 1, "Tried to delete cube map array rendertarget which does not exist.");
-        m_CubeMapArrayRenderTargets.erase(name);
-    }
+	ComputeShader* RenderContext::GetComputeShader(const std::string& name)
+	{
+		auto it = m_ComputeShaders.find(name);
+		if (it == m_ComputeShaders.end())
+		{
+			GM_CORE_ASSERT(false, "Compute shader does not exist.");
+			return nullptr;
+		}
+		return it->second.get();
+	}
 
-    void RenderContext::DeleteVertexObject(const std::string& name)
-    {
-        GM_CORE_ASSERT(m_VertexObjects.count(name) > 1, "Tried to delete vertexobject which does not exist.");
-        m_VertexObjects.erase(name);
-    }
+	void RenderContext::DeleteFrameBuffer(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_FrameBuffers.count(name) > 1, "Tried to delete framebuffer which does not exist.");
+		m_FrameBuffers.erase(name);
+	}
 
-    void RenderContext::UnloadShader(const std::string& name)
-    {
-        GM_CORE_ASSERT(m_Shaders.count(name) > 1, "Tried to delete shader which does not exist.");
-        m_Shaders.erase(name);
-    }
+	void RenderContext::DeleteSingleSampleRenderTarget(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_SingleSampleRenderTargets.count(name) > 1, "Tried to delete single sample rendertarget which does not exist.");
+		m_SingleSampleRenderTargets.erase(name);
+	}
 
-    void RenderContext::DeleteDataBuffer(const std::string& name)
-    {
-        GM_CORE_ASSERT(m_DataBuffers.count(name) > 1, "Tried to delete databuffer which does not exist.");
-        m_DataBuffers.erase(name);
-    }
+	void RenderContext::DeleteMultiSampleRenderTarget(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_MultiSampleRenderTargets.count(name) > 1, "Tried to delete multi sample rendertarget which does not exist.");
+		m_MultiSampleRenderTargets.erase(name);
+	}
 
-    RenderView& RenderContext::CreateRenderView(glm::u32vec2 renderResolution, float fov, float nearClip, float farClip, unsigned int viewGroupID)
-    {
-        const unsigned int viewID = m_RenderViewFreeList.Append();
-        // NEXTTODO: Proper reference handling!!! References will be invalidated if the m_RenderViews array gets resized.
-        m_RenderViews[viewID] = { renderResolution , fov, nearClip, farClip, viewGroupID, viewID };
-        RenderView& renderView = m_RenderViews[viewID].value();
-        renderView.m_ViewID = viewID;
-        ++numRenderView;
-        return renderView;
-    }
+	void RenderContext::DeleteCubeMapArrayRenderTarget(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_CubeMapArrayRenderTargets.count(name) > 1, "Tried to delete cube map array rendertarget which does not exist.");
+		m_CubeMapArrayRenderTargets.erase(name);
+	}
 
-    void RenderContext::DestroyRenderView(RenderView& renderView)
-    {
-        m_RenderViewFreeList.Free(renderView.m_ViewID);
-    }
+	void RenderContext::DeleteVertexObject(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_VertexObjects.count(name) > 1, "Tried to delete vertexobject which does not exist.");
+		m_VertexObjects.erase(name);
+	}
 
-    const VertexObject& RenderContext::GetVO(MeshWorldObject::Mesh& mesh)
-    {
-        CachedVertexObject& cvo = m_VertexObjectCache[mesh.m_MeshID];
-        if (cvo.m_VertexObject.get() != nullptr)
-        {
-            cvo.m_LastAccessTime = GMTime::s_Time;
-            return *cvo.m_VertexObject.get();
-        }
-        else
-        {
-            std::unique_ptr<VertexObject> voUPtr = GraphicsFactory::CreateVertexObject(&mesh.m_VertexIndicies[0], mesh.m_VertexIndicies.size());
-            std::unique_ptr<DataBuffer<MeshVertexData>> bufferptr = std::make_unique<DataBuffer<MeshVertexData>>(&mesh.m_Vertices[0], mesh.m_Vertices.size(), DataBufferType::Static);
-            voUPtr->LinkAndOwnBuffer(std::move(bufferptr));
-            m_VertexObjectCache[mesh.m_MeshID].m_LastAccessTime = GMTime::s_Time;
-            m_VertexObjectCache[mesh.m_MeshID].m_VertexObject = std::move(voUPtr);
-            return *m_VertexObjectCache[mesh.m_MeshID].m_VertexObject.get();
-        }
-    }
+	void RenderContext::UnloadGraphicsShader(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_GraphicsShaders.count(name) > 1, "Tried to delete graphics shader which does not exist.");
+		m_GraphicsShaders.erase(name);
+	}
+
+	void RenderContext::UnloadComputeShader(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_ComputeShaders.count(name) > 1, "Tried to delete compute shader which does not exist.");
+		m_ComputeShaders.erase(name);
+	}
+
+	void RenderContext::DeleteDataBuffer(const std::string& name)
+	{
+		GM_CORE_ASSERT(m_DataBuffers.count(name) > 1, "Tried to delete databuffer which does not exist.");
+		m_DataBuffers.erase(name);
+	}
+
+	RenderView& RenderContext::CreateRenderView(glm::u32vec2 renderResolution, float fov, float nearClip, float farClip, unsigned int viewGroupID)
+	{
+		const unsigned int viewID = m_RenderViewFreeList.Append();
+		// NEXTTODO: Proper reference handling!!! References will be invalidated if the m_RenderViews array gets resized.
+		m_RenderViews[viewID] = { renderResolution , fov, nearClip, farClip, viewGroupID, viewID };
+		RenderView& renderView = m_RenderViews[viewID].value();
+		renderView.m_ViewID = viewID;
+		++numRenderView;
+		return renderView;
+	}
+
+	void RenderContext::DestroyRenderView(RenderView& renderView)
+	{
+		m_RenderViewFreeList.Free(renderView.m_ViewID);
+	}
+
+	const VertexObject& RenderContext::GetVO(MeshWorldObject::Mesh& mesh)
+	{
+		CachedVertexObject& cvo = m_VertexObjectCache[mesh.m_MeshID];
+		if (cvo.m_VertexObject.get() != nullptr)
+		{
+			cvo.m_LastAccessTime = GMTime::s_Time;
+			return *cvo.m_VertexObject.get();
+		}
+		else
+		{
+			std::unique_ptr<VertexObject> voUPtr = GraphicsFactory::CreateVertexObject(&mesh.m_VertexIndicies[0], mesh.m_VertexIndicies.size());
+			std::unique_ptr<DataBuffer<MeshVertexData>> bufferptr = GraphicsFactory::CreateDataBuffer<MeshVertexData>(&mesh.m_Vertices[0], mesh.m_Vertices.size(), DataBufferType::Static);
+			voUPtr->LinkAndOwnBuffer(std::move(bufferptr));
+			m_VertexObjectCache[mesh.m_MeshID].m_LastAccessTime = GMTime::s_Time;
+			m_VertexObjectCache[mesh.m_MeshID].m_VertexObject = std::move(voUPtr);
+			return *m_VertexObjectCache[mesh.m_MeshID].m_VertexObject.get();
+		}
+	}
 }

@@ -30,7 +30,8 @@ namespace Ganymede
 
 		static void BindFrameBuffer(const OGLFrameBuffer& frameBuffer);
 		static void UnbindFrameBuffer();
-		static void BindShader(const OGLShader& shader);
+		static void BindShader(unsigned int rendererID);
+		static void UnbindShader(unsigned int rendererID);
 		static void BindVertexArrayObject(const OGLVertexObject& vo);
 		static void BindIndirectDrawBuffer(OGLSSBO& buffer);
 

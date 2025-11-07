@@ -1,24 +1,27 @@
 #pragma once
-#include "Ganymede/Core/Core.h"
-#include "Ganymede/Graphics/Shader.h"
+#include "Ganymede/Graphics/GraphicsShader.h"
 
 namespace Ganymede
 {
 	class RenderTarget;
 	class ShaderBinary;
 
-	class GANYMEDE_API OGLShader : public Shader
+	class GANYMEDE_API OGLGraphicsShader : public GraphicsShader
 	{
 	public:
-		explicit OGLShader(const ShaderBinary& shaderBinary);
-		~OGLShader() override;
+		explicit OGLGraphicsShader(const ShaderBinary& shaderBinary);
+		~OGLGraphicsShader() override;
 
-		OGLShader(OGLShader&& other) noexcept;
-		OGLShader& operator=(OGLShader&& other) noexcept;
+		OGLGraphicsShader(OGLGraphicsShader&& other) noexcept;
+		OGLGraphicsShader& operator=(OGLGraphicsShader&& other) noexcept;
 
 		unsigned int GetRendererID() const { return m_RendererID; }
 
 		bool IsValid() const override { return m_RendererID != 0; }
+
+		void Bind() override;
+		void Unbind() override;
+
 		void BindTexture(RenderTarget& texture, const char* textureName) override;
 
 		void SetUniform1f(const std::string& name, const float value) const override;

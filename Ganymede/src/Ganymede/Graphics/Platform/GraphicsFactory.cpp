@@ -2,13 +2,16 @@
 
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/ShaderBinary.h"
-
+#include "Ganymede/Graphics/VertexDataTypes.h"
+#include "OpenGL/OGLComputeShader.h"
+#include "OpenGL/OGLDataBuffer.h"
 #include "OpenGL/OGLFrameBuffer.h"
 #include "OpenGL/OGLGPUDebugHandler.h"
 #include "OpenGL/OGLGPUTexture.h"
+#include "OpenGL/OGLGraphicsShader.h"
 #include "OpenGL/OGLRenderer.h"
 #include "OpenGL/OGLRenderTarget.h"
-#include "OpenGL/OGLShader.h"
+#include "OpenGL/OGLShaderLoader.h"
 #include "OpenGL/OGLSSBO.h"
 #include "OpenGL/OGLVertexObject.h"
 
@@ -16,6 +19,10 @@ namespace Ganymede
 {
 	namespace GraphicsFactory
 	{
+	#define DECLARE_CREATEDATABUFFER_FUNC(TYPE, IMPLTYPE)										\
+	DECLARE_CREATEDATABUFFER_FUNC_HEADER(TYPE)										\
+	{ return std::make_unique<IMPLTYPE<TYPE>>(data, numElements, bufferType); }
+
 #ifndef GM_RETAIL
 		GANYMEDE_API std::unique_ptr<GPUDebugHandler> CreateGPUDebugHandler()
 		{
@@ -43,9 +50,14 @@ namespace Ganymede
 			return std::make_unique<OGLGPUTexture>(texture);
 		}
 
-		GANYMEDE_API std::unique_ptr<Shader> CreateShader(const ShaderBinary& shaderBinary)
+		GANYMEDE_API std::unique_ptr<GraphicsShader> CreateGraphicsShader(const ShaderBinary& shaderBinary)
 		{
-			return std::make_unique<OGLShader>(shaderBinary);
+			return std::make_unique<OGLGraphicsShader>(shaderBinary);
+		}
+
+		GANYMEDE_API std::unique_ptr<ComputeShader> CreateComputeShader(const ShaderBinary& shaderBinary)
+		{
+			return std::make_unique<OGLComputeShader>(shaderBinary);
 		}
 
 		GANYMEDE_API std::unique_ptr<RenderTarget> CreateSingleSampleRenderTarget(RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size)
@@ -67,5 +79,14 @@ namespace Ganymede
 		{
 			return std::make_unique<OGLRenderer>(renderContext);
 		}
+
+		GANYMEDE_API std::optional<ShaderBinary> LoadShader(const std::string& filePath)
+		{
+			return OGLShaderLoader::Load(filePath);
+		}
+
+		#define X(type, basetype, ...) DECLARE_CREATEDATABUFFER_FUNC(type, OGLDataBuffer);
+		#include "Ganymede/Graphics/VertexDataTypes.def"
+		#undef X
 	}
 }

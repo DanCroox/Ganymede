@@ -11,93 +11,22 @@ namespace Ganymede
 		Static
 	};
 
-	// TODO: Since there is no abstraction for native render-api calls, we need to deal with it explicitly here.
-	// We don't want to expose glew header in this Ganymede header so we create this set of helper functions.
-	class GANYMEDE_API DataBufferNativeFunctions
-	{
-	public:
-		static unsigned int GenerateBuffer();
-		static void DeleteBuffer(unsigned int renderID);
-		static void BindBuffer(unsigned int renderID);
-		static void UnBindBuffer();
-		static void Write(unsigned int renderID, const void* data, unsigned int numBytes, unsigned int byteOffset);
-		static void InitializeBufferData(unsigned int renderID, const void* data, unsigned int numBytes, DataBufferType bufferType);
-	};
-
 	class GANYMEDE_API DataBufferBase
 	{
 	public:
-		virtual ~DataBufferBase()
-		{
-			DataBufferNativeFunctions::DeleteBuffer(m_RenderID);
-		}
-
-		void Bind()
-		{
-			DataBufferNativeFunctions::BindBuffer(m_RenderID);
-		}
-
-		void UnBind()
-		{
-			DataBufferNativeFunctions::UnBindBuffer();
-		}
-
+		virtual ~DataBufferBase() = default;
 		virtual const std::vector<VertexDataPrimitiveTypeInfo>& GetVertexDataPrimitiveTypeInfo() const = 0;
 		virtual unsigned int GetElementSize() const = 0;
 
 	protected:
-		unsigned int m_RenderID;
+		DataBufferBase() = default;
 	};
 
 	template <typename T>
 	class GANYMEDE_API DataBuffer : public DataBufferBase
 	{
 	public:
-		DataBuffer() = delete;
-		DataBuffer(const DataBuffer<T>&) = delete;
-		DataBuffer<T>& operator=(const DataBuffer<T>&) = delete;
-
-		DataBuffer(DataBuffer<T>&& other) noexcept :
-			m_BufferType(other.m_BufferType)
-		{
-			m_RenderID = other.m_RenderID;
-			other.m_RenderID = 0;
-		}
-
-		DataBuffer<T>& operator=(DataBuffer<T>&& other) noexcept
-		{
-			if (this != &other)
-			{
-				m_RenderID = other.m_RenderID;
-				m_BufferType = other.m_BufferType;
-				other.m_RenderID = 0;
-			}
-			return *this;
-		}
-
-		DataBuffer(typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType) :
-			m_BufferType(bufferType)
-		{
-			m_BufferType = bufferType;
-			m_BufferSize = sizeof(typename T::VertexDataType) * numElements;
-			static_assert(std::is_base_of<VertexDataDescriptor<typename T::VertexDataType>, T>::value, "You can only create a DataBuffer with a VertexDataDescriptor derivate.");
-			m_RenderID = DataBufferNativeFunctions::GenerateBuffer();
-			DataBufferNativeFunctions::InitializeBufferData(m_RenderID, (const void*) data, sizeof(typename T::VertexDataType) * numElements, bufferType);
-		}
-
-		void Write(typename T::VertexDataType* data, unsigned int numElements, unsigned int offset)
-		{
-			GM_CORE_ASSERT(m_BufferType == DataBufferType::Dynamic, "Writing data to a statically initialized data buffer is not possible.");
-			
-			const size_t numBytesRequested = (sizeof(typename T::VertexDataType) * numElements) + (sizeof(typename T::VertexDataType) * offset);
-			if (numBytesRequested > m_BufferSize)
-			{
-				DataBufferNativeFunctions::InitializeBufferData(m_RenderID, nullptr, numBytesRequested, m_BufferType);
-				m_BufferSize = numBytesRequested;
-			}
-
-			DataBufferNativeFunctions::Write(m_RenderID, (const void*)&data[0], sizeof(typename T::VertexDataType) * numElements, sizeof(typename T::VertexDataType) * offset);
-		}
+		virtual void Write(typename T::VertexDataType* data, unsigned int numElements, unsigned int offset) = 0;
 
 		const std::vector<VertexDataPrimitiveTypeInfo>& GetVertexDataPrimitiveTypeInfo() const override
 		{
@@ -106,8 +35,15 @@ namespace Ganymede
 
 		unsigned int GetElementSize() const override { return sizeof(typename T::VertexDataType); }
 
-	private:
-		DataBufferType m_BufferType;
-		size_t m_BufferSize;
+	protected:
+		DataBuffer() = delete;
+
+		DataBuffer(typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType) {}
+
+		DataBuffer(const DataBuffer<T>&) = delete;
+		DataBuffer<T>& operator=(const DataBuffer<T>&) = delete;
+
+		DataBuffer(DataBuffer<T>&& other) noexcept = default;
+		DataBuffer<T>& operator=(DataBuffer<T>&& other) noexcept = default;
 	};
 }

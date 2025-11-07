@@ -7,9 +7,9 @@
 
 namespace Ganymede
 {
-	class VertexObject;
-	class Shader;
 	class FrameBuffer;
+	class GraphicsShader;
+	class VertexObject;
 
 	class GANYMEDE_API CompositeRenderPass : public RenderPass2
 	{
@@ -19,7 +19,7 @@ namespace Ganymede
 
 	private:
 		FrameBuffer* m_FrameBuffer;
-		Shader* m_ViewportShader;
+		GraphicsShader* m_ViewportShader;
 		VertexObject* m_ScreenVO;
 	};
 }

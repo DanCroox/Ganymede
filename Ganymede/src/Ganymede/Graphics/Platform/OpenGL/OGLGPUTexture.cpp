@@ -71,7 +71,7 @@ namespace Ganymede
 
 	OGLGPUTexture::~OGLGPUTexture()
 	{
-		GLCall(glDeleteTextures(1, &m_RendererID));
+		glDeleteTextures(1, &m_RendererID);
 	}
 
 	OGLGPUTexture::OGLGPUTexture(OGLGPUTexture&& other) noexcept

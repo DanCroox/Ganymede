@@ -5,7 +5,6 @@
 #include "Ganymede/ECS/Components/GCGPUMeshData.h"
 #include "Ganymede/ECS/Components/GCRenderObject.h"
 #include "Ganymede/Graphics/FrameBuffer.h"
-#include "Ganymede/Graphics/GPUCommands.h"
 #include "Ganymede/Graphics/RenderContext.h"
 #include "Ganymede/Graphics/RenderTarget.h"
 #include "Ganymede/Graphics/SSBO.h"
@@ -51,13 +50,6 @@ namespace Ganymede
 		m_FrameBuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Color4, *m_EmissionRT);
 		m_FrameBuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Depth, *m_DepthRT);
 
-		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Color0, FrameBuffer::AttachmentType::Color0, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
-		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Color1, FrameBuffer::AttachmentType::Color1, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
-		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Color2, FrameBuffer::AttachmentType::Color2, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
-		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Color3, FrameBuffer::AttachmentType::Color3, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
-		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Color4, FrameBuffer::AttachmentType::Color4, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
-		m_MultiToSingleSampleBlitFBConfig.m_AttachementsToBlit.push_back({ *m_FrameBufferMS, *m_FrameBuffer, FrameBuffer::AttachmentType::Depth, FrameBuffer::AttachmentType::Depth, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest });
-
 		ssbo_IndirectDrawCmds = renderContext.GetSSBO("IndirectDrawCommands");
 
 		return true;
@@ -86,6 +78,11 @@ namespace Ganymede
 			renderer.DrawIndirect(voPtr, *ssbo_IndirectDrawCmds, renderInfo.m_IndirectCommandIndex, *m_FrameBufferMS, material, true);
 		}
 
-		GPUCommands::FrameBufferCommands::Blit(m_MultiToSingleSampleBlitFBConfig);
+		m_FrameBuffer->Blit(*m_FrameBufferMS, FrameBuffer::AttachmentType::Color0, FrameBuffer::AttachmentType::Color0, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest);
+		m_FrameBuffer->Blit(*m_FrameBufferMS, FrameBuffer::AttachmentType::Color1, FrameBuffer::AttachmentType::Color1, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest);
+		m_FrameBuffer->Blit(*m_FrameBufferMS, FrameBuffer::AttachmentType::Color2, FrameBuffer::AttachmentType::Color2, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest);
+		m_FrameBuffer->Blit(*m_FrameBufferMS, FrameBuffer::AttachmentType::Color3, FrameBuffer::AttachmentType::Color3, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest);
+		m_FrameBuffer->Blit(*m_FrameBufferMS, FrameBuffer::AttachmentType::Color4, FrameBuffer::AttachmentType::Color4, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest);
+		m_FrameBuffer->Blit(*m_FrameBufferMS, FrameBuffer::AttachmentType::Depth, FrameBuffer::AttachmentType::Depth, { 0, 0, 1920, 1080 }, { 0, 0, 1920, 1080 }, FrameBuffer::BlitFilterType::Nearest);
 	}
 }

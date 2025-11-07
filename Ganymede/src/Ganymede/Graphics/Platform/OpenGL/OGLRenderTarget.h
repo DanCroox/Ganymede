@@ -16,7 +16,18 @@ namespace Ganymede
 		virtual void Bind();
 		virtual void UnBind();
 
+		void Clear(
+			unsigned int mipLayer,
+			unsigned int destX,
+			unsigned int destY,
+			unsigned int destDepth,
+			unsigned int extendX,
+			unsigned int extendY,
+			unsigned int extendDepth,
+			const float* normalizedClearColor) override;
+
 		void SetParameter(RenderTargetTypes::ParameterKey key, RenderTargetTypes::ParameterValue value) override;
+		
 		bool IsValid() const override { return m_RenderID != 0; }
 
 		unsigned int GetRenderID() const { return m_RenderID; }

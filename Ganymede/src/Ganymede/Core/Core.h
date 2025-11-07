@@ -8,8 +8,6 @@
 
 namespace Ganymede
 {
-#define GLCall(c) c;
-
 	struct ClassID
 	{
 		ClassID() = default;

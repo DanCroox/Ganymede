@@ -25,6 +25,9 @@ IF NOT EXIST "%BUILD_DIR%" (
 :: Switch into project-build directory.
 PUSHD "%BUILD_DIR%"
 
+:: Clear cmake cache
+if exist "%BUILD_DIR%\CMakeCache.txt" del "%BUILD_DIR%\CMakeCache.txt"
+
 :: Generate project files.
 cmake %SOURCE_DIR% -G %IDE% -A %ARCHITECTURE% %BUILD_PARAMS%
 

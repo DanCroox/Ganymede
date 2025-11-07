@@ -2,7 +2,6 @@
 
 #include "OGLFrameBuffer.h"
 #include "Ganymede/Graphics/RenderTarget.h"
-#include "OGLShader.h"
 #include "OGLSSBO.h"
 #include "OGLVertexObject.h"
 #include <GL/glew.h>
@@ -45,9 +44,8 @@ namespace Ganymede
 		m_BoundFrameBuffer = 0;
 	}
 
-	void OGLContext::BindShader(const OGLShader& shader)
+	void OGLContext::BindShader(unsigned int rendererID)
 	{
-		const unsigned int rendererID = shader.GetRendererID();
 		if (rendererID == m_BoundShader)
 		{
 			return;
@@ -55,6 +53,15 @@ namespace Ganymede
 
 		glUseProgram(rendererID);
 		m_BoundShader = rendererID;
+	}
+
+	void OGLContext::UnbindShader(unsigned int rendererID)
+	{
+		if (rendererID == m_BoundShader)
+		{
+			glUseProgram(0);
+			m_BoundShader = 0;
+		}
 	}
 
 	void OGLContext::BindVertexArrayObject(const OGLVertexObject& vo)

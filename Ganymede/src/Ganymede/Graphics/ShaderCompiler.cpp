@@ -28,32 +28,36 @@ namespace Ganymede
         GM_CORE_ASSERT(stream.good(), "Couldn't load shader source from path.");
 
         std::string line;
-        std::stringstream ss[static_cast<int>(ShaderBinary::ShaderType::_COUNT)];
-        ShaderBinary::ShaderType type = ShaderBinary::ShaderType::NONE;
+        std::stringstream ss[4];
+        uint8_t typeBit = 0;
         while (getline(stream, line))
         {
             if (line.find("#shader") != std::string::npos)
             {
                 if (line.find("compute") != std::string::npos)
                 {
-                    type = ShaderBinary::ShaderType::COMPUTE;
+                    typeBit = ShaderBinaryTypeBits::COMPUTE;
                 }
                 else if (line.find("vertex") != std::string::npos)
                 {
-                    type = ShaderBinary::ShaderType::VERTEX;
+                    typeBit = ShaderBinaryTypeBits::VERTEX;
                 }
                 else if (line.find("fragment") != std::string::npos)
                 {
-                    type = ShaderBinary::ShaderType::FRAGMENT;
+                    typeBit = ShaderBinaryTypeBits::FRAGMENT;
                 }
                 else if (line.find("geometry") != std::string::npos)
                 {
-                    type = ShaderBinary::ShaderType::GEOMETRY;
+                    typeBit = ShaderBinaryTypeBits::GEOMETRY;
                 }
             }
             else
             {
-                std::stringstream& outBuffer = ss[static_cast<int>(type)];
+                uint8_t mask = typeBit;
+                int index = 0;
+                while (mask >>= 1) ++index;
+
+                std::stringstream& outBuffer = ss[index];
                 if (line.find("#include") != std::string::npos)
                 {
                     ParseIncludeHierarchy(filepath, line, outBuffer);
@@ -123,28 +127,34 @@ namespace Ganymede
         unsigned int fs = 0;
         unsigned int gs = 0;
 
+        uint8_t shaderTypeBits = 0;
+
         if (hasCS)
         {
+            shaderTypeBits |= ShaderBinaryTypeBits::COMPUTE;
             cs = CompileShaderShaderStage(GL_COMPUTE_SHADER, programSource.ComputeSource);
-            GLCall(glAttachShader(program, cs));
+            glAttachShader(program, cs);
         }
 
         if (hasVS)
         {
+            shaderTypeBits |= ShaderBinaryTypeBits::VERTEX;
             vs = CompileShaderShaderStage(GL_VERTEX_SHADER, programSource.VertexSource);
-            GLCall(glAttachShader(program, vs));
+            glAttachShader(program, vs);
         }
 
         if (hasFS)
         {
+            shaderTypeBits |= ShaderBinaryTypeBits::FRAGMENT;
             fs = CompileShaderShaderStage(GL_FRAGMENT_SHADER, programSource.FragmentSource);
-            GLCall(glAttachShader(program, fs));
+            glAttachShader(program, fs);
         }
 
         if (hasGS)
         {
+            shaderTypeBits |= ShaderBinaryTypeBits::GEOMETRY;
             gs = CompileShaderShaderStage(GL_GEOMETRY_SHADER, programSource.GeometrySource);
-            GLCall(glAttachShader(program, gs));
+            glAttachShader(program, gs);
         }
 
         glProgramParameteri(program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
@@ -164,34 +174,35 @@ namespace Ganymede
         glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, &binaryLength);
 
         ShaderBinary::Binary& binary = binaryDataOut.emplace_back();
+        binary.m_ShaderTypeBits = shaderTypeBits;
         binary.m_Data.resize(binaryLength);
 
-        // Binary und Format auslesen
+        // Read binary and format
         glGetProgramBinary(program,
             binaryLength,
-            &binaryLength,  // zurückgegebene Länge
-            &binary.m_DataFormat,  // Treiberspezifisches Format
+            &binaryLength,
+            &binary.m_DataFormat,
             binary.m_Data.data());
         glDeleteProgram(program);
 
         if (hasCS)
         {
-            GLCall(glDeleteShader(cs));
+            glDeleteShader(cs);
         }
 
         if (hasVS)
         {
-            GLCall(glDeleteShader(vs));
+            glDeleteShader(vs);
         }
 
         if (hasFS)
         {
-            GLCall(glDeleteShader(fs));
+            glDeleteShader(fs);
         }
 
         if (hasGS)
         {
-            GLCall(glDeleteShader(gs));
+            glDeleteShader(gs);
         }
 
         return true;
@@ -199,19 +210,19 @@ namespace Ganymede
 
     unsigned int ShaderCompiler:: CompileShaderShaderStage(unsigned int type, const std::string& source)
     {
-        GLCall(unsigned int id = glCreateShader(type));
+        unsigned int id = glCreateShader(type);
         const char* src = source.c_str();
-        GLCall(glShaderSource(id, 1, &src, nullptr));
-        GLCall(glCompileShader(id));
+        glShaderSource(id, 1, &src, nullptr);
+        glCompileShader(id);
 
         int result;
-        GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
+        glGetShaderiv(id, GL_COMPILE_STATUS, &result);
         if (result == GL_FALSE)
         {
             int length;
-            GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
+            glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
             char* message = (char*)alloca(length * sizeof(char));
-            GLCall(glGetShaderInfoLog(id, length, &length, message));
+            glGetShaderInfoLog(id, length, &length, message);
 
             std::string shaderTypeString;
             if (type == GL_VERTEX_SHADER)
@@ -232,7 +243,7 @@ namespace Ganymede
             }
             std::cout << "Failed to compile " << shaderTypeString << "shader!" << std::endl;
             std::cout << message << std::endl;
-            GLCall(glDeleteShader(id));
+            glDeleteShader(id);
 
             return 0;
         }

@@ -5,9 +5,9 @@
 namespace Ganymede
 {
 	class FrameBuffer;
+	class GraphicsShader;
 	class Material;
 	class RenderContext;
-	class Shader;
 	class SSBO;
 	class VertexObject;
 
@@ -16,8 +16,8 @@ namespace Ganymede
 	public:
 		~Renderer() = default;
 
-		virtual void DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, Shader& shader, bool doDepthTest) = 0;
-		virtual void DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Shader& shader, bool doDepthTest) = 0;
+		virtual void DrawVertexObject(VertexObject& vertexObject, unsigned int numInstances, FrameBuffer& frameBuffer, GraphicsShader& shader, bool doDepthTest) = 0;
+		virtual void DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const GraphicsShader& shader, bool doDepthTest) = 0;
 		virtual void DrawIndirect(const VertexObject& vertexObject, SSBO& indirectCommandsBuffer, unsigned int commandOffset, FrameBuffer& frameBuffer, const Material& material, bool doDepthTest) = 0;
 		virtual void ClearFrameBuffer(FrameBuffer& frameBuffer, bool clearColor, bool clearDepth) = 0;
 

@@ -1,7 +1,7 @@
 #include "AssetLoader.h"
 
 #include "Ganymede/Common/Helpers.h"
-#include "Ganymede/Graphics/ShaderLoader.h"
+#include "Ganymede/Graphics/Platform/GraphicsFactory.h"
 #include "Ganymede/Graphics/Texture.h"
 #include "Ganymede/Log/Log.h"
 #include "Ganymede/World/PointlightWorldObject.h"
@@ -51,7 +51,7 @@ namespace Ganymede
         std::string shaderName = AssetLoader_Private::locBaseShaderFolder + "gbuffer.shader";
 
         size_t shaderID = m_StaticData.m_ShaderBinaries.size();
-        if (std::optional<ShaderBinary> shaderBinary = ShaderLoader::Load(shaderName))
+        if (std::optional<ShaderBinary> shaderBinary = GraphicsFactory::LoadShader(shaderName))
         {        
             m_StaticData.m_ShaderBinaries.push_back(shaderBinary.value());
             m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
@@ -600,7 +600,7 @@ namespace Ganymede
                 auto it = m_ShaderBinaryToIndex.find(shaderName);
                 if (it == m_ShaderBinaryToIndex.end())
                 {
-                    if (std::optional<ShaderBinary> shaderBinary = ShaderLoader::Load(shaderName))
+                    if (std::optional<ShaderBinary> shaderBinary = GraphicsFactory::LoadShader(shaderName))
                     {
                         shaderID = m_StaticData.m_ShaderBinaries.size();
                         m_StaticData.m_ShaderBinaries.push_back(shaderBinary.value());

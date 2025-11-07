@@ -23,6 +23,14 @@ namespace Ganymede
 		const glm::vec4& GetColorBufferClearColor() const override { return m_ColorBufferClearColor; }
 		float GetDepthBufferClearColor() const override { return m_DepthBufferClearColor; }
 
+		void Blit(
+			FrameBuffer& m_SourceFrameBuffer,
+			FrameBuffer::AttachmentType m_SourceAttachement,
+			FrameBuffer::AttachmentType m_DestAttachement,
+			const glm::u32vec4& m_SourcePixelBounds,
+			const glm::u32vec4& m_DestPixelBounds,
+			BlitFilterType m_FilterType) override;
+
 		bool IsValid() const override { return m_IsHardwareFrameBuffer || m_RenderID != 0; }
 
 		glm::u32vec2 GetRenderDimension() const { return m_RenderDimension; }

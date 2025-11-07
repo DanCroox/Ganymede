@@ -2,14 +2,16 @@
 
 #include "Ganymede/Core/Core.h"
 
+#include "ComputeShader.h"
 #include "DataBuffer.h"
 #include "FrameBuffer.h"
 #include "Ganymede/System/FreeList.h"
 #include "GPUTexture.h"
+#include "GraphicsShader.h"
+#include "Platform/GraphicsFactory.h"
 #include "Renderer.h"
 #include "RenderTarget.h"
 #include "RenderView.h"
-#include "Shader.h"
 #include "SSBO.h"
 #include "VertexDataTypes.h"
 #include "VertexObject.h"
@@ -21,9 +23,9 @@
 
 namespace Ganymede
 {
-	class World;
-	class MeshWorldObject::Mesh;
 	class FPSCamera;
+	class MeshWorldObject::Mesh;
+	class World;
 
 	struct VisibleEntity
 	{
@@ -90,7 +92,8 @@ namespace Ganymede
 		RenderTarget* CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		VertexObject* CreateVertexObject(const std::string& name, const unsigned int* indicesData, unsigned int numIndices);
 		SSBO* CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize);
-		Shader* LoadShader(const std::string& name, const std::string& shaderFile);
+		GraphicsShader* LoadGraphicsShader(const std::string& name, const std::string& shaderFile);
+		ComputeShader* LoadComputeShader(const std::string& name, const std::string& shaderFile);
 		
 		template <typename T>
 		DataBuffer<T>* CreateDataBuffer(const std::string& name, typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType)
@@ -99,19 +102,20 @@ namespace Ganymede
 			if (it != m_DataBuffers.end())
 			{
 				GM_CORE_ASSERT(false, "Tried to create DataBuffer which already existed. Using from cache.");
-				const std::pair<ClassID, void*>& pair = it->second;
+				const std::pair<ClassID, std::unique_ptr<DataBufferBase>>& pair = it->second;
 				if (T::GetStaticClassID() != pair.first)
 				{
 					GM_CORE_ASSERT(false, "Template type does not match stored object type.");
 					return nullptr;
 				}
 				
-				return (DataBuffer<T>*) pair.second;
+				return static_cast<DataBuffer<T>*>(pair.second.get());
 			}
 
-			DataBuffer<T>* instanceDataBuffer = new DataBuffer<T>(data, numElements, bufferType);
-			m_DataBuffers[name] = std::make_pair(T::GetStaticClassID(), (void*)instanceDataBuffer);
-			return instanceDataBuffer;
+			auto [emplacedBufferIt, inserted] = m_DataBuffers.emplace(name, std::make_pair(T::GetStaticClassID(), GraphicsFactory::CreateDataBuffer<T>(data, numElements, bufferType)));
+			GM_CORE_ASSERT(inserted, "Failed to emplace DataBuffer.");
+
+			return static_cast<DataBuffer<T>*>(emplacedBufferIt->second.second.get());
 		}
 
 		void BindMaterial(const Material& material);
@@ -122,7 +126,8 @@ namespace Ganymede
 		RenderTarget* GetCubeMapArrayRenderTarget(const std::string& name);
 		VertexObject* GetVertexObject(const std::string& name);
 		SSBO* GetSSBO(const std::string& name);
-		Shader* GetShader(const std::string& name);
+		GraphicsShader* GetGraphicsShader(const std::string& name);
+		ComputeShader* GetComputeShader(const std::string& name);
 
 		template <typename T>
 		DataBuffer<T>* GetDataBuffer(const std::string& name)
@@ -142,7 +147,7 @@ namespace Ganymede
 				return nullptr;
 			}
 
-			return (DataBuffer<T>*) it->second.second;
+			return static_cast<DataBuffer<T>*>(it->second.second);
 		}
 
 		void DeleteFrameBuffer(const std::string& name);
@@ -150,7 +155,8 @@ namespace Ganymede
 		void DeleteMultiSampleRenderTarget(const std::string& name);
 		void DeleteCubeMapArrayRenderTarget(const std::string& name);
 		void DeleteVertexObject(const std::string& name);
-		void UnloadShader(const std::string& name);
+		void UnloadGraphicsShader(const std::string& name);
+		void UnloadComputeShader(const std::string& name);
 		void DeleteDataBuffer(const std::string& name);
 
 		RenderCommandQueue m_CubemapShadowMappingCommandQueue;
@@ -183,8 +189,9 @@ namespace Ganymede
 		std::unordered_map<std::string, std::unique_ptr<RenderTarget>> m_CubeMapArrayRenderTargets;
 		std::unordered_map<std::string, std::unique_ptr<VertexObject>> m_VertexObjects;
 		std::unordered_map<std::string, std::unique_ptr<SSBO>> m_SSBOs;
-		std::unordered_map<std::string, std::unique_ptr<Shader>> m_Shaders;
-		std::unordered_map<std::string, std::pair<ClassID, void*>> m_DataBuffers;
+		std::unordered_map<std::string, std::unique_ptr<GraphicsShader>> m_GraphicsShaders;
+		std::unordered_map<std::string, std::unique_ptr<ComputeShader>> m_ComputeShaders;
+		std::unordered_map<std::string, std::pair<ClassID, std::unique_ptr<DataBufferBase>>> m_DataBuffers;
 		
 		std::vector<CachedVertexObject> m_VertexObjectCache;
 		std::vector<std::unique_ptr<GPUTexture>> m_TextureObjectCache;

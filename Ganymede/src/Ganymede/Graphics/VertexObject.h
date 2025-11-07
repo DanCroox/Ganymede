@@ -3,7 +3,6 @@
 #include "Ganymede/Core/Core.h"
 
 #include "DataBuffer.h"
-#include "GPUCommands.h"
 #include "VertexDataTypes.h"
 
 namespace Ganymede

@@ -8,9 +8,8 @@ namespace Ganymede
 {
 	class ShaderBinary;
 
-	class GANYMEDE_API ShaderLoader
+	namespace OGLShaderLoader
 	{
-	public:
-		static std::optional<ShaderBinary> Load(const std::string& filePath);
+		std::optional<ShaderBinary> Load(const std::string& filePath);
 	};
 }
