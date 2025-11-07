@@ -4,6 +4,7 @@
 #include "Ganymede/Log/Log.h"
 #include "Ganymede/Platform/Input.h"
 #include "Ganymede/Platform/Window.h"#
+#include "Ganymede/Platform/WindowFactory.h"
 
 namespace Ganymede
 {
@@ -14,14 +15,14 @@ namespace Ganymede
 		GM_CORE_ASSERT(m_Instance == nullptr, "It is not allowed to have more than one Application instance at a time.");
 
 		std::unique_ptr<EventSystem> eventSystem = std::make_unique<EventSystem>();
-		std::unique_ptr<Window> renderWindow = std::unique_ptr<Window>(Window::Create(*eventSystem));
+		std::unique_ptr<Window> renderWindow = WindowFactory::CreateApplicationWindow(*eventSystem);
 		if (!renderWindow->Initialize())
 		{
 			GM_CORE_CRITICAL("Failed to initialize native window.");
 			return;
 		}
-
-		std::unique_ptr<InputSystem> inputSystem = std::unique_ptr<InputSystem>(InputSystem::Create(renderWindow->GetNativeWindow(), *eventSystem));
+		
+		std::unique_ptr<InputSystem> inputSystem = WindowFactory::CreateInputSystem(renderWindow->GetNativeWindow(), *eventSystem);
 		if (!inputSystem->Initialize())
 		{
 			GM_CORE_CRITICAL("Failed to initialize input system.");

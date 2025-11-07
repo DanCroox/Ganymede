@@ -21,9 +21,6 @@ namespace Ganymede
 		inline bool IsMouseButtonPressed(MouseButtonCode mouseButtonCode) { return IsNativeMouseButtonPressed(ConvertToNativeMouseButtonCode(mouseButtonCode)); }
 		inline glm::vec2 GetMousePosition() { return GetNativeMousePosition(); }
 
-		// Needs to be implemented per Platform
-		static InputSystem* Create(void* nativeWindow, EventSystem& eventSystem);
-
 	protected:
 		InputSystem() = delete;
 		InputSystem(

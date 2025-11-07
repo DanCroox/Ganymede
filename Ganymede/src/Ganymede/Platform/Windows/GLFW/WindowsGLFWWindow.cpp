@@ -1,6 +1,6 @@
 #ifdef GM_PLATFORM_WINDOWS
 
-#include "WindowsWindow.h"
+#include "WindowsGLFWWindow.h"
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
@@ -16,17 +16,12 @@
 
 namespace Ganymede
 {
-    Window* Window::Create(EventSystem& eventSystem)
-    {
-        return new WindowsWindow(eventSystem);
-    }
-
-    WindowsWindow::~WindowsWindow()
+    WindowsGLFWWindow::~WindowsGLFWWindow()
     {
         TerminateWindow();
     }
 
-    bool WindowsWindow::Initialize()
+    bool WindowsGLFWWindow::Initialize()
     {
         if (!glfwInit())
         {
@@ -79,12 +74,12 @@ namespace Ganymede
         return true;
     }
 
-    void* WindowsWindow::GetNativeWindow()
+    void* WindowsGLFWWindow::GetNativeWindow()
     {
         return m_GLFWWindow;
     }
 
-    bool WindowsWindow::TryStart()
+    bool WindowsGLFWWindow::TryStart()
     {
         m_EventSystem.NotifyEvent(WindowInitializeEvent());
 
@@ -120,18 +115,18 @@ namespace Ganymede
         return true;
     }
 
-    void WindowsWindow::SetVSyncEnabled(bool isEnabled)
+    void WindowsGLFWWindow::SetVSyncEnabled(bool isEnabled)
     {
         m_IsVSyncEnabled = isEnabled;
         glfwSwapInterval(isEnabled ? 1 : 0);
     }
 
-    bool WindowsWindow::IsVSyncEnabled() const
+    bool WindowsGLFWWindow::IsVSyncEnabled() const
     {
         return m_IsVSyncEnabled;
     }
 
-    void WindowsWindow::DrawStats(double deltaTime, double gameTime)
+    void WindowsGLFWWindow::DrawStats(double deltaTime, double gameTime)
     {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -165,7 +160,7 @@ namespace Ganymede
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    void WindowsWindow::TerminateWindow()
+    void WindowsGLFWWindow::TerminateWindow()
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();

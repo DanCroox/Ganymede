@@ -11,10 +11,6 @@ namespace Ganymede
 	public:
 		virtual ~Window() = default;
 
-		/// <summary>
-		/// Creates the native window.
-		/// </summary>
-		/// <returns>Creating succeeded</returns>
 		virtual bool Initialize() = 0;
 
 		virtual void* GetNativeWindow() = 0;
@@ -22,9 +18,6 @@ namespace Ganymede
 		virtual bool TryStart() = 0;
 		virtual void SetVSyncEnabled(bool isEnabled) = 0;
 		virtual bool IsVSyncEnabled() const = 0;
-
-		// Needs to be implemented per Platform
-		static Window* Create(EventSystem& eventSystem);
 
 	protected:
 		Window() = delete;

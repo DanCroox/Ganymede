@@ -11,10 +11,12 @@ namespace Ganymede
 {
 	class EventSystem;
 
-	class GANYMEDE_API WindowsWindow : public Window
+	class GANYMEDE_API WindowsGLFWWindow : public Window
 	{
 	public:
-		~WindowsWindow();
+		WindowsGLFWWindow(EventSystem& eventSystem) : Window(eventSystem) {}
+
+		~WindowsGLFWWindow();
 
 		bool Initialize() override;
 
@@ -23,9 +25,6 @@ namespace Ganymede
 		bool TryStart() override;
 		void SetVSyncEnabled(bool isEnabled) override;
 		bool IsVSyncEnabled() const override;
-	
-	protected:
-		using Window::Window;
 
 	private:
 		void DrawStats(double deltaTime, double gameTime);
