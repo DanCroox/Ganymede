@@ -1,5 +1,8 @@
 #include "GLFWInputSystem.h"
 
+#include "Ganymede/Core/Application.h"
+#include "Ganymede/Runtime/WindowEvents.h"
+
 #include "GLFW/glfw3.h"
 
 namespace Ganymede
@@ -145,4 +148,92 @@ namespace Ganymede
 				{ MouseButtonCode::Mouse_Middle, GLFW_MOUSE_BUTTON_MIDDLE }
 			}
 		) {}
+
+	bool GLFWInputSystem::Initialize()
+	{
+		GLFWwindow* window = static_cast<GLFWwindow*>(m_NativeWindow);
+		// Dont overwrite user pointer elsewhere!
+		glfwSetWindowUserPointer(window, this);
+		
+		glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+			WindowResizeEvent event({ width, height });
+			Application::Get().GetEventSystem().NotifyEvent(event);
+			});
+
+		glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xpos, double ypos) {
+			MouseMoveEvent event({ xpos, ypos });
+			Application::Get().GetEventSystem().NotifyEvent(event);
+			});
+
+		glfwSetScrollCallback(window, [](GLFWwindow* window, double xOffset, double yOffset) {
+			MouseScrollEvent event({ xOffset, yOffset });
+			Application::Get().GetEventSystem().NotifyEvent(event);
+			});
+
+		glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods) {
+				switch (action)
+				{
+					case GLFW_PRESS:
+					{
+						const GLFWInputSystem& input = *static_cast<GLFWInputSystem*>(glfwGetWindowUserPointer(window));
+						MouseButtonPressEvent event(input.ConvertToMouseButtonCode(button));
+						input.m_EventSystem.NotifyEvent(event);
+						break;
+					}
+					case GLFW_RELEASE:
+					{
+						const GLFWInputSystem& input = *static_cast<GLFWInputSystem*>(glfwGetWindowUserPointer(window));
+						MouseButtonReleaseEvent event(input.ConvertToMouseButtonCode(button));
+						input.m_EventSystem.NotifyEvent(event);
+						break;
+					}
+					default:
+						break;
+				}
+			});
+
+		glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+			{
+				switch (action)
+				{
+					case GLFW_PRESS:
+					{
+						const GLFWInputSystem& input = *static_cast<GLFWInputSystem*>(glfwGetWindowUserPointer(window));
+						KeyPressEvent event(input.ConvertToKeyCode(key));
+						input.m_EventSystem.NotifyEvent(event);
+						break;
+					}
+					case GLFW_RELEASE:
+					{
+						const GLFWInputSystem& input = *static_cast<GLFWInputSystem*>(glfwGetWindowUserPointer(window));
+						KeyReleaseEvent event(input.ConvertToKeyCode(key));
+						input.m_EventSystem.NotifyEvent(event);
+						break;
+					}
+					default:
+						break;
+				}
+			});
+
+		return true;
+	}
+
+	bool GLFWInputSystem::IsNativeKeyPressed(int nativeKeyCode)
+	{
+		auto state = glfwGetKey(static_cast<GLFWwindow*>(m_NativeWindow), nativeKeyCode);
+		return state == GLFW_PRESS || state == GLFW_REPEAT;
+	}
+
+	bool GLFWInputSystem::IsNativeMouseButtonPressed(int nativeMouseButtonCode)
+	{
+		auto state = glfwGetMouseButton(static_cast<GLFWwindow*>(m_NativeWindow), nativeMouseButtonCode);
+		return state == GLFW_PRESS;
+	}
+
+	glm::vec2 GLFWInputSystem::GetNativeMousePosition()
+	{
+		double x, y;
+		glfwGetCursorPos(static_cast<GLFWwindow*>(m_NativeWindow), &x, &y);
+		return { x, y };
+	}
 }

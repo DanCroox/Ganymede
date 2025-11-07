@@ -139,7 +139,8 @@ project "Ganymede"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+		"Ganymede/vendor/volk/volk.c"
 	}
 
 	includedirs
@@ -159,8 +160,18 @@ project "Ganymede"
 		"Ganymede/vendor/stb_image",
 		"Ganymede/vendor/imgui",
 		"Ganymede/vendor/entt/single_include",
-		"Ganymede/vendor/bitsery/include"
+		"Ganymede/vendor/bitsery/include",
+		"Ganymede/vendor/volk"
 	}
+
+	-- Vulkan SDK Include
+	if os.getenv("VULKAN_SDK") then
+		includedirs { os.getenv("VULKAN_SDK") .. "/Include" }
+		libdirs { os.getenv("VULKAN_SDK") .. "/Lib" }
+	else
+		print("Error: VULKAN_SDK not found! Install Vulkan SDK and set VULKAN_SDK environment variable accordingly.")
+		os.exit(1)
+	end
 
 	-- MSVC doesnt set __cplusplus correctly out of the box so we need to tell it to do so explicity
 	filter { "action:vs*", "system:windows" }
@@ -177,6 +188,9 @@ project "Ganymede"
 			"GM_BUILD_DLL",
 			"GLEW_STATIC"
 		}
+
+		-- Vulkan loader on Windows
+		links { "vulkan-1.lib" }
 
 		postbuildcommands
 		{

@@ -2,15 +2,14 @@
 
 #ifdef GM_PLATFORM_WINDOWS
 
-#include "Ganymede/Platform/Windows/GLFW/GLFWInputSystem.h"
+#include "Ganymede/Platform/InputSystem.h"
 
 namespace Ganymede
 {
-	class WindowsGLFWInputSystem : public GLFWInputSystem
+	class GLFWInputSystem : public InputSystem
 	{
 	public:
-		WindowsGLFWInputSystem(void* nativeWindow, EventSystem& eventSystem) : GLFWInputSystem(nativeWindow, eventSystem) {}
-
+		GLFWInputSystem::GLFWInputSystem(void* nativeWindow, EventSystem& eventSystem);
 		bool Initialize() override;
 
 		virtual bool IsNativeKeyPressed(int nativeKeyCode) override;

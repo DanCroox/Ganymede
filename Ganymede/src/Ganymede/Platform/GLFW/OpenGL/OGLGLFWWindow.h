@@ -2,7 +2,6 @@
 
 #ifdef GM_PLATFORM_WINDOWS
 
-#include "Ganymede/Core/Core.h"
 #include "Ganymede/Platform/Window.h"
 
 struct GLFWwindow;
@@ -11,12 +10,12 @@ namespace Ganymede
 {
 	class EventSystem;
 
-	class GANYMEDE_API WindowsGLFWWindow : public Window
+	class GANYMEDE_API OGLGLFWWindow : public Window
 	{
 	public:
-		WindowsGLFWWindow(EventSystem& eventSystem) : Window(eventSystem) {}
+		OGLGLFWWindow(EventSystem& eventSystem) : Window(eventSystem) {}
 
-		~WindowsGLFWWindow();
+		~OGLGLFWWindow();
 
 		bool Initialize() override;
 

@@ -48,7 +48,7 @@
 #include <Ganymede/Input/MouseButtonCodes.h>
 #include <Ganymede/Log/Log.h>
 #include <Ganymede/Physics/PhysicsWorld.h>
-#include <Ganymede/Platform/Input.h>
+#include <Ganymede/Platform/InputSystem.h>
 #include <Ganymede/Platform/Window.h>
 #include <Ganymede/Player/FPSCamera.h>
 #include <Ganymede/Player/PlayerCharacter.h>

@@ -1,4 +1,4 @@
-#include "Input.h"
+#include "InputSystem.h"
 
 #include "Ganymede/Events/Event.h"
 

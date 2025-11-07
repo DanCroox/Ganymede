@@ -1,27 +1,27 @@
 #ifdef GM_PLATFORM_WINDOWS
 
-#include "WindowsGLFWWindow.h"
+#include "OGLGLFWWindow.h"
+
+#include "Ganymede/Common/Helpers.h"
+#include "Ganymede/Log/Log.h"
+#include "Ganymede/Runtime/WindowEvents.h"
 
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
-#include "Ganymede/Log/Log.h"
-#include "Ganymede/Runtime/WindowEvents.h"
-#include "Ganymede/Common/Helpers.h"
-
-#include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "imgui.h"
 
 #include <algorithm>
 
 namespace Ganymede
 {
-    WindowsGLFWWindow::~WindowsGLFWWindow()
+    OGLGLFWWindow::~OGLGLFWWindow()
     {
         TerminateWindow();
     }
 
-    bool WindowsGLFWWindow::Initialize()
+    bool OGLGLFWWindow::Initialize()
     {
         if (!glfwInit())
         {
@@ -74,12 +74,12 @@ namespace Ganymede
         return true;
     }
 
-    void* WindowsGLFWWindow::GetNativeWindow()
+    void* OGLGLFWWindow::GetNativeWindow()
     {
         return m_GLFWWindow;
     }
 
-    bool WindowsGLFWWindow::TryStart()
+    bool OGLGLFWWindow::TryStart()
     {
         m_EventSystem.NotifyEvent(WindowInitializeEvent());
 
@@ -115,18 +115,18 @@ namespace Ganymede
         return true;
     }
 
-    void WindowsGLFWWindow::SetVSyncEnabled(bool isEnabled)
+    void OGLGLFWWindow::SetVSyncEnabled(bool isEnabled)
     {
         m_IsVSyncEnabled = isEnabled;
         glfwSwapInterval(isEnabled ? 1 : 0);
     }
 
-    bool WindowsGLFWWindow::IsVSyncEnabled() const
+    bool OGLGLFWWindow::IsVSyncEnabled() const
     {
         return m_IsVSyncEnabled;
     }
 
-    void WindowsGLFWWindow::DrawStats(double deltaTime, double gameTime)
+    void OGLGLFWWindow::DrawStats(double deltaTime, double gameTime)
     {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -160,7 +160,7 @@ namespace Ganymede
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
-    void WindowsGLFWWindow::TerminateWindow()
+    void OGLGLFWWindow::TerminateWindow()
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();

@@ -2,7 +2,7 @@
 
 #include "Ganymede/Events/Event.h"
 #include "Ganymede/Log/Log.h"
-#include "Ganymede/Platform/Input.h"
+#include "Ganymede/Platform/InputSystem.h"
 #include "Ganymede/Platform/Window.h"#
 #include "Ganymede/Platform/WindowFactory.h"
 
