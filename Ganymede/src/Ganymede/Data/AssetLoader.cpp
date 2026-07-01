@@ -24,6 +24,19 @@
 
 namespace Ganymede
 {
+    enum BindingPoints : uint32_t
+    {
+        Texture0 = 0,
+        Texture1,
+        Texture2,
+        Texture3,
+        Texture4,
+        BaseColor,
+        EmmisiveColor,
+        Roughness,
+        Metalness
+    };
+
     namespace AssetLoader_Private
     {
         inline std::string locBaseShaderFolder("res/shaders/");
@@ -45,35 +58,8 @@ namespace Ganymede
         m_DefaultWhite(CreateDefaultTexture({ 255, 255, 255 }, "DefaultWhite")),
         m_DefaultBlack(CreateDefaultTexture({ 0, 0, 0 }, "DefaultBlack")),
         m_DefaultNormal(CreateDefaultTexture({ 128, 128, 255}, "DefaultNormal")),
-        m_DefaultMaterial({0})
+        m_DefaultMaterial(CreateDefaultMaterial())
     {
-        // Load default textures and materials
-        std::string shaderName = AssetLoader_Private::locBaseShaderFolder + "gbuffer.shader";
-
-        size_t shaderID = m_StaticData.m_ShaderBinaries.size();
-        if (std::optional<ShaderBinary> shaderBinary = GraphicsFactory::LoadShader(shaderName))
-        {        
-            m_StaticData.m_ShaderBinaries.push_back(shaderBinary.value());
-            m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
-        }
-        else
-        {
-            GM_CORE_ASSERT(false, "Couldnt load shader");
-        }
-
-        size_t materialID = m_StaticData.m_Materials.size();
-        Material& material = m_StaticData.m_Materials.emplace_back(Handle<ShaderBinary>(shaderID));
-
-        material.AddMaterialTextureSamplerProperty("u_Texture0", m_DefaultWhite);
-        material.AddMaterialTextureSamplerProperty("u_Texture1", m_DefaultNormal);
-        material.AddMaterialTextureSamplerProperty("u_Texture2", m_DefaultWhite);
-        material.AddMaterialTextureSamplerProperty("u_Texture3", m_DefaultWhite);
-        material.AddMaterialTextureSamplerProperty("u_Texture4", m_DefaultWhite);
-
-        material.AddMaterialVector3fProperty("u_BaseColor", { 0.8f, 0.8f, 0.8f });
-        material.AddMaterialVector3fProperty("u_EmissiveColor", { 0.0f, 0.0f, 0.0f });
-        material.AddMaterialFloatProperty("u_Roughness", 0.2f);
-        material.AddMaterialFloatProperty("u_Metalness", 0.0f);
     }
 
     void AssetLoader::LoadNodeData(const aiNode& node, const aiScene& scene, const std::unordered_map<std::string, aiLight*>& lightsByNameLookup)
@@ -593,7 +579,7 @@ namespace Ganymede
                 const size_t pos = materialName.find("_S#");
                 const bool useCustomShader = pos != -1;
 
-                std::string shaderName = useCustomShader ? materialName.substr(pos + 3, materialName.size()) : "gbuffer";
+                std::string shaderName = useCustomShader ? materialName.substr(pos + 3, materialName.size()) : GM_ActiveBackend == GraphicsBackend::OpenGL ? "gbuffer" : "VulkanTest";
                 shaderName = AssetLoader_Private::locBaseShaderFolder + shaderName + ".shader";
 
                 size_t shaderID = 0;
@@ -608,6 +594,9 @@ namespace Ganymede
                     }
                     else
                     {
+                        // TODO: implement error shader
+                        // Currently gbuffer default shader is on 0
+                        shaderID = 0; 
                         GM_CORE_ASSERT(false, "Cant load shader");
                     }
                 }
@@ -634,14 +623,13 @@ namespace Ganymede
         bool hasRoughnessTexture = false;
         bool hasMetallicTexture = false;
         bool hasEmissionTexture = false;
-
         {
             aiString str;
             aiMaterial.GetTexture(aiTextureType::aiTextureType_DIFFUSE, 0, &str);
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasAlbedoTexture = textureHandle.has_value();
-            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture0", hasAlbedoTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty(BindingPoints::Texture0, hasAlbedoTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
@@ -649,7 +637,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasNormalTexture = textureHandle.has_value();
-            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture1", hasNormalTexture ? textureHandle.value() : m_DefaultNormal);
+            meshMaterial->AddMaterialTextureSamplerProperty(BindingPoints::Texture1, hasNormalTexture ? textureHandle.value() : m_DefaultNormal);
         }
         {
             aiString str;
@@ -657,7 +645,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasRoughnessTexture = textureHandle.has_value();
-            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture2", hasRoughnessTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty(BindingPoints::Texture2, hasRoughnessTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
@@ -665,7 +653,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasMetallicTexture = textureHandle.has_value();
-            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture3", hasMetallicTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty(BindingPoints::Texture3, hasMetallicTexture ? textureHandle.value() : m_DefaultWhite);
         }
         {
             aiString str;
@@ -673,7 +661,7 @@ namespace Ganymede
             const aiTexture* textureAi = scene.GetEmbeddedTexture(str.C_Str());
             const std::optional<Handle<Texture>> textureHandle = TryLoadAndStoreRAWTexture(textureAi);
             hasEmissionTexture = textureHandle.has_value();
-            meshMaterial->AddMaterialTextureSamplerProperty("u_Texture4", hasEmissionTexture ? textureHandle.value() : m_DefaultWhite);
+            meshMaterial->AddMaterialTextureSamplerProperty(BindingPoints::Texture4, hasEmissionTexture ? textureHandle.value() : m_DefaultWhite);
         }
 
         for (unsigned int i = 0; i < aiMaterial.mNumProperties; ++i)
@@ -686,23 +674,23 @@ namespace Ganymede
             {
                 glm::vec3 baseColor;
                 memcpy(&baseColor.x, data, 12);
-                meshMaterial->AddMaterialVector3fProperty("u_BaseColor", hasAlbedoTexture ? glm::vec3(1) : baseColor);
+                meshMaterial->AddMaterialVector3fProperty(BindingPoints::BaseColor, hasAlbedoTexture ? glm::vec3(1) : baseColor);
             }
             else if (strcmp(propName.C_Str(), "$mat.roughnessFactor") == 0)
             {
                 float roughness = *reinterpret_cast<float*>(data);
-                meshMaterial->AddMaterialFloatProperty("u_Roughness", hasRoughnessTexture ? 1.f : roughness);
+                meshMaterial->AddMaterialFloatProperty(BindingPoints::Roughness, hasRoughnessTexture ? 1.f : roughness);
             }
             else if (strcmp(propName.C_Str(), "$mat.reflectivity") == 0)
             {
                 float metalness = *reinterpret_cast<float*>(data);
-                meshMaterial->AddMaterialFloatProperty("u_Metalness", hasMetallicTexture ? 1.f : metalness);
+                meshMaterial->AddMaterialFloatProperty(BindingPoints::Metalness, hasMetallicTexture ? 1.f : metalness);
             }
             else if (strcmp(propName.C_Str(), "$clr.emissive") == 0)
             {
                 glm::vec4 emissionColor;
                 memcpy(&emissionColor.x, data, 16);
-                meshMaterial->AddMaterialVector3fProperty("u_EmissiveColor", hasEmissionTexture ? glm::vec3(1) : glm::vec3(emissionColor));
+                meshMaterial->AddMaterialVector3fProperty(BindingPoints::EmmisiveColor, hasEmissionTexture ? glm::vec3(1) : glm::vec3(emissionColor));
             }
         }
 
@@ -789,6 +777,8 @@ namespace Ganymede
 
     Handle<Texture> AssetLoader::CreateDefaultTexture(const glm::u8vec3& color, const std::string& name)
     {
+        StaticData::Instance = &m_StaticData;
+
         auto textureSearchIt = m_TextureNameToIndex.find(name);
         if (textureSearchIt == m_TextureNameToIndex.end())
         {
@@ -803,5 +793,38 @@ namespace Ganymede
             const size_t textureID = textureSearchIt->second;
             return Handle<Texture> { textureID };
         }
+    }
+
+    Handle<Material> AssetLoader::CreateDefaultMaterial()
+    {
+        std::string shaderName = AssetLoader_Private::locBaseShaderFolder + (GM_ActiveBackend == GraphicsBackend::OpenGL ? "gbuffer.shader" : "VulkanTest.shader");
+
+        size_t shaderID = m_StaticData.m_ShaderBinaries.size();
+        if (std::optional<ShaderBinary> shaderBinary = GraphicsFactory::LoadShader(shaderName))
+        {
+            m_StaticData.m_ShaderBinaries.push_back(shaderBinary.value());
+            m_ShaderBinaryToIndex.emplace(shaderName, shaderID);
+        }
+        else
+        {
+            GM_CORE_ASSERT(false, "Couldnt load shader");
+        }
+
+        size_t materialID = m_StaticData.m_Materials.size();
+        Handle<ShaderBinary> shaderHandle(shaderID);
+        Material& material = m_StaticData.m_Materials.emplace_back(shaderHandle);
+
+        material.AddMaterialTextureSamplerProperty(BindingPoints::Texture0, m_DefaultWhite);
+        material.AddMaterialTextureSamplerProperty(BindingPoints::Texture1, m_DefaultNormal);
+        material.AddMaterialTextureSamplerProperty(BindingPoints::Texture2, m_DefaultWhite);
+        material.AddMaterialTextureSamplerProperty(BindingPoints::Texture3, m_DefaultWhite);
+        material.AddMaterialTextureSamplerProperty(BindingPoints::Texture4, m_DefaultWhite);
+
+        material.AddMaterialVector3fProperty(BindingPoints::BaseColor, { 0.8f, 0.8f, 0.8f });      // Base Color
+        material.AddMaterialVector3fProperty(BindingPoints::EmmisiveColor, { 0.0f, 0.0f, 0.0f });
+        material.AddMaterialFloatProperty(BindingPoints::Roughness, 0.2f);
+        material.AddMaterialFloatProperty(BindingPoints::Metalness, 0.0f);
+
+        return { materialID };
     }
 }

@@ -1,3 +1,4 @@
+#pragma once
 #include "Ganymede/Core/Core.h"
 
 #include "RenderPass.h"
@@ -20,7 +21,7 @@ namespace Ganymede
 		RenderPipeline& operator=(const RenderPipeline&) = delete;
 
 		RenderPipeline(RenderContext& renderContext);
-		~RenderPipeline();
+		virtual ~RenderPipeline();
 
 		bool Initialize();
 		void Execute();

@@ -13,7 +13,8 @@ namespace Ganymede
 		{
 			// If loading 16bit failes, it is probably 8bit (or 32bit - but we don't support it for now)
 			// Seems in stb there is no better way to check if it is a 16bit or 8bit texture
-			if (const unsigned short* buffer16 = stbi_load_16(path.c_str(), reinterpret_cast<int*>(&m_Width), reinterpret_cast<int*>(&m_Height), reinterpret_cast<int*>(&m_ChannelCount), 0))
+
+			if (const unsigned short* buffer16 = stbi_load_16(path.c_str(), reinterpret_cast<int*>(&m_Width), reinterpret_cast<int*>(&m_Height), reinterpret_cast<int*>(&m_ChannelCount), STBI_rgb_alpha))
 			{
 				buffer = (unsigned char*)buffer16;
 				m_BitDepth = 16;
@@ -21,7 +22,7 @@ namespace Ganymede
 		}
 		else
 		{
-			buffer = stbi_load(path.c_str(), reinterpret_cast<int*>(&m_Width), reinterpret_cast<int*>(&m_Height), reinterpret_cast<int*>(&m_ChannelCount), 0);
+			buffer = stbi_load(path.c_str(), reinterpret_cast<int*>(&m_Width), reinterpret_cast<int*>(&m_Height), reinterpret_cast<int*>(&m_ChannelCount), STBI_rgb_alpha);
 			m_BitDepth = 8;
 		}
 

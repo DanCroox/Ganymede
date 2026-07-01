@@ -13,7 +13,7 @@ namespace Ganymede
 	class GANYMEDE_API VKGLFWWindow : public Window
 	{
 	public:
-		VKGLFWWindow(EventSystem& eventSystem) : Window(eventSystem) {}
+		VKGLFWWindow(EventSystem& eventSystem);
 
 		~VKGLFWWindow();
 
@@ -24,6 +24,12 @@ namespace Ganymede
 		bool TryStart() override;
 		void SetVSyncEnabled(bool isEnabled) override;
 		bool IsVSyncEnabled() const override;
+
+	private:
+		void TerminateWindow();
+
+		GLFWwindow* m_GLFWWindow = nullptr;
+		bool m_IsVSyncEnabled = false;
 	};
 }
 #endif //GM_PLATFORM_WINDOWS

@@ -44,7 +44,6 @@ namespace Ganymede
         GM_CORE_INFO("glfwCreateWindow succeeded");
 
         glfwMakeContextCurrent(m_GLFWWindow);     //Make the window's context current  
-        glfwSetWindowUserPointer(m_GLFWWindow, this);
         glfwSetWindowPos(m_GLFWWindow, 200, 100);
         SetVSyncEnabled(false);
 
@@ -165,6 +164,7 @@ namespace Ganymede
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
+        GM_CORE_INFO("ImGui context destroyed.");
 
         glfwDestroyWindow(m_GLFWWindow);
         GM_CORE_INFO("glfw window destroyed.");

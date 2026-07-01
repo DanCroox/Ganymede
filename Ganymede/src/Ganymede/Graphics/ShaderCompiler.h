@@ -1,8 +1,7 @@
 #pragma once
 #include "Ganymede/Core/Core.h"
 
-#include "ShaderBinary.h"
-#include <optional>
+#include "Ganymede/Graphics/ShaderBinary.h"
 #include <string>
 #include <vector>
 
@@ -11,21 +10,27 @@ namespace Ganymede
 	class GANYMEDE_API ShaderCompiler
 	{
 	public:
-		ShaderCompiler() = delete;
-		static bool Compile(const std::string& filePath, std::vector<ShaderBinary::Binary>& binaryDataOut);
+		ShaderCompiler() = default;
+		virtual ~ShaderCompiler() = default;
 
-	private:
+		bool Compile(const std::string& filePath, std::vector<ShaderBinary::Binary>& binaryDataOut);
+
+	protected:
 		struct ProgramSource
 		{
+#ifndef GM_RETAIL
+			std::string m_Name;
+#endif //GM_RETAIL
 			std::string ComputeSource;
 			std::string VertexSource;
 			std::string FragmentSource;
 			std::string GeometrySource;
 		};
 
-		static ProgramSource ParseShader(const std::string& filepath);
-		static void ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut);
-		static bool CompileProgram(const ProgramSource& programSource, std::vector<ShaderBinary::Binary>& binaryDataOut);
-		static unsigned int CompileShaderShaderStage(unsigned int type, const std::string& source);
+		virtual bool CompileProgram(const ProgramSource& programSource, std::vector<ShaderBinary::Binary>& binaryDataOut) = 0;
+
+	private:
+		void ParseIncludeHierarchy(const std::string& filepath, const std::string& line, std::stringstream& stringOut);
+		ProgramSource ParseShader(const std::string& filepath);
 	};
 }

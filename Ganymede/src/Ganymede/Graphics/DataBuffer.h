@@ -38,7 +38,10 @@ namespace Ganymede
 	protected:
 		DataBuffer() = delete;
 
-		DataBuffer(typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType) {}
+		DataBuffer(typename T::VertexDataType* data, unsigned int numElements, DataBufferType bufferType)
+		{
+			static_assert(std::is_base_of<VertexDataDescriptor<typename T::VertexDataType>, T>::value, "You can only create a DataBuffer with a VertexDataDescriptor derivate.");
+		}
 
 		DataBuffer(const DataBuffer<T>&) = delete;
 		DataBuffer<T>& operator=(const DataBuffer<T>&) = delete;

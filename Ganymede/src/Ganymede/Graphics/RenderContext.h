@@ -23,7 +23,6 @@
 
 namespace Ganymede
 {
-	class FPSCamera;
 	class MeshWorldObject::Mesh;
 	class World;
 
@@ -75,6 +74,12 @@ namespace Ganymede
 			std::unique_ptr<VertexObject> m_VertexObject;
 		};
 
+		struct CachedGPUTextureObject
+		{
+			float m_LastAccessTime;
+			std::unique_ptr<GPUTexture> m_GPUTexture;
+		};
+
 		RenderContext(const RenderContext&) = delete;
 		RenderContext& operator=(const RenderContext&) = delete;
 		RenderContext() = delete;
@@ -86,7 +91,7 @@ namespace Ganymede
 
 		Renderer& GetRenderer();
 
-		FrameBuffer* CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer);
+		FrameBuffer* CreateFrameBuffer(const std::string& name, const FrameBufferAttachmentStorage& attachments, glm::u32vec2 renderDimension);
 		RenderTarget* CreateSingleSampleRenderTarget(const std::string& name, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		RenderTarget* CreateMultiSampleRenderTarget(const std::string& name, unsigned int sampleCount, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
 		RenderTarget* CreateCubeMapArrayRenderTarget(const std::string& name, unsigned int numTextures, RenderTargetTypes::ComponentType componentType, RenderTargetTypes::ChannelDataType dataType, RenderTargetTypes::ChannelPrecision precision, glm::uvec2 size);
@@ -172,6 +177,8 @@ namespace Ganymede
 		unsigned int numRenderView = 0;
 
 		const VertexObject& GetVO(MeshWorldObject::Mesh& mesh);
+		const GPUTexture& GetGPUTexture(const Handle<Texture> handle);
+
 		std::vector<RenderMeshInstanceCommand> m_RenderInfo;
 		std::vector<RenderMeshInstanceCommandOffsetsByView> m_RenderInfoOffsets;
 		std::vector<MeshWorldObject::Mesh*> m_MeshIDMapping;
@@ -194,7 +201,7 @@ namespace Ganymede
 		std::unordered_map<std::string, std::pair<ClassID, std::unique_ptr<DataBufferBase>>> m_DataBuffers;
 		
 		std::vector<CachedVertexObject> m_VertexObjectCache;
-		std::vector<std::unique_ptr<GPUTexture>> m_TextureObjectCache;
+		std::vector<CachedGPUTextureObject> m_TextureObjectCache;
 
 		std::vector<VisibleEntity> m_VisibleEntities;
 

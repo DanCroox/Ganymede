@@ -234,10 +234,11 @@ namespace Ganymede
     void serialize(S& s, Material& material)
     {
         constexpr size_t MAX_NUM_MATERIAL_PROPERTIES = 100;
-        constexpr size_t MAX_MATERIAL_PROPERTY_NAME_LEN = 255;
-        s.ext(material.m_MaterialProperties, bitsery::ext::StdMap{ MAX_NUM_MATERIAL_PROPERTIES }, [MAX_MATERIAL_PROPERTY_NAME_LEN](S& s, std::string &key, Material::MaterialProperty& value) {
-            s.text1b(key, MAX_MATERIAL_PROPERTY_NAME_LEN);
-            s.object(value);
+        s.ext(material.m_MaterialProperties, bitsery::ext::StdMap{ MAX_NUM_MATERIAL_PROPERTIES },
+            [](S& s, uint32_t& key, Material::MaterialProperty& value)
+            {
+                s.value4b(key);
+                s.object(value);
             });
 
         s.object(material.m_ShaderBinaryHandle);

@@ -12,7 +12,6 @@
 #include "Ganymede/Graphics/SSBO.h"
 #include "Ganymede/Graphics/VertexDataTypes.h"
 #include "Ganymede/Graphics/VertexObject.h"
-#include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/World/MeshWorldObject.h"
 #include "Ganymede/World/World.h"
 #include <chrono>

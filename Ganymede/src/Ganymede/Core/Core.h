@@ -82,9 +82,9 @@ namespace Ganymede
 				std::cerr << "  file    : " << __FILE__ << std::endl;					\
 				std::cerr << "  line    : " << __LINE__	<< std::endl;					\
 				std::cerr << "  message : " << __VA_ARGS__ << std::endl;	\
-				__debugbreak();															\
 			}																			\
 		}
+
 // Assert for client applications
 #define GM_ASSERT(condition, ...) GM_CORE_ASSERT(condition, __VA_ARGS__)
 #else
@@ -92,20 +92,28 @@ namespace Ganymede
 #define GM_ASSERT(condition, message)
 #endif
 
+// Set graphics backend
+enum class GraphicsBackend
+{
+	OpenGL,
+	Vulkan
+};
+inline GraphicsBackend GM_ActiveBackend = GraphicsBackend::Vulkan;
+
 // This is a tiny reflection system to obtain class inheritance hierarchy during runtime. Use when required. Not all classes need to carry this information.
 #define GM_GENERATE_CLASSTYPEINFO(classname, parentClassName)													\
-	inline static const ClassTypeInfoImpl<classname, parentClassName>& GetStaticClassTypeInfo()				\
+	inline static const ClassTypeInfoImpl<classname, parentClassName>& GetStaticClassTypeInfo()					\
 	{																											\
-		static const ClassTypeInfoImpl<classname, parentClassName> classTypeInfo;										\
+		static const ClassTypeInfoImpl<classname, parentClassName> classTypeInfo;								\
 		return classTypeInfo;																					\
 	};																											\
 	const ClassTypeInfo& GetClassTypeInfo() const override { return classname ##::GetStaticClassTypeInfo(); }	\
 
 
 #define GM_GENERATE_BASE_CLASSTYPEINFO(classname)																\
-	inline static const ClassTypeInfoImpl<classname, ClassTypeInfo>& GetStaticClassTypeInfo()				\
+	inline static const ClassTypeInfoImpl<classname, ClassTypeInfo>& GetStaticClassTypeInfo()					\
 	{																											\
-		static const ClassTypeInfoImpl<classname, ClassTypeInfo> classTypeInfo;										\
+		static const ClassTypeInfoImpl<classname, ClassTypeInfo> classTypeInfo;									\
 		return classTypeInfo;																					\
 	};																											\
 	virtual const ClassTypeInfo& GetClassTypeInfo() const = 0;													\

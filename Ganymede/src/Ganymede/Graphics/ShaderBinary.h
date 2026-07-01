@@ -21,8 +21,8 @@ namespace Ganymede
 	public:
 		struct Binary
 		{
-			std::vector<unsigned char> m_Data;
-			unsigned int m_DataFormat = 0;
+			std::vector<uint8_t> m_Data;
+			uint32_t m_DataFormat = 0;
 			uint8_t m_ShaderTypeBits = 0;
 		};
 

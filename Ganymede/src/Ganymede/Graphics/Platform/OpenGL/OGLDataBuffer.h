@@ -44,7 +44,6 @@ namespace Ganymede
 			m_BufferType(bufferType)
 		{
 			m_BufferSize = sizeof(typename T::VertexDataType) * numElements;
-			static_assert(std::is_base_of<VertexDataDescriptor<typename T::VertexDataType>, T>::value, "You can only create a DataBuffer with a VertexDataDescriptor derivate.");
 			m_RenderID = DataBufferNativeFunctions::GenerateBuffer();
 			DataBufferNativeFunctions::InitializeBufferData(m_RenderID, (const void*)data, sizeof(typename T::VertexDataType) * numElements, bufferType);
 		}
@@ -70,7 +69,7 @@ namespace Ganymede
 			return *this;
 		}
 
-		void Write(typename T::VertexDataType* data, unsigned int numElements, unsigned int offset)
+		void Write(typename T::VertexDataType* data, unsigned int numElements, unsigned int offset) override
 		{
 			GM_CORE_ASSERT(m_BufferType == DataBufferType::Dynamic, "Writing data to a statically initialized data buffer is not possible.");
 

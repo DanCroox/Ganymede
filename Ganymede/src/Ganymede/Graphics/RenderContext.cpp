@@ -1,10 +1,8 @@
 #include "RenderContext.h"
 
 #include "Ganymede/Data/StaticData.h"
-#include "Ganymede/Player/FPSCamera.h"
 #include "Ganymede/Runtime/GMTime.h"
 #include "Ganymede/World/World.h"
-#include "ShaderCompiler.h"
 #include "Texture.h"
 #include <memory>
 
@@ -29,9 +27,9 @@ namespace Ganymede
 		return *m_Renderer.get();
 	}
 
-	FrameBuffer* RenderContext::CreateFrameBuffer(const std::string& name, glm::u32vec2 renderDimension, bool isHardwareBuffer)
+	FrameBuffer* RenderContext::CreateFrameBuffer(const std::string& name, const FrameBufferAttachmentStorage& attachments, glm::u32vec2 renderDimension)
 	{
-		auto [it, inserted] = m_FrameBuffers.try_emplace(name, GraphicsFactory::CreateFrameBuffer(renderDimension, isHardwareBuffer));
+		auto [it, inserted] = m_FrameBuffers.try_emplace(name, GraphicsFactory::CreateFrameBuffer(attachments, renderDimension));
 		GM_CORE_ASSERT(inserted, "Tried to create framebuffer which already existed. Using from cache.");
 		FrameBuffer* ptr = it->second.get();
 		if (!ptr->IsValid())
@@ -102,7 +100,7 @@ namespace Ganymede
 	SSBO* RenderContext::CreateSSBO(const std::string& name, unsigned int bindingID, unsigned int numBytes, bool autoResize)
 	{
 		auto [it, inserted] = m_SSBOs.try_emplace(name, GraphicsFactory::CreateSSBO(bindingID, numBytes, autoResize));
-		GM_CORE_ASSERT(inserted, "Tried to create ssbo which already existed. Using from cache.");
+		//GM_CORE_ASSERT(inserted, "Tried to create ssbo which already existed. Using from cache.");
 		std::unique_ptr<SSBO>* ptr = &it->second;
 
 		return ptr->get();
@@ -149,7 +147,7 @@ namespace Ganymede
 		const auto& propertiesMap = material.GetMaterialProperties();
 
 		int nextTextureSlot = 0;
-		for (const auto& [propertyName, property] : propertiesMap)
+		for (const auto& [bindingPoint, property] : propertiesMap)
 		{
 			const Material::MaterialPropertyData& propertyValue = property.m_Data;
 
@@ -158,22 +156,18 @@ namespace Ganymede
 
 			if (std::holds_alternative<float>(propertyValue))
 			{
-				shader.SetUniform1f(propertyName.c_str(), std::get<float>(propertyValue));
+				shader.SetUniform1f(bindingPoint, std::get<float>(propertyValue));
 			}
 			else if (std::holds_alternative<glm::vec3>(propertyValue))
 			{
-				shader.SetUniform3f(propertyName.c_str(), std::get<glm::vec3>(propertyValue));
+				shader.SetUniform3f(bindingPoint, std::get<glm::vec3>(propertyValue));
 			}
 			else if (std::holds_alternative<Handle<Texture>>(propertyValue))
 			{
 				const Handle<Texture>& handle = std::get<Handle<Texture>>(propertyValue);
-				std::unique_ptr<GPUTexture>& gpuTexture = m_TextureObjectCache[handle.GetID()];
-				if (gpuTexture == nullptr)
-				{
-					m_TextureObjectCache[handle.GetID()] = GraphicsFactory::CreateGPUTexture(handle.GetData());
-				}
-				gpuTexture->Bind(nextTextureSlot);
-				shader.SetUniform1i(propertyName, nextTextureSlot);
+				const GPUTexture& gpuTexture = GetGPUTexture(handle);
+				gpuTexture.Bind(nextTextureSlot);
+				shader.SetUniform1i(bindingPoint, nextTextureSlot);
 				++nextTextureSlot;
 			}
 
@@ -349,6 +343,21 @@ namespace Ganymede
 			m_VertexObjectCache[mesh.m_MeshID].m_LastAccessTime = GMTime::s_Time;
 			m_VertexObjectCache[mesh.m_MeshID].m_VertexObject = std::move(voUPtr);
 			return *m_VertexObjectCache[mesh.m_MeshID].m_VertexObject.get();
+		}
+	}
+
+	const GPUTexture& RenderContext::GetGPUTexture(const Handle<Texture> handle)
+	{
+		CachedGPUTextureObject& cvo = m_TextureObjectCache[handle.GetID()];
+		if (cvo.m_GPUTexture.get() != nullptr)
+		{
+			cvo.m_LastAccessTime = GMTime::s_Time;
+			return *cvo.m_GPUTexture.get();
+		}
+		else
+		{
+			m_TextureObjectCache[handle.GetID()] = { GMTime::s_Time, std::move(GraphicsFactory::CreateGPUTexture(handle.GetData())) };
+			return *m_TextureObjectCache[handle.GetID()].m_GPUTexture.get();
 		}
 	}
 }

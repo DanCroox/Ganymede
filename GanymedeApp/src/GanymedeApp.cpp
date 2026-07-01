@@ -46,13 +46,21 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 
 	m_RenderContext = std::make_unique<RenderContext>(*m_World);
 	m_RenderPipeline = std::make_unique<RenderPipeline>(*m_RenderContext);
-	m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
-	m_RenderPipeline->AddRenderPass<ComputePass>();
-	m_RenderPipeline->AddRenderPass<UpdateDrawDataPass>();
-	m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
-	m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
-	m_RenderPipeline->AddRenderPass<LightingRenderPass>();
-	m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
+
+	if (GM_ActiveBackend == GraphicsBackend::OpenGL)
+	{
+		m_RenderPipeline->AddRenderPass<PrepareFrameRenderPass>();
+		m_RenderPipeline->AddRenderPass<ComputePass>();
+		m_RenderPipeline->AddRenderPass<UpdateDrawDataPass>();
+		m_RenderPipeline->AddRenderPass<GeometryRenderPass>();
+		m_RenderPipeline->AddRenderPass<ShadowMappingRenderPass>();
+		m_RenderPipeline->AddRenderPass<LightingRenderPass>();
+		m_RenderPipeline->AddRenderPass<CompositeRenderPass>();
+	}
+	else
+	{
+		m_RenderPipeline->AddRenderPass<VulkanTestRenderPass>();
+	}
 
 	m_Camera = std::make_unique<FPSCamera>(m_RenderContext->CreateRenderView({1920, 1080}, 55.0f, 0.01f, 1000.0f, 0));
 	m_PlayerCharacter = std::make_unique<PlayerCharacter>(*m_World, *m_PhysicsWorld, *m_Camera);
@@ -61,11 +69,8 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	m_AssetLoader->LoadFromPath("res/models/animationtest.glb");
 
 	// Just for testing: We serialize entire static data container back and forth to see its working
-	const std::vector<uint8_t> serializedStaticData = Serializer::Serialize(m_AssetLoader->m_StaticData);
-	m_StaticData = std::make_unique<StaticData>(Serializer::Deserialize<StaticData>(serializedStaticData));
-	StaticData::Instance = m_StaticData.get();
-
-	m_RenderPipeline->Initialize();
+	//const std::vector<uint8_t> serializedStaticData = Serializer::Serialize(m_AssetLoader->m_StaticData);
+	//*StaticData::Instance = Serializer::Deserialize<StaticData>(serializedStaticData);
 
 	//m_AssetLoader->LoadFromPath("res/models/backroom2.glb");
 	GM_INFO("WorldObjects loaded from glb.");
@@ -78,7 +83,7 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	{
 		if (smwo.GetName().find("Matschkopf") == 0)
 		{
-			for (int i = 0; i < 100; ++i)
+			for (int i = 0; i < 3000; ++i)
 			{
 				entt::entity entity = EntityHelpers::CreateMeshEntity(*m_World, smwo, WorldObjectInstance::Mobility::Dynamic);
 				m_World->AddComponent<GCTickable>(entity, GSCreature::Tick, GSCreature::Initialize);
@@ -175,6 +180,8 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 		}
 		++numlights;
 	}
+
+	m_RenderPipeline->Initialize();
 
 	GM_INFO("World loaded. Size: {}, {}, {} x {}, {}, {}", worldBoundsMin.x, worldBoundsMin.y, worldBoundsMin.z, worldBoundsMax.x, worldBoundsMax.y, worldBoundsMax.z);
 

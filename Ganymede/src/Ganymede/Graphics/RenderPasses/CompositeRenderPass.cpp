@@ -10,7 +10,7 @@ namespace Ganymede
 {
 	bool CompositeRenderPass::Initialize(RenderContext& renderContext)
 	{
-		m_FrameBuffer = renderContext.CreateFrameBuffer("Hardware", { 1920, 1080 }, true);
+		m_FrameBuffer = renderContext.CreateFrameBuffer("Hardware", {}, { 1920, 1080 });
 		m_ViewportShader = renderContext.LoadGraphicsShader("ScreenShader", { "res/shaders/ScreenShader2.shader" });
 		m_ScreenVO = renderContext.GetVertexObject("ScreenVertexObject");
 
@@ -19,7 +19,7 @@ namespace Ganymede
 
 	void CompositeRenderPass::Execute(RenderContext& renderContext)
 	{
-		m_ViewportShader->BindTexture(*renderContext.GetSingleSampleRenderTarget("Lighting"), "m_LightingPass");
+		m_ViewportShader->BindTexture(*renderContext.GetSingleSampleRenderTarget("Lighting"), 0);
 		renderContext.GetRenderer().ClearFrameBuffer(*m_FrameBuffer, true, true);
 		renderContext.GetRenderer().DrawVertexObject(*m_ScreenVO, 1, *m_FrameBuffer, *m_ViewportShader, false);
 	}

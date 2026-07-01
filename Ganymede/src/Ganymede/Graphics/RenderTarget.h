@@ -33,7 +33,8 @@ namespace Ganymede
 		enum class GANYMEDE_API ChannelDataType
 		{
 			Float,
-			UInt
+			UInt,
+			UNorm
 		};
 
 		enum class GANYMEDE_API ChannelPrecision

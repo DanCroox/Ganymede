@@ -190,7 +190,12 @@ project "Ganymede"
 		}
 
 		-- Vulkan loader on Windows
-		links { "vulkan-1.lib" }
+		links
+		{
+			"vulkan-1.lib",
+			"shaderc_shared.lib",
+			"shaderc_combined.lib"
+		}
 
 		postbuildcommands
 		{

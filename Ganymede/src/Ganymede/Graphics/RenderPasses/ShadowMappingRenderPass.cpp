@@ -19,8 +19,10 @@ namespace Ganymede
 	{
 		m_ShadowMapsCubeArray = renderContext.CreateCubeMapArrayRenderTarget("OmniDirectionalShadowMapArray", 6 * 100, RenderTargetTypes::ComponentType::Depth, RenderTargetTypes::ChannelDataType::Float, RenderTargetTypes::ChannelPrecision::B32, { m_ShadowMapSize, m_ShadowMapSize });
 		
-		m_Framebuffer = renderContext.CreateFrameBuffer("OmniDirectionalShadowMapping", { m_ShadowMapSize, m_ShadowMapSize }, false);
-		m_Framebuffer->SetFrameBufferAttachment(FrameBuffer::AttachmentType::Depth, *m_ShadowMapsCubeArray);
+		m_Framebuffer = renderContext.CreateFrameBuffer(
+			"OmniDirectionalShadowMapping",
+			{ {FrameBufferAttachmentTypee::Depth, 0, m_ShadowMapsCubeArray} },
+			{ m_ShadowMapSize, m_ShadowMapSize });
 
 		m_ShadowMappingShader = renderContext.LoadGraphicsShader("OmniDirectionalShadowMappingShader", {"res/shaders/OmnidirectionalShadowMapInstances.shader"});
 

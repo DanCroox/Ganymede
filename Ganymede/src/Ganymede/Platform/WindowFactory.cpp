@@ -16,7 +16,16 @@ namespace Ganymede
 
 		std::unique_ptr<Window> CreateApplicationWindow(EventSystem& eventSystem)
 		{
-			return std::make_unique<OGLGLFWWindow>(eventSystem);
+			switch (GM_ActiveBackend)
+			{
+			case GraphicsBackend::OpenGL:
+				return std::make_unique<OGLGLFWWindow>(eventSystem);
+			case GraphicsBackend::Vulkan:
+				return std::make_unique<VKGLFWWindow>(eventSystem);
+			default:
+				GM_CORE_ASSERT(false, "Not supported");
+				return {};
+			}
 		}
 	}
 }

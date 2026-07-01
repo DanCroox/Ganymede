@@ -11,20 +11,30 @@
 
 namespace Ganymede
 {
-	template <>
-	const MeshWorldObject& Handle<MeshWorldObject>::GetData() const { return StaticData::Instance->m_MeshWorldObjects[m_Index]; }
-	template <>
-	const SkeletalMeshWorldObject& Handle<SkeletalMeshWorldObject>::GetData() const { return StaticData::Instance->m_SkeletalMeshWorldObjects[m_Index]; }
-	template <>
-	const PointlightWorldObject& Handle<PointlightWorldObject>::GetData() const { return StaticData::Instance->m_PointlightWorldObjects[m_Index]; }
-	template <>
-	const Texture& Handle<Texture>::GetData() const { return StaticData::Instance->m_Textures[m_Index]; }
-	template <>
-	const Animation& Handle<Animation>::GetData() const { return StaticData::Instance->m_SceneAnimations[m_Index]; }
-	template <>
-	const MeshWorldObject::Mesh& Handle<MeshWorldObject::Mesh>::GetData() const { return StaticData::Instance->m_Meshes[m_Index]; }
-	template <>
-	const Material& Handle<Material>::GetData() const { return StaticData::Instance->m_Materials[m_Index]; }
-	template <>
-	const ShaderBinary& Handle<ShaderBinary>::GetData() const { return StaticData::Instance->m_ShaderBinaries[m_Index]; }
+
+#define DEFINE_HANDLE_FOR_TYPE(TYPE, MEMBER)			\
+	template<>											\
+	Handle<TYPE>::Handle(size_t index)					\
+		: m_Index(index)								\
+		  HANDLE_DATA_INIT(MEMBER) {}					\
+														\
+	template<>											\
+	const TYPE& Handle<TYPE>::GetData() const {			\
+		return StaticData::Instance->MEMBER[m_Index];	\
+	}
+
+#ifndef RETAIL
+#define HANDLE_DATA_INIT(MEMBER) , m_Data(&StaticData::Instance->MEMBER[m_Index])
+#else
+#define HANDLE_DATA_INIT(MEMBER)
+#endif //RETAIL
+
+	DEFINE_HANDLE_FOR_TYPE(MeshWorldObject, m_MeshWorldObjects);
+	DEFINE_HANDLE_FOR_TYPE(SkeletalMeshWorldObject, m_SkeletalMeshWorldObjects);
+	DEFINE_HANDLE_FOR_TYPE(PointlightWorldObject, m_PointlightWorldObjects);
+	DEFINE_HANDLE_FOR_TYPE(Texture, m_Textures);
+	DEFINE_HANDLE_FOR_TYPE(Animation, m_SceneAnimations);
+	DEFINE_HANDLE_FOR_TYPE(MeshWorldObject::Mesh, m_Meshes);
+	DEFINE_HANDLE_FOR_TYPE(Material, m_Materials);
+	DEFINE_HANDLE_FOR_TYPE(ShaderBinary, m_ShaderBinaries);
 }

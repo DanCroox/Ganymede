@@ -1,15 +1,16 @@
 #pragma once
 
+#include "Ganymede/Core/Core.h"
 #include "Ganymede/Data/SerializerTraits.h"
 #include <vector>
 
 namespace Ganymede
 {
 	template <typename T>
-	class Handle
+	class GANYMEDE_API Handle
 	{
 	public:
-		Handle(size_t index) : m_Index(index) {}
+		Handle(size_t index);
 		const T& GetData() const;
 
 		bool operator==(const Handle<T>& other) const
@@ -29,5 +30,8 @@ namespace Ganymede
 		Handle() = default;
 
 		size_t m_Index;
+#ifndef RETAIL
+		T* m_Data;
+#endif //RETAIL
 	};
 }
