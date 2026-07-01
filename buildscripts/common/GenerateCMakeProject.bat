@@ -29,7 +29,7 @@ PUSHD "%BUILD_DIR%"
 if exist "%BUILD_DIR%\CMakeCache.txt" del "%BUILD_DIR%\CMakeCache.txt"
 
 :: Generate project files.
-cmake %SOURCE_DIR% -G %IDE% -A %ARCHITECTURE% %BUILD_PARAMS%
+"C:\Program Files\CMake\bin\cmake.exe" %SOURCE_DIR% -G %IDE% -A %ARCHITECTURE% %BUILD_PARAMS%
 
 POPD
 

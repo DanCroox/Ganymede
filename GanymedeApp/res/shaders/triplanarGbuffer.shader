@@ -56,17 +56,15 @@ in mat3 v_TBN;
 in vec3 v_SSAOPos;
 in vec3 v_SSAONormal;
 
-uniform vec3 u_BaseColor;
-uniform vec3 u_EmissiveColor;
-uniform float u_Roughness;
-uniform float u_Metalness;
-
-uniform sampler2D u_Texture0;
-uniform sampler2D u_Texture1;
-uniform sampler2D u_Texture2;
-uniform sampler2D u_Texture3;
-
-uniform sampler2D u_Texture4;
+layout(location = 0) uniform sampler2D u_Texture0;
+layout(location = 1) uniform sampler2D u_Texture1;
+layout(location = 2) uniform sampler2D u_Texture2;
+layout(location = 3) uniform sampler2D u_Texture3;
+layout(location = 4) uniform sampler2D u_Texture4;
+layout(location = 5) uniform vec3 u_BaseColor;
+layout(location = 6) uniform vec3 u_EmissiveColor;
+layout(location = 7) uniform float u_Roughness;
+layout(location = 8) uniform float u_Metalness;
 
 void main()
 {

@@ -19,7 +19,7 @@ void main()
 
 in vec2 TexCoords;
 
-uniform sampler2D m_LightingPass;
+layout(location = 0) uniform sampler2D m_LightingPass;
 
 out vec4 FragColor;
 

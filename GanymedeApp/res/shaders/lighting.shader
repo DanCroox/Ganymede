@@ -18,12 +18,7 @@ void main()
 #include "common.h"
 
 out vec4 FragColor;
-
 in vec2 v_TexCoords;
-
-uniform vec3 u_ViewPos;
-uniform ivec2 u_ViewportResolution;
-uniform ivec2 u_RenderResolution;
 
 struct PointLight
 {
@@ -33,17 +28,19 @@ struct PointLight
 };
 layout(std140, binding = 0) buffer PointLightDataBlock { PointLight pointLights[]; };
 
-uniform int u_PointlightCount;
+layout(location = 0) uniform sampler2DMS u_GPositions;
+layout(location = 1) uniform sampler2DMS u_GNormals;
+layout(location = 2) uniform sampler2DMS u_GDepths;
+layout(location = 3) uniform sampler2DMS u_GAlbedo;
+layout(location = 4) uniform sampler2DMS u_GMetalRough;
+layout(location = 5) uniform sampler2DMS u_GEmission;
+layout(location = 6) uniform sampler2DMS u_ComplexFragment;
+layout(location = 7) uniform samplerCubeArray u_DepthCubemapTexture;
 
-uniform samplerCubeArray u_DepthCubemapTexture;
-
-uniform sampler2DMS u_GPositions;
-uniform sampler2DMS u_GNormals;
-uniform sampler2DMS u_GDepths;
-uniform sampler2DMS u_GAlbedo;
-uniform sampler2DMS u_GMetalRough;
-uniform sampler2DMS u_ComplexFragment;
-uniform sampler2DMS u_GEmission;
+layout(location = 8) uniform ivec2 u_RenderResolution;
+layout(location = 9) uniform int u_PointlightCount;
+layout(location = 10) uniform vec3 u_ViewPos;
+layout(location = 11) uniform ivec2 u_ViewportResolution;
 
 #define SIGMA 30.0
 #define BSIGMA 1.0
