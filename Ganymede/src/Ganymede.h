@@ -39,6 +39,7 @@
 #include <Ganymede/Graphics/RenderPasses/PrepareFrameRenderPass.h>
 #include <Ganymede/Graphics/RenderPasses/ShadowMappingRenderPass.h>
 #include <Ganymede/Graphics/RenderPasses/UpdateDrawDataPass.h>
+#include <Ganymede/Graphics/RenderPasses/VulkanTestLighting.h>
 #include <Ganymede/Graphics/RenderPasses/VulkanTestRenderPass.h>
 #include <Ganymede/Graphics/RenderPipeline.h>
 #include <Ganymede/Graphics/RenderTarget.h>

@@ -37,6 +37,9 @@ namespace Ganymede
 		const std::vector<VkFramebuffer>& GetVkFrameBuffers() const{ return m_VkFramebuffers; }
 
 		bool HasDepthAttachment() const { return m_HasDepthAttachment; }
+
+		static VkAccessFlags AccessMaskForLayout(VkImageLayout layout);
+		static VkPipelineStageFlags StageForLayout(VkImageLayout layout);
 		const std::vector<VkPipelineColorBlendAttachmentState>& GetColorBlendAttachments() const { return m_ColorBlendAttachments; };
 
 	private:

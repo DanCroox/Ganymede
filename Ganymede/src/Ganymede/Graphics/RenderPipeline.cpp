@@ -1,7 +1,6 @@
 #include "RenderPipeline.h"
 
 #include "Ganymede/Player/FPSCamera.h"
-#include "Ganymede/Graphics/Platform/GraphicsFactory.h"
 #include "Ganymede/Common/Helpers.h"
 #include "GPUDebugHandler.h"
 #include "RenderContext.h"

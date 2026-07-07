@@ -30,6 +30,7 @@ namespace Ganymede
 		VKBackBuffer<VkImageView> m_VkImageView;
 		VKBackBuffer<VkSampler> m_VkSampler;
 		VkImageAspectFlags m_VkImageAspectFlags = 0;
+		VKBackBuffer<VkImageLayout> m_CurrentLayout;
 
 		const VKBackBuffer<uint32_t>& GetBindlessDSIndex() const { return m_BindlessDescriptorSetIndex; }
 		bool IsBindlessDSIndexValid() const { return g_VKGetSCIndex(m_BindlessDescriptorSetIndex) != Numbers::MAX_UINT32; }

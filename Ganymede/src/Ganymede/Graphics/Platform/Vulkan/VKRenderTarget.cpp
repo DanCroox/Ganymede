@@ -169,8 +169,13 @@ namespace Ganymede
 		RenderTargetTypes::ChannelDataType dataType,
 		RenderTargetTypes::ChannelPrecision precision,
 		glm::uvec2 size) :
-		RenderTarget(componentType, dataType, precision, size)
+		RenderTarget(componentType, dataType, precision, size),
+		m_CurrentLayout{}
 	{
+		for (auto& layout : m_CurrentLayout)
+		{
+			layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
 		ResetBindlessDSIndex();
 	};
 
@@ -193,10 +198,15 @@ namespace Ganymede
 		m_VkFormat(other.m_VkFormat),
 		m_VkImage(other.m_VkImage),
 		m_VkImageView(other.m_VkImageView),
-		m_VkImageAspectFlags(other.m_VkImageAspectFlags)
+		m_VkImageAspectFlags(other.m_VkImageAspectFlags),
+		m_CurrentLayout(other.m_CurrentLayout)
 	{
 		g_VKClearBackBuffer(other.m_VkImage);
 		g_VKClearBackBuffer(other.m_VkImageView);
+		for (auto& layout : other.m_CurrentLayout)
+		{
+			layout = VK_IMAGE_LAYOUT_UNDEFINED;
+		}
 	}
 
 	VKRenderTarget& VKRenderTarget::operator=(VKRenderTarget&& other) noexcept
@@ -208,9 +218,14 @@ namespace Ganymede
 			m_VkImage = other.m_VkImage;
 			m_VkImageView = other.m_VkImageView;
 			m_VkImageAspectFlags = other.m_VkImageAspectFlags;
+			m_CurrentLayout = other.m_CurrentLayout;
 
 			g_VKClearBackBuffer(other.m_VkImage);
 			g_VKClearBackBuffer(other.m_VkImageView);
+			for (auto& layout : other.m_CurrentLayout)
+			{
+				layout = VK_IMAGE_LAYOUT_UNDEFINED;
+			}
 		}
 
 		return *this;

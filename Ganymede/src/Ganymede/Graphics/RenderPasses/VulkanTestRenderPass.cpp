@@ -33,83 +33,63 @@
 
 namespace Ganymede
 {
-	std::vector<std::unique_ptr<Pipeline>> m_MaterialPipelinePtrs;
-	std::unique_ptr<Pipeline> compoPipeline;
-
-	struct alignas(16) GBufferMaterialData
+	namespace
 	{
-		struct Data
-		{
-			glm::uint m_AlbedoIdx;
-			glm::uint m_NormalIdx;
-			glm::uint m_RoughnessIdx;
-			glm::uint m_MetallicIdx;
+		std::vector<std::unique_ptr<Pipeline>> m_MaterialPipelinePtrs;
+		std::unique_ptr<Pipeline> compoPipeline;
 
-			glm::uint m_EmissionIdx;
-			glm::uint _PadA;
-			glm::uint _PadB;
+		struct alignas(16) GBufferMaterialData
+		{
+			struct Data
+			{
+				glm::uint m_AlbedoIdx;
+				glm::uint m_NormalIdx;
+				glm::uint m_RoughnessIdx;
+				glm::uint m_MetallicIdx;
+
+				glm::uint m_EmissionIdx;
+				glm::uint _PadA;
+				glm::uint _PadB;
+				glm::uint _PadC;
+
+				glm::vec4 m_BaseColor;
+
+				glm::vec3 m_EmissiveColor;
+				float _PadD;
+
+				float m_Roughness;
+				float m_Metalness;
+				float _PadE;
+				float _PadF;
+			};
+
+			union
+			{
+				Data data;
+				std::byte padding[256];
+			};
+		};
+		static_assert(sizeof(GBufferMaterialData) == 256);
+
+		struct GBufferMeshInstanceData
+		{
+			glm::mat4 m_M;
+			glm::mat4 m_V;
+			glm::mat4 m_P;
+
+			glm::uint m_MaterialBufferIndex;
+			glm::uint m_MaterialDataIndex;
+			glm::uint m_AnimDataIndex;
 			glm::uint _PadC;
-
-			glm::vec4 m_BaseColor;
-
-			glm::vec3 m_EmissiveColor;
-			float _PadD;
-
-			float m_Roughness;
-			float m_Metalness;
-			float _PadE;
-			float _PadF;
 		};
 
-		union
-		{
-			Data data;
-			std::byte padding[256];
-		};
-	};
-	static_assert(sizeof(GBufferMaterialData) == 256);
+		VKSSBO* ssboMeshInstanzData;
+		VKSSBO* ssboMaterialData;
+		VKSSBO* ssboAnimationData;
 
-	struct alignas(16) CompositeMaterialData
-	{
-		struct Data
-		{
-			glm::uint m_PositionIdx;
-			glm::uint m_NormalIdx;
-			glm::uint m_AlbedoIdx;
-			glm::uint m_RoughnessMetalIdx;
+		FreeList matDataIndexFreelist;
+	}
 
-			glm::uint m_EmissionIdx;
-			glm::uint m_ComplexFrgIdx;
-			glm::uint m_DepthIdx;
-			glm::uint _PadA;
-		};
-
-		union
-		{
-			Data data;
-			std::byte padding[256];
-		};
-	};
-	static_assert(sizeof(CompositeMaterialData) == 256);
-
-	struct GBufferMeshInstanceData
-	{
-		glm::mat4 m_M;
-		glm::mat4 m_V;
-		glm::mat4 m_P;
-
-		glm::uint m_MaterialBufferIndex;
-		glm::uint m_MaterialDataIndex;
-		glm::uint m_AnimDataIndex;
-		glm::uint _PadC;
-	};
-
-	VKSSBO* ssboMeshInstanzData;
-	VKSSBO* ssboMaterialData;
-	VKSSBO* ssboAnimationData;
-
-	FreeList matDataIndexFreelist;
-	std::vector<PCData> compPCData;
 	bool VulkanTestRenderPass::Initialize(RenderContext& renderContext)
 	{
 		VKContext& vkContext = VKContext::GetInstance();
@@ -153,38 +133,6 @@ namespace Ganymede
 				MeshVertexData::GetVertexDataPrimitiveTypeInfo(),
 				*geometryFB,
 				std::vector{0u}); //We gonna have exactly 1 SSBO on binding location 0
-		}
-
-		// Init COMPOSITE pass
-		FrameBufferAttachmentStorage compositefbAttachments{ { FrameBufferAttachmentTypee::Color, 0, vkContext.m_SCImageRenderTargets.get() } };
-		const FrameBuffer* compositeFB = renderContext.CreateFrameBuffer("VKCompoPassFB", compositefbAttachments, { extent.x, extent.y });
-
-		std::optional<ShaderBinary> shaderBinary = GraphicsFactory::LoadShader("res/shaders/VulkanComposite.shader");
-		const uint32_t shaderBinIdx = StaticData::Instance->m_ShaderBinaries.size();
-
-		StaticData::Instance->m_ShaderBinaries.push_back(std::move(shaderBinary.value()));
-		Material& compoMat = StaticData::Instance->m_Materials.emplace_back(shaderBinIdx);
-
-		std::vector<uint32_t> compssbos;
-		compoPipeline = GraphicsFactory::CreatePipeline(compoMat.GetShaderBinary().GetData(), *compositeFB, compssbos);
-		
-		for (uint32_t scImg = 0; scImg < vkContext.m_SCImgCount; ++scImg)
-		{
-			CompositeMaterialData mdata;
-			mdata.data.m_PositionIdx = positionRT->GetBindlessDSIndex()[scImg];
-			mdata.data.m_NormalIdx = normalsRT->GetBindlessDSIndex()[scImg];
-			mdata.data.m_AlbedoIdx = albedoRT->GetBindlessDSIndex()[scImg];
-			mdata.data.m_RoughnessMetalIdx = roughnessMetalRT->GetBindlessDSIndex()[scImg];
-			mdata.data.m_EmissionIdx = emissionRT->GetBindlessDSIndex()[scImg];
-			mdata.data.m_ComplexFrgIdx = complexFragRT->GetBindlessDSIndex()[scImg];
-			mdata.data.m_DepthIdx = depthRT->GetBindlessDSIndex()[scImg];
-
-			const uint32_t matDataIdx = matDataIndexFreelist.Append();
-			ssboMaterialData->Write(matDataIdx * sizeof(CompositeMaterialData), sizeof(CompositeMaterialData::Data), &mdata);
-
-			PCData& pcData = compPCData.emplace_back();
-			pcData.m_DataIndex = matDataIdx;
-			pcData.m_BufferIndex = ssboMaterialData->GetBindlessDSIndex();
 		}
 
 		return true;
@@ -307,10 +255,6 @@ namespace Ganymede
 			commandList.DrawGeometry(vertexObject, pc);
 		}
 
-		commandList.BindFrameBuffer(compoPipeline->GetFrameBuffer());
-		commandList.BindPipeline(*compoPipeline);
-		commandList.DrawFullscreenQuad(compPCData[vkContext.m_SCIndex]);
-
-		commandList.End();
+		//commandList.End();
 	}
 }

@@ -64,8 +64,8 @@ namespace Ganymede
 			{
 			case FrameBufferAttachmentTypee::Color:
 			{
-				vkAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // kein vorheriger Inhalt garantiert
-				vkAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL <- presentation
+				vkAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				vkAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				
 				VkAttachmentReference& colorAttachmentRef = colorAttachmentReferences.emplace_back();
 				colorAttachmentRef.attachment = static_cast<uint32_t>(attachmentDescriptions.size() - 1);
@@ -81,7 +81,7 @@ namespace Ganymede
 			}
 			case FrameBufferAttachmentTypee::Depth:
 			{
-				vkAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // kein vorheriger Inhalt garantiert
+				vkAttachmentDescription.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 				vkAttachmentDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 				depthAttachmentReferenceOpt = VkAttachmentReference();
@@ -189,7 +189,7 @@ namespace Ganymede
 		return *this;
 	}
 
-	VkAccessFlags access_mask_for_layout(VkImageLayout layout)
+	VkAccessFlags VKFrameBuffer::AccessMaskForLayout(VkImageLayout layout)
 	{
 		switch (layout) {
 		case VK_IMAGE_LAYOUT_UNDEFINED: return 0;
@@ -204,7 +204,7 @@ namespace Ganymede
 		}
 	}
 
-	VkPipelineStageFlags stage_for_layout(VkImageLayout layout)
+	VkPipelineStageFlags VKFrameBuffer::StageForLayout(VkImageLayout layout)
 	{
 		switch (layout) {
 		case VK_IMAGE_LAYOUT_UNDEFINED: return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -236,7 +236,7 @@ namespace Ganymede
 		if (aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT))
 			filter = VK_FILTER_NEAREST;
 
-		// 1) Übergänge in TRANSFER_SRC / TRANSFER_DST
+		// 1) ï¿½bergï¿½nge in TRANSFER_SRC / TRANSFER_DST
 		VkImageMemoryBarrier barriers[2] = {};
 
 		// src -> TRANSFER_SRC_OPTIMAL
@@ -251,7 +251,7 @@ namespace Ganymede
 		barriers[0].subresourceRange.levelCount = 1;
 		barriers[0].subresourceRange.baseArrayLayer = srcBaseLayer;
 		barriers[0].subresourceRange.layerCount = layerCount;
-		barriers[0].srcAccessMask = access_mask_for_layout(srcOldLayout);
+		barriers[0].srcAccessMask = VKFrameBuffer::AccessMaskForLayout(srcOldLayout);
 		barriers[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
 		// dst -> TRANSFER_DST_OPTIMAL
@@ -266,12 +266,12 @@ namespace Ganymede
 		barriers[1].subresourceRange.levelCount = 1;
 		barriers[1].subresourceRange.baseArrayLayer = dstBaseLayer;
 		barriers[1].subresourceRange.layerCount = layerCount;
-		barriers[1].srcAccessMask = access_mask_for_layout(dstOldLayout);
+		barriers[1].srcAccessMask = VKFrameBuffer::AccessMaskForLayout(dstOldLayout);
 		barriers[1].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
 		vkCmdPipelineBarrier(
 			cmd,
-			stage_for_layout(srcOldLayout),
+			VKFrameBuffer::StageForLayout(srcOldLayout),
 			VK_PIPELINE_STAGE_TRANSFER_BIT,
 			0,
 			0, nullptr,
@@ -307,7 +307,7 @@ namespace Ganymede
 			1, &blit,
 			filter);
 
-		// 3) Übergänge zu final layouts
+		// 3) ï¿½bergï¿½nge zu final layouts
 		VkImageMemoryBarrier post[2] = {};
 
 		// src
@@ -323,7 +323,7 @@ namespace Ganymede
 		post[0].subresourceRange.baseArrayLayer = srcBaseLayer;
 		post[0].subresourceRange.layerCount = layerCount;
 		post[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		post[0].dstAccessMask = access_mask_for_layout(srcFinalLayout);
+		post[0].dstAccessMask = VKFrameBuffer::AccessMaskForLayout(srcFinalLayout);
 
 		// dst
 		post[1].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -338,12 +338,12 @@ namespace Ganymede
 		post[1].subresourceRange.baseArrayLayer = dstBaseLayer;
 		post[1].subresourceRange.layerCount = layerCount;
 		post[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		post[1].dstAccessMask = access_mask_for_layout(dstFinalLayout);
+		post[1].dstAccessMask = VKFrameBuffer::AccessMaskForLayout(dstFinalLayout);
 
 		vkCmdPipelineBarrier(
 			cmd,
 			VK_PIPELINE_STAGE_TRANSFER_BIT,
-			stage_for_layout(srcFinalLayout) | stage_for_layout(dstFinalLayout),
+			VKFrameBuffer::StageForLayout(srcFinalLayout) | VKFrameBuffer::StageForLayout(dstFinalLayout),
 			0,
 			0, nullptr,
 			0, nullptr,

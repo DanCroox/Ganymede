@@ -2,6 +2,7 @@
 
 #include "VKContext.h"
 #include "VKFrameBuffer.h"
+#include "VKRenderTarget.h"
 #include "VKVertexObject.h"
 #include "VKPipeline.h"
 
@@ -38,19 +39,45 @@ namespace Ganymede
 
 	void VKCommandList::End()
 	{
-		if (vkEndCommandBuffer(m_VkCommandBuffer[VKContext::GetInstance().m_FiFIndex]) != VK_SUCCESS)
+		VKContext& vkContext = VKContext::GetInstance();
+		const uint32_t fifIndex = vkContext.m_FiFIndex;
+		const uint32_t scIndex = vkContext.m_SCIndex;
+
+		if (m_BoundFramebuffer != nullptr)
+		{
+			vkCmdEndRenderPass(m_VkCommandBuffer[fifIndex]);
+
+			for (const uint32_t bindingLocation : m_BoundFramebuffer->GetAttachments())
+			{
+				const FrameBufferAttachment& fbAttachment = *m_BoundFramebuffer->GetAttachments().TryGetByBindingLocation(bindingLocation);
+				VKRenderTarget& renderTarget = *const_cast<VKRenderTarget*>(static_cast<const VKRenderTarget*>(fbAttachment.m_RenderTarget));
+
+				VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				if (fbAttachment.m_AttachmentType == FrameBufferAttachmentTypee::Depth)
+				{
+					finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+				}
+				renderTarget.m_CurrentLayout[scIndex] = finalLayout;
+			}
+
+			m_BoundFramebuffer = nullptr;
+		}
+
+		if (vkEndCommandBuffer(m_VkCommandBuffer[fifIndex]) != VK_SUCCESS)
 			throw std::runtime_error("failed to record command buffer!");
 	}
 
 	void VKCommandList::BindFrameBuffer(const FrameBuffer& framebuffer)
 	{
 		VKContext& vkContext = VKContext::GetInstance();
+		const uint32_t fifIndex = vkContext.m_FiFIndex;
+		const uint32_t scIndex = vkContext.m_SCIndex;
 
 		const VKFrameBuffer& vkFramebuffer = static_cast<const VKFrameBuffer&>(framebuffer);
 		VkRenderPassBeginInfo rpInfo{};
 		rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		rpInfo.renderPass = vkFramebuffer.GetVkRenderPass();
-		rpInfo.framebuffer = vkFramebuffer.GetVkFrameBuffers()[vkContext.m_SCIndex];
+		rpInfo.framebuffer = vkFramebuffer.GetVkFrameBuffers()[scIndex];
 		rpInfo.renderArea.offset = { 0, 0 };
 		rpInfo.renderArea.extent = vkContext.extent;
 		std::vector<VkClearValue> clearValues;
@@ -64,7 +91,7 @@ namespace Ganymede
 				clearValues[cli].color = {
 					vkFramebuffer.GetColorBufferClearColor().x,
 					vkFramebuffer.GetColorBufferClearColor().y,
-					1,
+					vkFramebuffer.GetColorBufferClearColor().z,
 					vkFramebuffer.GetColorBufferClearColor().a
 				};
 			}
@@ -80,9 +107,78 @@ namespace Ganymede
 
 		if (m_BoundFramebuffer != nullptr)
 		{
-			vkCmdEndRenderPass(m_VkCommandBuffer[vkContext.m_FiFIndex]);
+			vkCmdEndRenderPass(m_VkCommandBuffer[fifIndex]);
+
+			for (const uint32_t bindingLocation : m_BoundFramebuffer->GetAttachments())
+			{
+				const FrameBufferAttachment& fbAttachment = *m_BoundFramebuffer->GetAttachments().TryGetByBindingLocation(bindingLocation);
+				VKRenderTarget& renderTarget = *const_cast<VKRenderTarget*>(static_cast<const VKRenderTarget*>(fbAttachment.m_RenderTarget));
+
+				VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				if (fbAttachment.m_AttachmentType == FrameBufferAttachmentTypee::Depth)
+				{
+					finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+				}
+				renderTarget.m_CurrentLayout[scIndex] = finalLayout;
+			}
+
+			m_BoundFramebuffer = nullptr;
 		}
-		vkCmdBeginRenderPass(m_VkCommandBuffer[vkContext.m_FiFIndex], &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		// Implizite Layout-Barrieren vor RenderPass-Start
+		for (const uint32_t bindingLocation : vkFramebuffer.GetAttachments())
+		{
+			const FrameBufferAttachment& fbAttachment = *vkFramebuffer.GetAttachments().TryGetByBindingLocation(bindingLocation);
+			const VKRenderTarget& renderTarget = *const_cast<VKRenderTarget*>(static_cast<const VKRenderTarget*>(fbAttachment.m_RenderTarget));
+
+			const VkImageLayout expectedLayout = fbAttachment.m_AttachmentType == FrameBufferAttachmentTypee::Depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+			const VkImageLayout currentLayout = renderTarget.m_CurrentLayout[scIndex];
+			if (currentLayout != expectedLayout && currentLayout != VK_IMAGE_LAYOUT_UNDEFINED)
+			{
+				VkImageMemoryBarrier barrier{};
+				barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+				barrier.oldLayout = currentLayout;
+				barrier.newLayout = expectedLayout;
+				barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				barrier.image = renderTarget.m_VkImage[scIndex];
+				barrier.subresourceRange.aspectMask = renderTarget.m_VkImageAspectFlags;
+				barrier.subresourceRange.baseMipLevel = 0;
+				barrier.subresourceRange.levelCount = 1;
+				barrier.subresourceRange.baseArrayLayer = 0;
+				barrier.subresourceRange.layerCount = 1;
+				barrier.srcAccessMask = VKFrameBuffer::AccessMaskForLayout(currentLayout);
+				barrier.dstAccessMask = VKFrameBuffer::AccessMaskForLayout(expectedLayout);
+
+				vkCmdPipelineBarrier(
+					m_VkCommandBuffer[fifIndex],
+					VKFrameBuffer::StageForLayout(currentLayout),
+					VKFrameBuffer::StageForLayout(expectedLayout),
+					0,
+					0, nullptr,
+					0, nullptr,
+					1, &barrier
+				);
+			}
+		}
+
+		vkCmdBeginRenderPass(m_VkCommandBuffer[fifIndex], &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		// Layout nach RenderPass-Start auf Working-Layout setzen
+		for (const uint32_t bindingLocation : vkFramebuffer.GetAttachments())
+		{
+			const FrameBufferAttachment& fbAttachment = *vkFramebuffer.GetAttachments().TryGetByBindingLocation(bindingLocation);
+			VKRenderTarget& renderTarget = *const_cast<VKRenderTarget*>(static_cast<const VKRenderTarget*>(fbAttachment.m_RenderTarget));
+
+			VkImageLayout workingLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			if (fbAttachment.m_AttachmentType == FrameBufferAttachmentTypee::Depth)
+			{
+				workingLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			}
+			renderTarget.m_CurrentLayout[scIndex] = workingLayout;
+		}
+
 		m_BoundFramebuffer = &vkFramebuffer;
 	}
 
