@@ -60,6 +60,7 @@ void GanymedeApp::GameInit(Ganymede::WindowInitializeEvent&)
 	else
 	{
 		m_RenderPipeline->AddRenderPass<VulkanTestRenderPass>();
+		m_RenderPipeline->AddRenderPass<VulkanTestLighting>();
 	}
 
 	m_Camera = std::make_unique<FPSCamera>(m_RenderContext->CreateRenderView({1920, 1080}, 55.0f, 0.01f, 1000.0f, 0));
