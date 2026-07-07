@@ -1,30 +1,40 @@
 [submodule "Ganymede/vendor/assimp"]
 	path = Ganymede/vendor/assimp
 	url = https://github.com/DanCroox/assimp
+	ignore = dirty
 [submodule "Ganymede/vendor/bullet3"]
 	path = Ganymede/vendor/bullet3
 	url = https://github.com/DanCroox/bullet3
+	ignore = dirty
 [submodule "Ganymede/vendor/spdlog"]
 	path = Ganymede/vendor/spdlog
 	url = https://github.com/DanCroox/spdlog
+	ignore = dirty
 [submodule "Ganymede/vendor/glm"]
 	path = Ganymede/vendor/glm
 	url = https://github.com/DanCroox/glm
+	ignore = dirty
 [submodule "Ganymede/vendor/glfw"]
 	path = Ganymede/vendor/glfw
 	url = https://github.com/DanCroox/glfw
+	ignore = dirty
 [submodule "Ganymede/vendor/recastnavigation"]
 	path = Ganymede/vendor/recastnavigation
 	url = https://github.com/DanCroox/recastnavigation
+	ignore = dirty
 [submodule "Ganymede/vendor/imgui"]
 	path = Ganymede/vendor/imgui
 	url = https://github.com/DanCroox/imgui
+	ignore = dirty
 [submodule "Ganymede/vendor/entt"]
 	path = Ganymede/vendor/entt
 	url = https://github.com/skypjack/entt.git
+	ignore = dirty
 [submodule "Ganymede/vendor/bitsery"]
 	path = Ganymede/vendor/bitsery
 	url = https://github.com/fraillt/bitsery
+	ignore = dirty
 [submodule "Ganymede/vendor/volk"]
 	path = Ganymede/vendor/volk
 	url = https://github.com/zeux/volk
+	ignore = dirty

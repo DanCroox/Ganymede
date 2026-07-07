@@ -1,0 +1,11 @@
+# .gitattributes in Repo-Root
+
+# Baseline: treat all as text, LF in repo, native in working tree
+* text=auto
+
+# Windows-Batch deterministic CRLF (cmd.exe-edge-cases)
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Shell-Script deterministic LF (glew/config has some)
+*.sh   text eol=lf

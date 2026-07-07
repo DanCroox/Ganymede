@@ -63,6 +63,7 @@ namespace Ganymede
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+        ImGui::GetIO().IniFilename = nullptr;
         ImGui::StyleColorsDark();
         ImGui_ImplGlfw_InitForOpenGL(m_GLFWWindow, true);
 #ifdef __EMSCRIPTEN__
